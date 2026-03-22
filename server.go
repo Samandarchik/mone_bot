@@ -381,9 +381,9 @@ textarea{resize:vertical}
 
 <div class="card" style="animation-delay:.6s">
   <span class="lbl"><span class="step-num">13</span><span data-uz="Telefon" data-ru="Телефон">Telefon</span></span>
-  <div style="display:flex;align-items:center;gap:0">
-    <span style="background:#f1f5f9;border:2px solid #e2e8f0;border-right:none;border-radius:14px 0 0 14px;padding:14px 12px;font-size:15px;font-weight:600;color:#334155;white-space:nowrap">+998</span>
-    <input type="tel" id="telefon" placeholder="901234567" maxlength="9" style="border-radius:0 14px 14px 0;border-left:none" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+  <div id="tel-wrap" style="display:flex;align-items:center;border:2px solid #e8e8ef;border-radius:12px;background:#fafaff;transition:all .2s;cursor:text" onclick="document.getElementById('telefon').focus()">
+    <span style="padding:12px 4px 12px 16px;font-size:14px;color:#1a1a2e;white-space:nowrap">+998</span>
+    <input type="tel" id="telefon" placeholder="901234567" maxlength="9" style="border:none;background:transparent;box-shadow:none;padding:12px 16px 12px 4px;outline:none" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onfocus="document.getElementById('tel-wrap').style.borderColor='#667eea';document.getElementById('tel-wrap').style.background='#fff';document.getElementById('tel-wrap').style.boxShadow='0 0 0 4px rgba(102,126,234,.12)'" onblur="document.getElementById('tel-wrap').style.borderColor='#e8e8ef';document.getElementById('tel-wrap').style.background='#fafaff';document.getElementById('tel-wrap').style.boxShadow='none'">
   </div>
 </div>
 
