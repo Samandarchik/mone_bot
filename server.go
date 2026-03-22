@@ -416,6 +416,13 @@ textarea{resize:vertical}
 <div class="msg err" id="msg-err">Xatolik yuz berdi.</div>
 </div>
 
+<div style="text-align:center;margin:24px auto 16px;max-width:420px">
+  <a href="https://t.me/uzaidev" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 24px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:14px;text-decoration:none;color:#fff;font-size:15px;font-weight:600;box-shadow:0 4px 15px rgba(102,126,234,.3);transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(102,126,234,.4)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 15px rgba(102,126,234,.3)'">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0h-.056zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+    <span data-uz="Dasturchi bilan bog'lanish" data-ru="Связаться с разработчиком">Dasturchi bilan bog'lanish</span>
+  </a>
+</div>
+
 <script>
 let curLang='uz';
 
@@ -687,7 +694,7 @@ async function submitForm(){
       throw new Error(errText);
     }
   }catch(e){
-    document.getElementById('msg-err').textContent=(curLang==='uz'?'Xatolik: ':'Ошибка: ')+e.message;
+    document.getElementById('msg-err').innerHTML=(curLang==='uz'?'Xatolik: ':'Ошибка: ')+e.message+'<br><span style="font-size:13px;margin-top:6px;display:inline-block">'+(curLang==='uz'?'Muammo hal bo\'lmasa dasturchi bilan bog\'laning: ':'Если проблема не решена, свяжитесь с разработчиком: ')+'<a href="https://t.me/uzaidev" target="_blank" style="color:#667eea;text-decoration:underline">t.me/uzaidev</a></span>';
     document.getElementById('msg-err').style.display='block';
     btn.disabled=false;
     btn.textContent=curLang==='uz'?'Saqlash va yuborish':'Сохранить и отправить';
