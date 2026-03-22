@@ -381,7 +381,10 @@ textarea{resize:vertical}
 
 <div class="card" style="animation-delay:.6s">
   <span class="lbl"><span class="step-num">13</span><span data-uz="Telefon" data-ru="Телефон">Telefon</span></span>
-  <input type="tel" id="telefon" placeholder="+998901234567">
+  <div style="display:flex;align-items:center;gap:0">
+    <span style="background:#f1f5f9;border:2px solid #e2e8f0;border-right:none;border-radius:14px 0 0 14px;padding:14px 12px;font-size:15px;font-weight:600;color:#334155;white-space:nowrap">+998</span>
+    <input type="tel" id="telefon" placeholder="901234567" maxlength="9" style="border-radius:0 14px 14px 0;border-left:none" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+  </div>
 </div>
 
 <div class="card" style="animation-delay:.65s">
@@ -599,6 +602,43 @@ function prevPhoto(input){
 }
 
 async function submitForm(){
+  const required=[
+    {id:'familiya',uz:'Familiya',ru:'Фамилия'},
+    {id:'ism',uz:'Ism',ru:'Имя'},
+    {id:'sharif',uz:'Sharif',ru:'Отчество'},
+    {id:'tugilgan',uz:'Tug\'ilgan sana',ru:'Дата рождения'},
+    {id:'boy',uz:'Bo\'y',ru:'Рост'},
+    {id:'vazn',uz:'Vazn',ru:'Вес'},
+    {id:'adres',uz:'Yashash manzili',ru:'Адрес проживания'},
+    {id:'moljal',uz:'Mo\'ljal',ru:'Ориентир'},
+    {id:'tajriba',uz:'Umumiy tajriba',ru:'Общий опыт'},
+    {id:'telefon',uz:'Telefon',ru:'Телефон'}
+  ];
+  const stateRequired=[
+    {key:'lavozim',uz:'Lavozim',ru:'Должность'},
+    {key:'chet',uz:'Chet el tajribasi',ru:'Опыт за рубежом'},
+    {key:'malumot',uz:'Ma\'lumot',ru:'Образование'},
+    {key:'oila',uz:'Oilaviy holat',ru:'Семейное положение'}
+  ];
+  const missing=[];
+  for(const f of required){
+    if(!document.getElementById(f.id).value.trim()) missing.push(curLang==='uz'?f.uz:f.ru);
+  }
+  for(const s of stateRequired){
+    if(!state[s.key]) missing.push(curLang==='uz'?s.uz:s.ru);
+  }
+  if(!photoBase64) missing.push(curLang==='uz'?'Rasm':'Фото');
+  if(missing.length>0){
+    document.getElementById('msg-err').textContent=(curLang==='uz'?'Iltimos, to\'ldiring: ':'Пожалуйста, заполните: ')+missing.join(', ');
+    document.getElementById('msg-err').style.display='block';
+    return;
+  }
+  const telVal=document.getElementById('telefon').value.replace(/[^0-9]/g,'');
+  if(telVal.length!==9){
+    document.getElementById('msg-err').textContent=curLang==='uz'?'Telefon raqam 9 ta raqamdan iborat bo\'lishi kerak':'Номер телефона должен содержать 9 цифр';
+    document.getElementById('msg-err').style.display='block';
+    return;
+  }
   const btn=document.getElementById('save-btn');
   btn.disabled=true;
   btn.textContent=curLang==='uz'?'Yuborilmoqda...':'Отправляется...';
@@ -627,7 +667,7 @@ async function submitForm(){
     malumot:state.malumot,
     oilaviy_holat:state.oila,
     tillar:allLangs,
-    telefon:document.getElementById('telefon').value,
+    telefon:'+998'+document.getElementById('telefon').value,
     qoshimcha:document.getElementById('extra').value,
     rasm:photoBase64
   };
