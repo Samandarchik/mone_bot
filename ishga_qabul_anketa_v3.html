@@ -1,0 +1,381 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{max-width:640px;margin:0 auto;padding:1.5rem 1rem}
+.ttl{font-size:20px;font-weight:500;color:var(--color-text-primary);margin-bottom:1.5rem;padding-bottom:12px;border-bottom:2px solid #e0e0e0}
+.card{background:#fff;border:1.5px solid #d0d0d0;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.lbl{font-size:13px;color:#666;margin-bottom:10px;display:block;font-weight:500}
+.bg{display:flex;flex-wrap:wrap;gap:10px}
+
+.btn{
+  padding:9px 20px;
+  border:2px solid #bbb;
+  border-radius:8px;
+  background:#f5f5f5;
+  color:#444;
+  font-size:14px;
+  cursor:pointer;
+  transition:all .15s;
+  font-weight:400;
+}
+.btn:hover{border-color:#888;background:#ebebeb}
+.btn.on{
+  background:#1a6ef5;
+  border:2px solid #0d50c4;
+  color:#fff;
+  font-weight:500;
+}
+
+input[type=text],input[type=tel],input[type=date],textarea{
+  width:100%;
+  padding:9px 12px;
+  border:1.5px solid #c0c0c0;
+  border-radius:8px;
+  font-size:14px;
+  background:#fafafa;
+  color:#222;
+  outline:none;
+  font-family:var(--font-sans);
+}
+input:focus,textarea:focus{border-color:#1a6ef5;background:#fff;box-shadow:0 0 0 3px rgba(26,110,245,0.1)}
+
+.rrow{display:flex;align-items:center;gap:12px}
+.rrow input[type=range]{flex:1}
+.rval{font-size:20px;font-weight:500;color:#1a6ef5;min-width:58px;text-align:right}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+.lang-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.lang-label{font-size:14px;color:#333;font-weight:500;min-width:110px}
+.lang-btns{display:flex;gap:6px;flex-wrap:wrap}
+
+.lang-btn{
+  padding:6px 12px;
+  border:2px solid #bbb;
+  border-radius:8px;
+  background:#f5f5f5;
+  color:#555;
+  font-size:12px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.lang-btn:hover{border-color:#888;background:#ebebeb}
+.lang-btn.on{
+  background:#1a6ef5;
+  border:2px solid #0d50c4;
+  color:#fff;
+  font-weight:500;
+}
+
+.photo-box{border:2px dashed #bbb;border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;background:#f8f8f8}
+.photo-box:hover{border-color:#1a6ef5;background:#f0f5ff}
+
+.save-btn{width:100%;padding:13px;background:#16a34a;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-top:0.5rem}
+.save-btn:hover{background:#15903f}
+.save-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.msg{border-radius:10px;padding:1rem 1.25rem;font-size:14px;margin-top:1rem;display:none;font-weight:500}
+.msg.ok{background:#dcfce7;color:#166534;border:1.5px solid #86efac}
+.msg.err{background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5}
+
+.add-lang{display:flex;gap:8px;margin-top:10px}
+.add-lang input{flex:1}
+.add-lang button{padding:8px 14px;border:1.5px solid #bbb;border-radius:8px;background:#f5f5f5;color:#333;font-size:13px;cursor:pointer;white-space:nowrap}
+.add-lang button:hover{background:#e5e5e5;border-color:#888}
+
+.added-lang{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lang-tag{display:flex;align-items:center;gap:8px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:8px;padding:5px 12px;font-size:13px;color:#1e40af}
+.lang-tag select{font-size:12px;border:1px solid #93c5fd;border-radius:4px;background:#fff;color:#1e40af;padding:2px 4px}
+.lang-tag button{background:none;border:none;cursor:pointer;color:#6b7280;font-size:15px;padding:0;line-height:1}
+.lang-tag button:hover{color:#991b1b}
+
+.sec-title{font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:2px}
+
+.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);z-index:9999;justify-content:center;align-items:center;cursor:pointer}
+.overlay.show{display:flex}
+.overlay img{max-width:95%;max-height:95%;object-fit:contain;border-radius:8px}
+.sample-img{cursor:pointer;transition:transform .15s}
+.sample-img:hover{transform:scale(1.05)}
+</style>
+
+<div class="overlay" id="img-overlay" onclick="this.classList.remove('show')">
+  <img id="overlay-img" src="">
+</div>
+
+<div class="wrap">
+<div class="ttl">Ishga qabul anketa</div>
+
+<div class="card">
+  <span class="lbl">1. Lavozim tanlang</span>
+  <div class="bg" id="g-lavozim">
+    <button class="btn" onclick="sel(this,'lavozim')">Горничная уборщица / Xonadon tozalovchi</button>
+    <button class="btn" onclick="sel(this,'lavozim')">Магазинщик / Do'konchi</button>
+    <button class="btn" onclick="sel(this,'lavozim')">Кухня Салатница / Kuxnya Salatnisa</button>
+    <button class="btn" onclick="sel(this,'lavozim')">Официант / Ofitsiant</button>
+    <button class="btn" onclick="sel(this,'lavozim')">Повар / Oshpaz</button>
+    <button class="btn" onclick="sel(this,'lavozim')">Водитель / Haydovchi</button>
+  </div>
+</div>
+
+<div class="card">
+  <span class="lbl">2. F.I.Sh</span>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <input type="text" id="familiya" placeholder="Familiya">
+    <input type="text" id="ism" placeholder="Ism">
+    <input type="text" id="sharif" placeholder="Sharif">
+  </div>
+</div>
+
+<div class="card">
+  <span class="lbl">3. Tug'ilgan sana</span>
+  <input type="date" id="tugilgan" style="max-width:200px">
+</div>
+
+<div class="card g2">
+  <div>
+    <span class="lbl">4. Boy (sm)</span>
+    <div class="rrow">
+      <input type="range" min="150" max="210" step="1" value="170" id="boy" oninput="document.getElementById('bv').textContent=this.value">
+      <span class="rval"><span id="bv">170</span></span>
+    </div>
+  </div>
+  <div>
+    <span class="lbl">5. Vazn (kg)</span>
+    <div class="rrow">
+      <input type="range" min="50" max="120" step="1" value="70" id="vazn" oninput="document.getElementById('vv').textContent=this.value">
+      <span class="rval"><span id="vv">70</span></span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <span class="lbl">6. Yashash manzili</span>
+  <input type="text" id="adres" placeholder="Shahar, ko'cha, uy raqami">
+</div>
+
+<div class="card">
+  <span class="lbl">7. Mo'ljal</span>
+  <input type="text" id="moljal" placeholder="Yaqin joy, bino nomi">
+</div>
+
+<div class="card">
+  <span class="lbl">8. Umumiy tajriba</span>
+  <input type="text" id="tajriba" placeholder="Masalan: 3 yil 6 oy">
+</div>
+
+<div class="card">
+  <span class="lbl">9. Chet el tajribasi</span>
+  <div class="bg" id="g-chet">
+    <button class="btn" onclick="sel(this,'chet')">Bor</button>
+    <button class="btn" onclick="sel(this,'chet')">Yo'q</button>
+  </div>
+</div>
+
+<div class="card">
+  <span class="lbl">10. Ma'lumot darajasi</span>
+  <div class="bg" id="g-malumot">
+    <button class="btn" onclick="sel(this,'malumot')">Yomon</button>
+    <button class="btn" onclick="sel(this,'malumot')">Yaxshi</button>
+    <button class="btn" onclick="sel(this,'malumot')">Zo'r</button>
+  </div>
+</div>
+
+<div class="card">
+  <span class="lbl">11. Oilaviy holat</span>
+  <div class="bg" id="g-oila">
+    <button class="btn" onclick="sel(this,'oila')">Oilaviy</button>
+    <button class="btn" onclick="sel(this,'oila')">Oilasiz</button>
+  </div>
+</div>
+
+<div class="card">
+  <span class="lbl">12. Tillar</span>
+  <div class="lang-row">
+    <span class="lang-label">Ingliz tili</span>
+    <div class="lang-btns" id="lg-en">
+      <button class="lang-btn" onclick="setLang(this,'en','bilmayman')">Bilmayman</button>
+      <button class="lang-btn" onclick="setLang(this,'en','bilaman')">Bilaman</button>
+      <button class="lang-btn" onclick="setLang(this,'en','zor bilaman')">Zo'r bilaman</button>
+    </div>
+  </div>
+  <div class="lang-row">
+    <span class="lang-label">Rus tili</span>
+    <div class="lang-btns" id="lg-ru">
+      <button class="lang-btn" onclick="setLang(this,'ru','bilmayman')">Bilmayman</button>
+      <button class="lang-btn" onclick="setLang(this,'ru','bilaman')">Bilaman</button>
+      <button class="lang-btn" onclick="setLang(this,'ru','zor bilaman')">Zo'r bilaman</button>
+    </div>
+  </div>
+  <div class="lang-row">
+    <span class="lang-label">O'zbek tili</span>
+    <div class="lang-btns" id="lg-uz">
+      <button class="lang-btn" onclick="setLang(this,'uz','bilmayman')">Bilmayman</button>
+      <button class="lang-btn" onclick="setLang(this,'uz','bilaman')">Bilaman</button>
+      <button class="lang-btn" onclick="setLang(this,'uz','zor bilaman')">Zo'r bilaman</button>
+    </div>
+  </div>
+  <div style="margin-top:12px">
+    <span class="sec-title">Qo'shimcha til</span>
+    <div class="add-lang">
+      <input type="text" id="extra-lang-name" placeholder="Til nomi (masalan: Turk tili)">
+      <button onclick="addExtraLang()">+ Qo'shish</button>
+    </div>
+    <div id="extra-langs" class="added-lang"></div>
+  </div>
+</div>
+
+<div class="card">
+  <span class="lbl">13. Telefon</span>
+  <input type="tel" id="telefon" placeholder="+998901234567">
+</div>
+
+<div class="card">
+  <span class="lbl">14. Qo'shimcha ma'lumot</span>
+  <textarea id="extra" rows="3" placeholder="Boshqa ko'nikmalar, izohlar..."></textarea>
+</div>
+
+<div class="card">
+  <span class="lbl">15. Rasm yuklash</span>
+  <div style="margin-bottom:12px">
+    <p style="font-size:13px;color:#555;margin-bottom:8px;font-weight:500">Namuna — rasmingiz shunday bo'lishi kerak:</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <img src="https://moneapp.monebakeryuz.uz/static/1_resized.jpg" class="sample-img" style="width:120px;height:160px;object-fit:cover;border-radius:10px;border:2px solid #d0d0d0" onclick="showImg(this.src)">
+      <img src="https://moneapp.monebakeryuz.uz/static/2_resized.jpg" class="sample-img" style="width:120px;height:160px;object-fit:cover;border-radius:10px;border:2px solid #d0d0d0" onclick="showImg(this.src)">
+    </div>
+  </div>
+  <div class="photo-box" onclick="document.getElementById('photo-inp').click()" id="photo-box">
+    <div id="photo-content">
+      <div style="font-size:28px;color:#bbb">+</div>
+      <p style="font-size:13px;color:#888;margin-top:6px">Rasmingizni yuklang</p>
+      <p style="font-size:11px;color:#bbb;margin-top:4px">JPG, PNG — max 5MB</p>
+    </div>
+  </div>
+  <input type="file" id="photo-inp" accept="image/*" style="display:none" onchange="prevPhoto(this)">
+</div>
+
+<button class="save-btn" id="save-btn" onclick="submitForm()">Saqlash va yuborish</button>
+<div class="msg ok" id="msg-ok">Anketa muvaffaqiyatli yuborildi!</div>
+<div class="msg err" id="msg-err">Xatolik yuz berdi.</div>
+</div>
+
+<script>
+function showImg(src){
+  document.getElementById('overlay-img').src=src;
+  document.getElementById('img-overlay').classList.add('show');
+}
+
+const state={lavozim:'',chet:'',malumot:'',oila:''};
+const langs={en:'',ru:'',uz:''};
+const extraLangs=[];
+let photoBase64=null;
+
+function sel(btn,group){
+  document.getElementById('g-'+group).querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  state[group]=btn.textContent.trim();
+}
+
+function setLang(btn,lang,val){
+  document.getElementById('lg-'+lang).querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  langs[lang]=val;
+}
+
+function addExtraLang(){
+  const inp=document.getElementById('extra-lang-name');
+  const name=inp.value.trim();
+  if(!name)return;
+  const idx=extraLangs.length;
+  extraLangs.push({til:name,daraja:''});
+  const container=document.getElementById('extra-langs');
+  const tag=document.createElement('div');
+  tag.className='lang-tag';
+  tag.id='etag-'+idx;
+  tag.innerHTML='<span>'+name+'</span>'
+    +'<select onchange="extraLangs['+idx+'].daraja=this.value"><option value="">Daraja</option><option>Bilmayman</option><option>Bilaman</option><option>Zo\'r bilaman</option></select>'
+    +'<button onclick="removeExtraLang('+idx+')" title="O\'chirish">&#x2715;</button>';
+  container.appendChild(tag);
+  inp.value='';
+}
+
+function removeExtraLang(idx){
+  extraLangs.splice(idx,1);
+  rebuildExtra();
+}
+
+function rebuildExtra(){
+  const c=document.getElementById('extra-langs');
+  c.innerHTML='';
+  extraLangs.forEach((l,i)=>{
+    const tag=document.createElement('div');
+    tag.className='lang-tag';
+    tag.innerHTML='<span>'+l.til+'</span>'
+      +'<select onchange="extraLangs['+i+'].daraja=this.value"><option value="">Daraja</option><option>Bilmayman</option><option>Bilaman</option><option>Zo\'r bilaman</option></select>'
+      +'<button onclick="removeExtraLang('+i+')" title="O\'chirish">&#x2715;</button>';
+    c.appendChild(tag);
+  });
+}
+
+function prevPhoto(input){
+  if(!input.files[0])return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    photoBase64=e.target.result;
+    document.getElementById('photo-content').innerHTML='<img src="'+e.target.result+'" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #bbb"><p style="font-size:13px;margin-top:8px;color:#666">'+input.files[0].name+'</p>';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+async function submitForm(){
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true;
+  btn.textContent='Yuborilmoqda...';
+  document.getElementById('msg-ok').style.display='none';
+  document.getElementById('msg-err').style.display='none';
+
+  const allLangs=[
+    {til:'Ingliz tili',daraja:langs.en},
+    {til:'Rus tili',daraja:langs.ru},
+    {til:"O'zbek tili",daraja:langs.uz},
+    ...extraLangs
+  ];
+
+  const payload={
+    lavozim:state.lavozim,
+    familiya:document.getElementById('familiya').value,
+    ism:document.getElementById('ism').value,
+    sharif:document.getElementById('sharif').value,
+    tugilgan_sana:document.getElementById('tugilgan').value,
+    boy_sm:parseInt(document.getElementById('boy').value),
+    vazn_kg:parseInt(document.getElementById('vazn').value),
+    yashash_manzili:document.getElementById('adres').value,
+    moljal:document.getElementById('moljal').value,
+    umumiy_tajriba:document.getElementById('tajriba').value,
+    chet_el_tajribasi:state.chet,
+    malumot:state.malumot,
+    oilaviy_holat:state.oila,
+    tillar:allLangs,
+    telefon:document.getElementById('telefon').value,
+    qoshimcha:document.getElementById('extra').value,
+    rasm:photoBase64
+  };
+
+  try{
+    const res=await fetch('/rezume',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(res.ok){
+      document.getElementById('msg-ok').style.display='block';
+      btn.textContent='Yuborildi!';
+    }else{
+      throw new Error('Server xatosi: '+res.status);
+    }
+  }catch(e){
+    document.getElementById('msg-err').textContent='Xatolik: '+e.message;
+    document.getElementById('msg-err').style.display='block';
+    btn.disabled=false;
+    btn.textContent='Saqlash va yuborish';
+  }
+}
+</script>
