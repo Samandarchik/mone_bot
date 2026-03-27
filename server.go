@@ -15,12 +15,13 @@ import (
 const botToken = "8550220546:AAFEII8AzNdMapEqT_VFtqiqv6h0obbLgzQ"
 
 var positionGroupMap = map[string]int64{
-	"Горничная уборщица / Xonadon tozalovchi": -5014841679,
-	"Магазинщик / Do'konchi":                  -5170258928,
-	"Кухня Салатница / Kuxnya Salatnisa":      -5126056788,
-	"Официант / Ofitsiant":                    -5170258928,
-	"Повар / Oshpaz":                          -5126056788,
-	"Водитель / Haydovchi":                    -5132239156,
+	"Горничная уборщица / Xonadon tozalovchi":            -5014841679,
+	"Магазинщик / Do'konchi":                             -5170258928,
+	"Кухня Салатница / Kuxnya Salatnisa":                 -5126056788,
+	"Официант / Ofitsiant":                               -5170258928,
+	"Повар / Oshpaz":                                     -5126056788,
+	"Водитель / Haydovchi":                               -5132239156,
+	"Оператор видеонаблюдения / Video kuzatuv operatori": -5218363617, // kerakli ID ni o'zingiz qo'ying
 }
 
 type LangInfo struct {
