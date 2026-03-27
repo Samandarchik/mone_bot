@@ -249,6 +249,7 @@ textarea{resize:vertical}
     <button class="btn" onclick="sel(this,'lavozim')">Официант / Ofitsiant</button>
     <button class="btn" onclick="sel(this,'lavozim')">Повар / Oshpaz</button>
     <button class="btn" onclick="sel(this,'lavozim')">Водитель / Haydovchi</button>
+    <button class="btn" onclick="sel(this,'lavozim')">Оператор видеонаблюдения / Video kuzatuv operatori</button>
   </div>
 </div>
 
