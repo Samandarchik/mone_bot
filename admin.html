@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MONE HR - Admin Panel</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--sidebar:#1e1e2d;--sidebar-hover:#2a2a3d;--sidebar-active:#3699ff;
+  --card:#fff;--text:#1a1a2e;--text2:#6b7280;--border:#e5e7eb;
+  --primary:#3699ff;--primary-light:#e8f4ff;--success:#22c55e;--success-light:#dcfce7;
+  --warning:#f59e0b;--warning-light:#fef3c7;--danger:#ef4444;--danger-light:#fee2e2;
+  --info:#8b5cf6;--info-light:#ede9fe;
+}
+html,body{height:100%;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+
+/* ===== LOGIN ===== */
+.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1e1e2d 0%,#2a2a3d 50%,#1e1e2d 100%)}
+.login-box{background:#fff;border-radius:20px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-box h1{font-size:28px;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,#3699ff,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-box p{color:var(--text2);margin-bottom:32px;font-size:14px}
+.login-box .field{margin-bottom:20px}
+.login-box label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.login-box input{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:inherit;outline:none;transition:all .2s}
+.login-box input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(54,153,255,.12)}
+.login-btn{width:100%;padding:16px;background:linear-gradient(135deg,#3699ff,#8b5cf6);border:none;border-radius:12px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 16px rgba(54,153,255,.4)}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(54,153,255,.5)}
+.login-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.login-err{background:var(--danger-light);color:#991b1b;padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;display:none;font-weight:500}
+
+/* ===== LAYOUT ===== */
+.app{display:none;height:100vh;overflow:hidden}
+.app.show{display:flex}
+
+/* Sidebar */
+.sidebar{width:260px;background:var(--sidebar);color:#fff;display:flex;flex-direction:column;flex-shrink:0;transition:width .3s}
+.sidebar-logo{padding:24px 20px;font-size:22px;font-weight:800;letter-spacing:-0.5px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.sidebar-logo svg{width:32px;height:32px;fill:#3699ff}
+.sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-section{font-size:11px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:1.5px;padding:12px 12px 8px;font-weight:700}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;cursor:pointer;transition:all .15s;font-size:14px;font-weight:500;color:rgba(255,255,255,.65);margin-bottom:2px}
+.nav-item:hover{background:var(--sidebar-hover);color:#fff}
+.nav-item.active{background:rgba(54,153,255,.15);color:var(--sidebar-active);font-weight:600}
+.nav-item svg{width:20px;height:20px;flex-shrink:0;opacity:.7}
+.nav-item.active svg{opacity:1}
+.nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;min-width:22px;text-align:center}
+.sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08)}
+.sidebar-user{display:flex;align-items:center;gap:12px}
+.sidebar-avatar{width:40px;height:40px;background:linear-gradient(135deg,#3699ff,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
+.sidebar-uinfo{flex:1}
+.sidebar-uname{font-size:14px;font-weight:600}
+.sidebar-urole{font-size:12px;color:rgba(255,255,255,.45)}
+.logout-btn{background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.6);padding:6px 8px;cursor:pointer;transition:all .2s}
+.logout-btn:hover{border-color:var(--danger);color:var(--danger)}
+
+/* Main Content */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+.topbar h2{font-size:22px;font-weight:700}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.content{flex:1;overflow-y:auto;padding:24px 32px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border-radius:16px;padding:24px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:transform .2s}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+.stat-icon svg{width:24px;height:24px}
+.stat-icon.blue{background:var(--primary-light);color:var(--primary)}
+.stat-icon.blue svg{fill:var(--primary)}
+.stat-icon.green{background:var(--success-light);color:var(--success)}
+.stat-icon.green svg{fill:var(--success)}
+.stat-icon.orange{background:var(--warning-light);color:var(--warning)}
+.stat-icon.orange svg{fill:var(--warning)}
+.stat-icon.red{background:var(--danger-light);color:var(--danger)}
+.stat-icon.red svg{fill:var(--danger)}
+.stat-icon.purple{background:var(--info-light);color:var(--info)}
+.stat-icon.purple svg{fill:var(--info)}
+.stat-info h3{font-size:28px;font-weight:800;line-height:1}
+.stat-info p{font-size:13px;color:var(--text2);margin-top:4px;font-weight:500}
+
+/* Table */
+.tbl-wrap{background:var(--card);border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.04);overflow:hidden}
+.tbl-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px}
+.tbl-header h3{font-size:16px;font-weight:700}
+.tbl-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 14px}
+.search-box input{border:none;background:transparent;font-size:13px;font-family:inherit;outline:none;width:180px;color:var(--text)}
+.search-box svg{width:16px;height:16px;fill:var(--text2);flex-shrink:0}
+.filter-select{padding:9px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg);font-size:13px;font-family:inherit;color:var(--text);cursor:pointer;outline:none}
+.btn-add{display:flex;align-items:center;gap:6px;padding:10px 18px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-add:hover{background:#2a80e0;transform:translateY(-1px)}
+.btn-add svg{width:16px;height:16px;fill:#fff}
+
+table{width:100%;border-collapse:collapse}
+thead{background:var(--bg)}
+th{padding:12px 16px;text-align:left;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(54,153,255,.02)}
+.tbl-overflow{overflow-x:auto}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.badge-yangi{background:#dbeafe;color:#1e40af}
+.badge-qabul{background:var(--success-light);color:#166534}
+.badge-rad{background:var(--danger-light);color:#991b1b}
+.badge-active{background:var(--success-light);color:#166534}
+.badge-inactive{background:var(--danger-light);color:#991b1b}
+.badge-admin{background:#e0e7ff;color:#3730a3}
+.badge-super{background:var(--warning-light);color:#92400e}
+.badge-rating0{background:#f3f4f6;color:#6b7280}
+.badge-rating1{background:var(--success-light);color:#166534}
+.badge-rating2{background:var(--warning-light);color:#92400e}
+.badge-rating3{background:var(--danger-light);color:#991b1b}
+
+/* Action buttons */
+.act-btn{padding:6px 8px;border:none;border-radius:8px;cursor:pointer;transition:all .15s;background:transparent}
+.act-btn:hover{transform:scale(1.1)}
+.act-btn svg{width:16px;height:16px}
+.act-view svg{fill:var(--primary)}
+.act-view:hover{background:var(--primary-light)}
+.act-edit svg{fill:var(--warning)}
+.act-edit:hover{background:var(--warning-light)}
+.act-del svg{fill:var(--danger)}
+.act-del:hover{background:var(--danger-light)}
+.act-interview svg{fill:var(--success)}
+.act-interview:hover{background:var(--success-light)}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-top:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.pagination-info{font-size:13px;color:var(--text2)}
+.pagination-btns{display:flex;gap:4px}
+.pg-btn{padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s;color:var(--text)}
+.pg-btn:hover{border-color:var(--primary);color:var(--primary)}
+.pg-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;justify-content:center;align-items:flex-start;padding:40px 16px;overflow-y:auto;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:20px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:modalIn .25s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;border-bottom:1px solid var(--border)}
+.modal-head h3{font-size:18px;font-weight:700}
+.modal-close{width:36px;height:36px;border:none;border-radius:10px;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.modal-close:hover{background:var(--danger-light)}
+.modal-close svg{width:18px;height:18px;fill:var(--text2)}
+.modal-body{padding:24px 28px}
+.modal-footer{padding:16px 28px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:all .2s;background:#fff}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(54,153,255,.1)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.btn-save{padding:11px 24px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-save:hover{background:#2a80e0}
+.btn-cancel{padding:11px 24px;background:var(--bg);color:var(--text2);border:1px solid var(--border);border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-cancel:hover{background:var(--border)}
+.btn-danger{padding:11px 24px;background:var(--danger);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-danger:hover{background:#dc2626}
+
+.checkbox-group{display:flex;flex-wrap:wrap;gap:8px}
+.chk-item{display:flex;align-items:center;gap:6px;padding:6px 12px;border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;font-size:13px;font-weight:500}
+.chk-item:hover{border-color:var(--primary)}
+.chk-item.checked{background:var(--primary-light);border-color:var(--primary);color:var(--primary)}
+.chk-item input{display:none}
+
+.toggle{position:relative;width:44px;height:24px;background:#d1d5db;border-radius:12px;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--success)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.toggle.on::after{transform:translateX(20px)}
+
+/* Detail view */
+.detail-card{background:var(--card);border-radius:16px;padding:28px;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:16px}
+.detail-card h3{font-size:16px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.detail-row{display:flex;padding:8px 0;border-bottom:1px solid #f3f4f6}
+.detail-row:last-child{border-bottom:none}
+.detail-label{width:180px;font-size:13px;color:var(--text2);font-weight:600;flex-shrink:0}
+.detail-value{font-size:14px;flex:1}
+.detail-photo{width:120px;height:150px;object-fit:cover;border-radius:12px;border:2px solid var(--border)}
+.detail-top{display:flex;gap:24px;margin-bottom:20px}
+.detail-top-info{flex:1}
+.back-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:16px;transition:all .15s;color:var(--text)}
+.back-btn:hover{border-color:var(--primary);color:var(--primary)}
+.back-btn svg{width:16px;height:16px;fill:currentColor}
+
+/* Empty state */
+.empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty svg{width:64px;height:64px;fill:var(--border);margin-bottom:16px}
+.empty p{font-size:15px;font-weight:500}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;padding:14px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;animation:toastIn .3s ease;display:none;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{display:block}
+.toast-ok{background:var(--success);color:#fff}
+.toast-err{background:var(--danger);color:#fff}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* Loading */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-260px;z-index:100;height:100%;transition:left .3s}
+  .sidebar.open{left:0}
+  .content{padding:16px}
+  .topbar{padding:12px 16px}
+  .form-row{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .mobile-toggle{display:block !important}
+}
+.mobile-toggle{display:none;background:none;border:none;cursor:pointer;padding:8px}
+.mobile-toggle svg{width:24px;height:24px;fill:var(--text)}
+.mobile-backdrop{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:99}
+.mobile-backdrop.show{display:block}
+
+/* Section pages */
+.page{display:none}
+.page.active{display:block}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN PAGE ===== -->
+<div class="login-page" id="loginPage">
+  <div class="login-box">
+    <h1>MONE HR</h1>
+    <p>Admin paneliga kirish</p>
+    <div class="login-err" id="loginErr"></div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Parol</label>
+      <input type="password" id="loginPass" placeholder="Parolingiz" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Kirish</button>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div class="app" id="app">
+  <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      MONE HR
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Asosiy</div>
+      <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-page="rezumeler" onclick="navigate('rezumeler')">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+        Rezumeler
+        <span class="nav-badge" id="badgeYangi" style="display:none">0</span>
+      </div>
+      <div class="nav-item" data-page="interviews" onclick="navigate('interviews')">
+        <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+        Intervyular
+      </div>
+      <div class="nav-section">Boshqaruv</div>
+      <div class="nav-item" data-page="users" onclick="navigate('users')">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        Foydalanuvchilar
+      </div>
+      <div class="nav-item" data-page="categories" onclick="navigate('categories')">
+        <svg viewBox="0 0 24 24"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/></svg>
+        Kategoriyalar
+      </div>
+      <div class="nav-item" data-page="branches" onclick="navigate('branches')">
+        <svg viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+        Filiallar
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">A</div>
+        <div class="sidebar-uinfo">
+          <div class="sidebar-uname" id="sidebarName">Admin</div>
+          <div class="sidebar-urole" id="sidebarRole">super_admin</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()" title="Chiqish">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="mobile-toggle" onclick="toggleSidebar()">
+          <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+        <h2 id="pageTitle">Dashboard</h2>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <!-- ===== DASHBOARD ===== -->
+      <div class="page active" id="pageDashboard">
+        <div class="stats" id="dashStats"></div>
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <h3>Oxirgi rezumeler</h3>
+          </div>
+          <div class="tbl-overflow">
+            <table>
+              <thead><tr><th>#</th><th>FIO</th><th>Lavozim</th><th>Telefon</th><th>Status</th><th>Sana</th></tr></thead>
+              <tbody id="dashLatest"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== REZUMELER ===== -->
+      <div class="page" id="pageRezumeler">
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <h3>Barcha rezumeler</h3>
+            <div class="tbl-actions">
+              <div class="search-box">
+                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" placeholder="Qidirish..." id="rezSearch" oninput="debounce(loadRezumeler,400)()">
+              </div>
+              <select class="filter-select" id="rezStatus" onchange="loadRezumeler()">
+                <option value="">Barcha status</option>
+                <option value="yangi">Yangi</option>
+                <option value="qabul">Qabul</option>
+                <option value="rad">Rad</option>
+              </select>
+              <select class="filter-select" id="rezLavozim" onchange="loadRezumeler()">
+                <option value="">Barcha lavozim</option>
+              </select>
+            </div>
+          </div>
+          <div class="tbl-overflow">
+            <table>
+              <thead><tr><th>#</th><th>Rasm</th><th>FIO</th><th>Lavozim</th><th>Telefon</th><th>Status</th><th>Sana</th><th>Amallar</th></tr></thead>
+              <tbody id="rezBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="rezPagination"></div>
+        </div>
+      </div>
+
+      <!-- Rezume Detail -->
+      <div class="page" id="pageRezumeDetail"></div>
+
+      <!-- ===== INTERVIEWS ===== -->
+      <div class="page" id="pageInterviews">
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <h3>Barcha intervyular</h3>
+            <div class="tbl-actions">
+              <select class="filter-select" id="intRating" onchange="loadInterviews()">
+                <option value="">Barcha baho</option>
+                <option value="0">Kutilmoqda</option>
+                <option value="1">Zo'r</option>
+                <option value="2">Qoniqarli</option>
+                <option value="3">Qabul qilinmadi</option>
+              </select>
+            </div>
+          </div>
+          <div class="tbl-overflow">
+            <table>
+              <thead><tr><th>#</th><th>FIO</th><th>Lavozim</th><th>Telefon</th><th>Sana</th><th>Vaqt</th><th>Chaqirgan</th><th>Baho</th><th>Izoh</th><th>Amallar</th></tr></thead>
+              <tbody id="intBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="intPagination"></div>
+        </div>
+      </div>
+
+      <!-- ===== USERS ===== -->
+      <div class="page" id="pageUsers">
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <h3>Foydalanuvchilar</h3>
+            <div class="tbl-actions">
+              <button class="btn-add" onclick="openUserModal()">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                Yangi foydalanuvchi
+              </button>
+            </div>
+          </div>
+          <div class="tbl-overflow">
+            <table>
+              <thead><tr><th>#</th><th>Username</th><th>Ism</th><th>Role</th><th>Filial</th><th>Intervyu</th><th>Kategoriyalar</th><th>Holat</th><th>Amallar</th></tr></thead>
+              <tbody id="usrBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CATEGORIES ===== -->
+      <div class="page" id="pageCategories">
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <h3>Kategoriyalar (Lavozimlar)</h3>
+            <div class="tbl-actions">
+              <button class="btn-add" onclick="openCatModal()">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                Yangi kategoriya
+              </button>
+            </div>
+          </div>
+          <div class="tbl-overflow">
+            <table>
+              <thead><tr><th>#</th><th>Nomi</th><th>TG Guruh ID</th><th>Holat</th><th>Yaratilgan</th><th>Amallar</th></tr></thead>
+              <tbody id="catBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== BRANCHES ===== -->
+      <div class="page" id="pageBranches">
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <h3>Filiallar</h3>
+            <div class="tbl-actions">
+              <button class="btn-add" onclick="openBranchModal()">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                Yangi filial
+              </button>
+            </div>
+          </div>
+          <div class="tbl-overflow">
+            <table>
+              <thead><tr><th>#</th><th>Nomi</th><th>Holat</th><th>Yaratilgan</th><th>Amallar</th></tr></thead>
+              <tbody id="brBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- User Modal -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="userModalTitle">Yangi foydalanuvchi</h3>
+      <button class="modal-close" onclick="closeModal('userModal')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="userId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="userUsername" placeholder="username">
+        </div>
+        <div class="form-group">
+          <label>Parol</label>
+          <input type="password" id="userPassword" placeholder="parol">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>To'liq ism</label>
+          <input type="text" id="userFullname" placeholder="Ism Familiya">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="userRole">
+            <option value="admin">Admin</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Filial</label>
+          <select id="userBranch"><option value="0">-- Tanlanmagan --</option></select>
+        </div>
+        <div class="form-group">
+          <label>Intervyu huquqi</label>
+          <div style="padding-top:8px">
+            <div class="toggle" id="userCanInterview" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Kategoriyalar</label>
+        <div class="checkbox-group" id="userCats"></div>
+      </div>
+      <div class="form-group" id="userActiveGroup" style="display:none">
+        <label>Faol holat</label>
+        <div style="padding-top:4px">
+          <div class="toggle on" id="userIsActive" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('userModal')">Bekor qilish</button>
+      <button class="btn-save" onclick="saveUser()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal-overlay" id="catModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="catModalTitle">Yangi kategoriya</h3>
+      <button class="modal-close" onclick="closeModal('catModal')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="catId">
+      <div class="form-group">
+        <label>Kategoriya nomi</label>
+        <input type="text" id="catName" placeholder="Masalan: Повар / Oshpaz">
+      </div>
+      <div class="form-group">
+        <label>Telegram guruh ID</label>
+        <input type="text" id="catTgGroup" placeholder="-5126056788">
+      </div>
+      <div class="form-group" id="catActiveGroup" style="display:none">
+        <label>Faol holat</label>
+        <div style="padding-top:4px">
+          <div class="toggle on" id="catIsActive" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('catModal')">Bekor qilish</button>
+      <button class="btn-save" onclick="saveCategory()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Branch Modal -->
+<div class="modal-overlay" id="branchModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="branchModalTitle">Yangi filial</h3>
+      <button class="modal-close" onclick="closeModal('branchModal')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="branchId">
+      <div class="form-group">
+        <label>Filial nomi</label>
+        <input type="text" id="branchName" placeholder="Masalan: Gelion">
+      </div>
+      <div class="form-group" id="branchActiveGroup" style="display:none">
+        <label>Faol holat</label>
+        <div style="padding-top:4px">
+          <div class="toggle on" id="branchIsActive" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('branchModal')">Bekor qilish</button>
+      <button class="btn-save" onclick="saveBranch()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Interview Modal -->
+<div class="modal-overlay" id="interviewModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="intModalTitle">Intervyuga chaqirish</h3>
+      <button class="modal-close" onclick="closeModal('interviewModal')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="intRezumeId">
+      <input type="hidden" id="intId">
+      <div class="form-group" id="intFioGroup">
+        <label>Nomzod</label>
+        <input type="text" id="intFio" disabled>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Sana</label>
+          <input type="date" id="intDate">
+        </div>
+        <div class="form-group">
+          <label>Vaqt</label>
+          <input type="time" id="intTime" value="09:00">
+        </div>
+      </div>
+      <div id="ratingGroup" style="display:none">
+        <div class="form-group">
+          <label>Baho</label>
+          <select id="intRatingVal">
+            <option value="0">Kutilmoqda</option>
+            <option value="1">Zo'r</option>
+            <option value="2">Qoniqarli</option>
+            <option value="3">Qabul qilinmadi</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Izoh</label>
+          <textarea id="intComment" placeholder="Izoh yozing..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('interviewModal')">Bekor qilish</button>
+      <button class="btn-save" id="intSaveBtn" onclick="saveInterview()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CONFIG =====
+const API = location.origin;
+let TOKEN = localStorage.getItem('hr_token') || '';
+let ME = null;
+let allCategories = [];
+let allBranches = [];
+
+// ===== UTILS =====
+function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (TOKEN) opts.headers['Authorization'] = 'Bearer ' + TOKEN;
+  if (body) opts.body = JSON.stringify(body);
+  return fetch(API + path, opts).then(async r => {
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Xatolik');
+    return data;
+  });
+}
+
+function toast(msg, ok = true) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (ok ? 'toast-ok' : 'toast-err');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function statusBadge(s) {
+  const map = { yangi: 'badge-yangi', qabul: 'badge-qabul', rad: 'badge-rad' };
+  const labels = { yangi: 'Yangi', qabul: 'Qabul', rad: 'Rad' };
+  return `<span class="badge ${map[s] || ''}">${labels[s] || s}</span>`;
+}
+
+function ratingBadge(r, text) {
+  return `<span class="badge badge-rating${r}">${text || ['Kutilmoqda','Zo\'r','Qoniqarli','Qabul qilinmadi'][r] || ''}</span>`;
+}
+
+function formatDate(d) {
+  if (!d) return '-';
+  return d.replace(/T.*/, '').split('-').reverse().join('.');
+}
+
+let _debounceTimers = {};
+function debounce(fn, ms) {
+  return function() {
+    clearTimeout(_debounceTimers[fn.name]);
+    _debounceTimers[fn.name] = setTimeout(fn, ms);
+  };
+}
+
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ===== AUTH =====
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginErr');
+  if (!username || !password) { errEl.textContent = 'Username va parol kiriting'; errEl.style.display = 'block'; return; }
+  try {
+    document.getElementById('loginBtn').disabled = true;
+    const data = await api('POST', '/api/auth/login', { username, password });
+    TOKEN = data.token;
+    ME = data.user;
+    localStorage.setItem('hr_token', TOKEN);
+    showApp();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  } finally {
+    document.getElementById('loginBtn').disabled = false;
+  }
+}
+
+async function doLogout() {
+  try { await api('POST', '/api/auth/logout'); } catch {}
+  TOKEN = '';
+  ME = null;
+  localStorage.removeItem('hr_token');
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('loginPage').style.display = 'flex';
+}
+
+async function checkAuth() {
+  if (!TOKEN) return false;
+  try {
+    ME = await api('GET', '/api/auth/me');
+    return true;
+  } catch {
+    TOKEN = '';
+    localStorage.removeItem('hr_token');
+    return false;
+  }
+}
+
+// ===== INIT =====
+async function init() {
+  if (await checkAuth()) {
+    showApp();
+  }
+}
+
+async function showApp() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('app').classList.add('show');
+  document.getElementById('sidebarName').textContent = ME.full_name || ME.username;
+  document.getElementById('sidebarRole').textContent = ME.role;
+  document.getElementById('sidebarAvatar').textContent = (ME.full_name || ME.username).charAt(0).toUpperCase();
+
+  // Hide management items for non-super_admin
+  document.querySelectorAll('[data-page="users"],[data-page="categories"],[data-page="branches"]').forEach(el => {
+    el.style.display = ME.role === 'super_admin' ? '' : 'none';
+  });
+
+  await Promise.all([loadCategories(), loadBranches()]);
+  navigate('dashboard');
+}
+
+// ===== NAVIGATION =====
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navItem = document.querySelector(`[data-page="${page}"]`);
+  if (navItem) navItem.classList.add('active');
+  closeSidebar();
+
+  const titles = {
+    dashboard: 'Dashboard', rezumeler: 'Rezumeler', rezumeDetail: 'Rezume tafsilotlari',
+    interviews: 'Intervyular', users: 'Foydalanuvchilar', categories: 'Kategoriyalar', branches: 'Filiallar'
+  };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+
+  const pageMap = {
+    dashboard: 'pageDashboard', rezumeler: 'pageRezumeler', rezumeDetail: 'pageRezumeDetail',
+    interviews: 'pageInterviews', users: 'pageUsers', categories: 'pageCategories', branches: 'pageBranches'
+  };
+  const el = document.getElementById(pageMap[page]);
+  if (el) el.classList.add('active');
+
+  switch (page) {
+    case 'dashboard': loadDashboard(); break;
+    case 'rezumeler': loadRezumeler(); break;
+    case 'interviews': loadInterviews(); break;
+    case 'users': loadUsers(); break;
+    case 'categories': loadCategoriesTable(); break;
+    case 'branches': loadBranchesTable(); break;
+  }
+}
+
+// ===== SIDEBAR MOBILE =====
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('mobileBackdrop').classList.toggle('show'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobileBackdrop').classList.remove('show'); }
+
+// ===== LOAD REFERENCE DATA =====
+async function loadCategories() {
+  try { allCategories = await api('GET', '/api/categories'); } catch { allCategories = []; }
+  const sel = document.getElementById('rezLavozim');
+  sel.innerHTML = '<option value="">Barcha lavozim</option>';
+  allCategories.forEach(c => { sel.innerHTML += `<option value="${c.name}">${c.name}</option>`; });
+}
+
+async function loadBranches() {
+  try { allBranches = await api('GET', '/api/branches'); } catch { allBranches = []; }
+}
+
+// ===== DASHBOARD =====
+async function loadDashboard() {
+  try {
+    const [rezAll, rezYangi, rezQabul, rezRad, interviews] = await Promise.all([
+      api('GET', '/api/rezumeler?limit=1'),
+      api('GET', '/api/rezumeler?status=yangi&limit=1'),
+      api('GET', '/api/rezumeler?status=qabul&limit=1'),
+      api('GET', '/api/rezumeler?status=rad&limit=1'),
+      api('GET', '/api/interviews?limit=1'),
+    ]);
+
+    const badge = document.getElementById('badgeYangi');
+    if (rezYangi.total > 0) { badge.textContent = rezYangi.total; badge.style.display = ''; }
+    else badge.style.display = 'none';
+
+    document.getElementById('dashStats').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon blue"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z"/></svg></div>
+        <div class="stat-info"><h3>${rezAll.total}</h3><p>Jami rezumeler</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+        <div class="stat-info"><h3>${rezYangi.total}</h3><p>Yangi rezumeler</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+        <div class="stat-info"><h3>${rezQabul.total}</h3><p>Qabul qilingan</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div>
+        <div class="stat-info"><h3>${rezRad.total}</h3><p>Rad etilgan</p></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg></div>
+        <div class="stat-info"><h3>${interviews.total}</h3><p>Jami intervyular</p></div>
+      </div>
+    `;
+
+    // Latest rezumes
+    const latest = await api('GET', '/api/rezumeler?limit=10');
+    const tbody = document.getElementById('dashLatest');
+    if (latest.data && latest.data.length > 0) {
+      tbody.innerHTML = latest.data.map(r => `
+        <tr style="cursor:pointer" onclick="showRezumeDetail(${r.id})">
+          <td>${r.id}</td>
+          <td>${r.familiya} ${r.ism}</td>
+          <td>${r.lavozim}</td>
+          <td>${r.telefon}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td>${formatDate(r.created_at)}</td>
+        </tr>
+      `).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text2)">Hali rezume yo\'q</td></tr>';
+    }
+  } catch (e) {
+    toast(e.message, false);
+  }
+}
+
+// ===== REZUMELER =====
+let rezPage = 1;
+async function loadRezumeler(page) {
+  if (page) rezPage = page;
+  const search = document.getElementById('rezSearch').value.trim();
+  const status = document.getElementById('rezStatus').value;
+  const lavozim = document.getElementById('rezLavozim').value;
+  let q = `?page=${rezPage}&limit=20`;
+  if (search) q += `&search=${encodeURIComponent(search)}`;
+  if (status) q += `&status=${status}`;
+  if (lavozim) q += `&lavozim=${encodeURIComponent(lavozim)}`;
+
+  try {
+    const data = await api('GET', '/api/rezumeler' + q);
+    const tbody = document.getElementById('rezBody');
+    if (data.data && data.data.length > 0) {
+      tbody.innerHTML = data.data.map(r => `
+        <tr>
+          <td>${r.id}</td>
+          <td>${r.rasm_url ? `<img src="${r.rasm_url}" style="width:36px;height:36px;object-fit:cover;border-radius:8px">` : '<div style="width:36px;height:36px;background:var(--bg);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text2)">N/A</div>'}</td>
+          <td><strong>${r.familiya} ${r.ism}</strong></td>
+          <td style="font-size:12px">${r.lavozim}</td>
+          <td>${r.telefon}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td>${formatDate(r.created_at)}</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <button class="act-btn act-view" title="Ko'rish" onclick="showRezumeDetail(${r.id})"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+              ${r.status === 'yangi' ? `
+                <button class="act-btn act-interview" title="Intervyuga chaqirish" onclick="openInterviewModal(${r.id},'${r.familiya} ${r.ism}')"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg></button>
+                <button class="act-btn" title="Qabul" onclick="updateRezStatus(${r.id},'qabul')" style="color:var(--success)"><svg viewBox="0 0 24 24" fill="var(--success)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></button>
+                <button class="act-btn" title="Rad" onclick="updateRezStatus(${r.id},'rad')" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="var(--danger)"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+              ` : ''}
+              <button class="act-btn act-del" title="O'chirish" onclick="deleteRezume(${r.id})"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text2)">Rezume topilmadi</td></tr>';
+    }
+    renderPagination('rezPagination', data.page, data.pages, data.total, loadRezumeler);
+  } catch (e) { toast(e.message, false); }
+}
+
+async function updateRezStatus(id, status) {
+  if (!confirm(`Haqiqatan ham "${status}" qilmoqchimisiz?`)) return;
+  try {
+    await api('PATCH', `/api/rezumeler/${id}/status`, { status });
+    toast(status === 'qabul' ? 'Qabul qilindi!' : 'Rad etildi');
+    loadRezumeler();
+    loadDashboard();
+  } catch (e) { toast(e.message, false); }
+}
+
+async function deleteRezume(id) {
+  if (!confirm('Rezumeni o\'chirmoqchimisiz?')) return;
+  try {
+    await api('DELETE', `/api/rezumeler/${id}`);
+    toast('O\'chirildi');
+    loadRezumeler();
+  } catch (e) { toast(e.message, false); }
+}
+
+// ===== REZUME DETAIL =====
+async function showRezumeDetail(id) {
+  try {
+    const r = await api('GET', `/api/rezumeler/${id}`);
+    document.getElementById('pageTitle').textContent = 'Rezume tafsilotlari';
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const page = document.getElementById('pageRezumeDetail');
+    page.classList.add('active');
+
+    let tillarHtml = '-';
+    if (r.tillar && r.tillar.length > 0) {
+      tillarHtml = r.tillar.map(t => `${t.til}: ${t.daraja}`).join(', ');
+    }
+
+    let interviewsHtml = '';
+    if (r.interviews && r.interviews.length > 0) {
+      interviewsHtml = `
+        <div class="detail-card">
+          <h3>Intervyular</h3>
+          <table style="width:100%">
+            <thead><tr><th>Sana</th><th>Vaqt</th><th>Chaqirgan</th><th>Baho</th><th>Izoh</th><th>Amallar</th></tr></thead>
+            <tbody>
+              ${r.interviews.map(i => `
+                <tr>
+                  <td>${i.interview_date}</td>
+                  <td>${i.interview_time}</td>
+                  <td>${i.invited_by_name}</td>
+                  <td>${ratingBadge(i.rating, i.rating_text)}</td>
+                  <td>${i.comment || '-'}</td>
+                  <td>${i.rating === 0 ? `<button class="act-btn act-edit" title="Baho qo'yish" onclick="openRateModal(${i.id})"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>` : ''}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    page.innerHTML = `
+      <button class="back-btn" onclick="navigate('rezumeler')">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        Orqaga
+      </button>
+      <div class="detail-card">
+        <div class="detail-top">
+          ${r.rasm_url ? `<img src="${r.rasm_url}" class="detail-photo" alt="Rasm">` : ''}
+          <div class="detail-top-info">
+            <h2 style="margin-bottom:8px">${r.familiya} ${r.ism} ${r.sharif}</h2>
+            <p style="color:var(--text2);margin-bottom:8px">${r.lavozim}</p>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              ${statusBadge(r.status)}
+              <span style="font-size:13px;color:var(--text2)">ID: ${r.id} | ${formatDate(r.created_at)}</span>
+            </div>
+            ${r.status === 'yangi' ? `
+              <div style="margin-top:12px;display:flex;gap:8px">
+                <button class="btn-save" onclick="updateRezStatus(${r.id},'qabul');setTimeout(()=>showRezumeDetail(${r.id}),500)">Qabul qilish</button>
+                <button class="btn-danger" onclick="updateRezStatus(${r.id},'rad');setTimeout(()=>showRezumeDetail(${r.id}),500)">Rad etish</button>
+                <button class="btn-save" style="background:var(--info)" onclick="openInterviewModal(${r.id},'${r.familiya} ${r.ism}')">Intervyuga chaqirish</button>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+        <h3>Shaxsiy ma'lumotlar</h3>
+        <div class="detail-row"><span class="detail-label">Tug'ilgan sana</span><span class="detail-value">${r.tugilgan_sana || '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Bo'y</span><span class="detail-value">${r.boy_sm ? r.boy_sm + ' sm' : '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Vazn</span><span class="detail-value">${r.vazn_kg ? r.vazn_kg + ' kg' : '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Yashash manzili</span><span class="detail-value">${r.yashash_manzili || '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Mo'ljal</span><span class="detail-value">${r.moljal || '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Oilaviy holat</span><span class="detail-value">${r.oilaviy_holat || '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Ma'lumot</span><span class="detail-value">${r.malumot || '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Umumiy tajriba</span><span class="detail-value">${r.umumiy_tajriba || '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Chet el tajribasi</span><span class="detail-value">${r.chet_el_tajribasi || '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Tillar</span><span class="detail-value">${tillarHtml}</span></div>
+        <div class="detail-row"><span class="detail-label">Telefon</span><span class="detail-value"><a href="tel:${r.telefon}" style="color:var(--primary);text-decoration:none;font-weight:600">${r.telefon}</a></span></div>
+        <div class="detail-row"><span class="detail-label">Qo'shimcha</span><span class="detail-value">${r.qoshimcha || '-'}</span></div>
+        <div class="detail-row"><span class="detail-label">Telegram</span><span class="detail-value">${r.tg_username ? '@' + r.tg_username : '-'} (ID: ${r.tg_user_id})</span></div>
+      </div>
+      ${interviewsHtml}
+    `;
+  } catch (e) { toast(e.message, false); }
+}
+
+// ===== INTERVIEWS =====
+let intPage = 1;
+async function loadInterviews(page) {
+  if (page) intPage = page;
+  const rating = document.getElementById('intRating').value;
+  let q = `?page=${intPage}&limit=20`;
+  if (rating !== '') q += `&rating=${rating}`;
+
+  try {
+    const data = await api('GET', '/api/interviews' + q);
+    const tbody = document.getElementById('intBody');
+    if (data.data && data.data.length > 0) {
+      tbody.innerHTML = data.data.map(i => `
+        <tr>
+          <td>${i.id}</td>
+          <td><strong>${i.rezume_fio}</strong></td>
+          <td style="font-size:12px">${i.rezume_lavozim}</td>
+          <td>${i.rezume_telefon}</td>
+          <td>${i.interview_date}</td>
+          <td>${i.interview_time}</td>
+          <td>${i.invited_by_name}</td>
+          <td>${ratingBadge(i.rating, i.rating_text)}</td>
+          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i.comment || '-'}</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              ${i.rating === 0 ? `<button class="act-btn act-edit" title="Baho qo'yish" onclick="openRateModal(${i.id})"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>` : ''}
+              <button class="act-btn act-view" title="Rezumeni ko'rish" onclick="showRezumeDetail(${i.rezume_id})"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg></button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text2)">Intervyu topilmadi</td></tr>';
+    }
+    renderPagination('intPagination', data.page, data.pages, data.total, loadInterviews);
+  } catch (e) { toast(e.message, false); }
+}
+
+function openInterviewModal(rezumeId, fio) {
+  document.getElementById('intModalTitle').textContent = 'Intervyuga chaqirish';
+  document.getElementById('intRezumeId').value = rezumeId;
+  document.getElementById('intId').value = '';
+  document.getElementById('intFio').value = fio;
+  document.getElementById('intFioGroup').style.display = '';
+  document.getElementById('intDate').value = '';
+  document.getElementById('intTime').value = '09:00';
+  document.getElementById('ratingGroup').style.display = 'none';
+  document.getElementById('intSaveBtn').textContent = 'Chaqirish';
+  openModal('interviewModal');
+}
+
+function openRateModal(intId) {
+  document.getElementById('intModalTitle').textContent = 'Baho qo\'yish';
+  document.getElementById('intId').value = intId;
+  document.getElementById('intRezumeId').value = '';
+  document.getElementById('intFioGroup').style.display = 'none';
+  document.getElementById('intDate').parentElement.parentElement.style.display = 'none';
+  document.getElementById('ratingGroup').style.display = '';
+  document.getElementById('intRatingVal').value = '1';
+  document.getElementById('intComment').value = '';
+  document.getElementById('intSaveBtn').textContent = 'Saqlash';
+  openModal('interviewModal');
+}
+
+async function saveInterview() {
+  const intId = document.getElementById('intId').value;
+  if (intId) {
+    // Update rating
+    const rating = parseInt(document.getElementById('intRatingVal').value);
+    const comment = document.getElementById('intComment').value;
+    try {
+      await api('PATCH', `/api/interviews/${intId}`, { rating, comment });
+      toast('Baho qo\'yildi!');
+      closeModal('interviewModal');
+      document.getElementById('intDate').parentElement.parentElement.style.display = '';
+      loadInterviews();
+    } catch (e) { toast(e.message, false); }
+  } else {
+    // Create interview
+    const rezumeId = parseInt(document.getElementById('intRezumeId').value);
+    const date = document.getElementById('intDate').value;
+    const time = document.getElementById('intTime').value;
+    if (!date || !time) { toast('Sana va vaqt kiriting', false); return; }
+    const formattedDate = date.split('-').reverse().join('.');
+    try {
+      await api('POST', '/api/interviews', { rezume_id: rezumeId, interview_date: formattedDate, interview_time: time });
+      toast('Intervyuga chaqirildi!');
+      closeModal('interviewModal');
+      loadRezumeler();
+      loadInterviews();
+    } catch (e) { toast(e.message, false); }
+  }
+}
+
+// ===== USERS =====
+async function loadUsers() {
+  try {
+    const users = await api('GET', '/api/users');
+    const tbody = document.getElementById('usrBody');
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td>${u.id}</td>
+        <td><strong>${u.username}</strong></td>
+        <td>${u.full_name}</td>
+        <td><span class="badge ${u.role === 'super_admin' ? 'badge-super' : 'badge-admin'}">${u.role}</span></td>
+        <td>${u.branch ? u.branch.name : '-'}</td>
+        <td>${u.can_interview ? '<span class="badge badge-qabul">Ha</span>' : '<span class="badge badge-rating0">Yo\'q</span>'}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.categories && u.categories.length > 0 ? u.categories.map(c => c.name).join(', ') : '-'}</td>
+        <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Faol' : 'Bloklangan'}</span></td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="act-btn act-edit" title="Tahrirlash" onclick="editUser(${u.id})"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+            <button class="act-btn act-del" title="O'chirish" onclick="deleteUser(${u.id})"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) { toast(e.message, false); }
+}
+
+function openUserModal() {
+  document.getElementById('userModalTitle').textContent = 'Yangi foydalanuvchi';
+  document.getElementById('userId').value = '';
+  document.getElementById('userUsername').value = '';
+  document.getElementById('userUsername').disabled = false;
+  document.getElementById('userPassword').value = '';
+  document.getElementById('userFullname').value = '';
+  document.getElementById('userRole').value = 'admin';
+  document.getElementById('userCanInterview').classList.remove('on');
+  document.getElementById('userIsActive').classList.add('on');
+  document.getElementById('userActiveGroup').style.display = 'none';
+
+  // Branch select
+  const brSel = document.getElementById('userBranch');
+  brSel.innerHTML = '<option value="0">-- Tanlanmagan --</option>';
+  allBranches.forEach(b => { brSel.innerHTML += `<option value="${b.id}">${b.name}</option>`; });
+
+  // Categories
+  const catsDiv = document.getElementById('userCats');
+  catsDiv.innerHTML = allCategories.map(c => `
+    <label class="chk-item" onclick="this.classList.toggle('checked')">
+      <input type="checkbox" value="${c.id}"> ${c.name}
+    </label>
+  `).join('');
+
+  openModal('userModal');
+}
+
+async function editUser(id) {
+  try {
+    const u = await api('GET', `/api/users/${id}`);
+    document.getElementById('userModalTitle').textContent = 'Foydalanuvchini tahrirlash';
+    document.getElementById('userId').value = u.id;
+    document.getElementById('userUsername').value = u.username;
+    document.getElementById('userUsername').disabled = true;
+    document.getElementById('userPassword').value = '';
+    document.getElementById('userFullname').value = u.full_name;
+    document.getElementById('userRole').value = u.role;
+    document.getElementById('userActiveGroup').style.display = '';
+
+    const ciToggle = document.getElementById('userCanInterview');
+    u.can_interview ? ciToggle.classList.add('on') : ciToggle.classList.remove('on');
+    const iaToggle = document.getElementById('userIsActive');
+    u.is_active ? iaToggle.classList.add('on') : iaToggle.classList.remove('on');
+
+    const brSel = document.getElementById('userBranch');
+    brSel.innerHTML = '<option value="0">-- Tanlanmagan --</option>';
+    allBranches.forEach(b => { brSel.innerHTML += `<option value="${b.id}" ${b.id === u.branch_id ? 'selected' : ''}>${b.name}</option>`; });
+
+    const userCatIds = (u.categories || []).map(c => c.id);
+    const catsDiv = document.getElementById('userCats');
+    catsDiv.innerHTML = allCategories.map(c => `
+      <label class="chk-item ${userCatIds.includes(c.id) ? 'checked' : ''}" onclick="this.classList.toggle('checked')">
+        <input type="checkbox" value="${c.id}" ${userCatIds.includes(c.id) ? 'checked' : ''}> ${c.name}
+      </label>
+    `).join('');
+
+    openModal('userModal');
+  } catch (e) { toast(e.message, false); }
+}
+
+async function saveUser() {
+  const id = document.getElementById('userId').value;
+  const catIds = [];
+  document.querySelectorAll('#userCats .chk-item.checked input').forEach(el => catIds.push(parseInt(el.value)));
+
+  if (id) {
+    // Update
+    const body = {
+      full_name: document.getElementById('userFullname').value,
+      role: document.getElementById('userRole').value,
+      can_interview: document.getElementById('userCanInterview').classList.contains('on'),
+      is_active: document.getElementById('userIsActive').classList.contains('on'),
+      category_ids: catIds,
+      branch_id: parseInt(document.getElementById('userBranch').value),
+    };
+    const pwd = document.getElementById('userPassword').value;
+    if (pwd) body.password = pwd;
+    try {
+      await api('PATCH', `/api/users/${id}`, body);
+      toast('Yangilandi!');
+      closeModal('userModal');
+      loadUsers();
+    } catch (e) { toast(e.message, false); }
+  } else {
+    // Create
+    const username = document.getElementById('userUsername').value.trim();
+    const password = document.getElementById('userPassword').value;
+    if (!username || !password) { toast('Username va parol kerak', false); return; }
+    const body = {
+      username,
+      password,
+      full_name: document.getElementById('userFullname').value,
+      role: document.getElementById('userRole').value,
+      can_interview: document.getElementById('userCanInterview').classList.contains('on'),
+      category_ids: catIds,
+      branch_id: parseInt(document.getElementById('userBranch').value),
+    };
+    try {
+      await api('POST', '/api/users', body);
+      toast('Yaratildi!');
+      closeModal('userModal');
+      loadUsers();
+    } catch (e) { toast(e.message, false); }
+  }
+}
+
+async function deleteUser(id) {
+  if (!confirm('Foydalanuvchini o\'chirmoqchimisiz?')) return;
+  try {
+    await api('DELETE', `/api/users/${id}`);
+    toast('O\'chirildi');
+    loadUsers();
+  } catch (e) { toast(e.message, false); }
+}
+
+// ===== CATEGORIES =====
+async function loadCategoriesTable() {
+  try {
+    const cats = await api('GET', '/api/categories');
+    const tbody = document.getElementById('catBody');
+    tbody.innerHTML = cats.map(c => `
+      <tr>
+        <td>${c.id}</td>
+        <td><strong>${c.name}</strong></td>
+        <td><code>${c.tg_group_id}</code></td>
+        <td><span class="badge ${c.is_active ? 'badge-active' : 'badge-inactive'}">${c.is_active ? 'Faol' : 'Nofaol'}</span></td>
+        <td>${formatDate(c.created_at)}</td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="act-btn act-edit" title="Tahrirlash" onclick="editCategory(${c.id})"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+            <button class="act-btn act-del" title="O'chirish" onclick="deleteCategory(${c.id})"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) { toast(e.message, false); }
+}
+
+function openCatModal() {
+  document.getElementById('catModalTitle').textContent = 'Yangi kategoriya';
+  document.getElementById('catId').value = '';
+  document.getElementById('catName').value = '';
+  document.getElementById('catTgGroup').value = '';
+  document.getElementById('catActiveGroup').style.display = 'none';
+  openModal('catModal');
+}
+
+async function editCategory(id) {
+  try {
+    const cats = await api('GET', '/api/categories');
+    const c = cats.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('catModalTitle').textContent = 'Kategoriyani tahrirlash';
+    document.getElementById('catId').value = c.id;
+    document.getElementById('catName').value = c.name;
+    document.getElementById('catTgGroup').value = c.tg_group_id;
+    document.getElementById('catActiveGroup').style.display = '';
+    const toggle = document.getElementById('catIsActive');
+    c.is_active ? toggle.classList.add('on') : toggle.classList.remove('on');
+    openModal('catModal');
+  } catch (e) { toast(e.message, false); }
+}
+
+async function saveCategory() {
+  const id = document.getElementById('catId').value;
+  const name = document.getElementById('catName').value.trim();
+  if (!name) { toast('Nom kiriting', false); return; }
+  const tgGroupId = parseInt(document.getElementById('catTgGroup').value) || 0;
+
+  if (id) {
+    const body = { name, tg_group_id: tgGroupId, is_active: document.getElementById('catIsActive').classList.contains('on') };
+    try {
+      await api('PATCH', `/api/categories/${id}`, body);
+      toast('Yangilandi!');
+      closeModal('catModal');
+      loadCategoriesTable();
+      loadCategories();
+    } catch (e) { toast(e.message, false); }
+  } else {
+    try {
+      await api('POST', '/api/categories', { name, tg_group_id: tgGroupId });
+      toast('Yaratildi!');
+      closeModal('catModal');
+      loadCategoriesTable();
+      loadCategories();
+    } catch (e) { toast(e.message, false); }
+  }
+}
+
+async function deleteCategory(id) {
+  if (!confirm('Kategoriyani o\'chirmoqchimisiz?')) return;
+  try {
+    await api('DELETE', `/api/categories/${id}`);
+    toast('O\'chirildi');
+    loadCategoriesTable();
+    loadCategories();
+  } catch (e) { toast(e.message, false); }
+}
+
+// ===== BRANCHES =====
+async function loadBranchesTable() {
+  try {
+    const branches = await api('GET', '/api/branches');
+    const tbody = document.getElementById('brBody');
+    tbody.innerHTML = branches.map(b => `
+      <tr>
+        <td>${b.id}</td>
+        <td><strong>${b.name}</strong></td>
+        <td><span class="badge ${b.is_active ? 'badge-active' : 'badge-inactive'}">${b.is_active ? 'Faol' : 'Nofaol'}</span></td>
+        <td>${formatDate(b.created_at)}</td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="act-btn act-edit" title="Tahrirlash" onclick="editBranch(${b.id})"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+            <button class="act-btn act-del" title="O'chirish" onclick="deleteBranch(${b.id})"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (e) { toast(e.message, false); }
+}
+
+function openBranchModal() {
+  document.getElementById('branchModalTitle').textContent = 'Yangi filial';
+  document.getElementById('branchId').value = '';
+  document.getElementById('branchName').value = '';
+  document.getElementById('branchActiveGroup').style.display = 'none';
+  openModal('branchModal');
+}
+
+async function editBranch(id) {
+  try {
+    const branches = await api('GET', '/api/branches');
+    const b = branches.find(x => x.id === id);
+    if (!b) return;
+    document.getElementById('branchModalTitle').textContent = 'Filialni tahrirlash';
+    document.getElementById('branchId').value = b.id;
+    document.getElementById('branchName').value = b.name;
+    document.getElementById('branchActiveGroup').style.display = '';
+    const toggle = document.getElementById('branchIsActive');
+    b.is_active ? toggle.classList.add('on') : toggle.classList.remove('on');
+    openModal('branchModal');
+  } catch (e) { toast(e.message, false); }
+}
+
+async function saveBranch() {
+  const id = document.getElementById('branchId').value;
+  const name = document.getElementById('branchName').value.trim();
+  if (!name) { toast('Nom kiriting', false); return; }
+
+  if (id) {
+    const body = { name, is_active: document.getElementById('branchIsActive').classList.contains('on') };
+    try {
+      await api('PATCH', `/api/branches/${id}`, body);
+      toast('Yangilandi!');
+      closeModal('branchModal');
+      loadBranchesTable();
+      loadBranches();
+    } catch (e) { toast(e.message, false); }
+  } else {
+    try {
+      await api('POST', '/api/branches', { name });
+      toast('Yaratildi!');
+      closeModal('branchModal');
+      loadBranchesTable();
+      loadBranches();
+    } catch (e) { toast(e.message, false); }
+  }
+}
+
+async function deleteBranch(id) {
+  if (!confirm('Filialni o\'chirmoqchimisiz?')) return;
+  try {
+    await api('DELETE', `/api/branches/${id}`);
+    toast('O\'chirildi');
+    loadBranchesTable();
+    loadBranches();
+  } catch (e) { toast(e.message, false); }
+}
+
+// ===== PAGINATION =====
+function renderPagination(containerId, page, pages, total, loadFn) {
+  const container = document.getElementById(containerId);
+  if (pages <= 1) { container.innerHTML = ''; return; }
+
+  let btns = '';
+  btns += `<button class="pg-btn" ${page <= 1 ? 'disabled' : ''} onclick="(${loadFn.name})(${page - 1})">&laquo;</button>`;
+
+  let start = Math.max(1, page - 2);
+  let end = Math.min(pages, page + 2);
+  if (start > 1) btns += `<button class="pg-btn" onclick="(${loadFn.name})(1)">1</button>`;
+  if (start > 2) btns += `<span style="padding:8px 4px;color:var(--text2)">...</span>`;
+
+  for (let i = start; i <= end; i++) {
+    btns += `<button class="pg-btn ${i === page ? 'active' : ''}" onclick="(${loadFn.name})(${i})">${i}</button>`;
+  }
+
+  if (end < pages - 1) btns += `<span style="padding:8px 4px;color:var(--text2)">...</span>`;
+  if (end < pages) btns += `<button class="pg-btn" onclick="(${loadFn.name})(${pages})">${pages}</button>`;
+  btns += `<button class="pg-btn" ${page >= pages ? 'disabled' : ''} onclick="(${loadFn.name})(${page + 1})">&raquo;</button>`;
+
+  container.innerHTML = `
+    <div class="pagination-info">Jami: ${total} ta</div>
+    <div class="pagination-btns">${btns}</div>
+  `;
+}
+
+// ===== ENTER KEY LOGIN =====
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>

@@ -1,8 +1,13 @@
 {
   "permissions": {
     "allow": [
+      "Bash(go get:*)",
       "Bash(go mod:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(sqlite3:*)",
+      "Bash(flutter --version)",
+      "Bash(kill:*)",
+      "Bash(go run:*)"
     ]
   }
 }
