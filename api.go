@@ -13,10 +13,58 @@ import (
 	"time"
 )
 
+// GET /api/public/categories — public, faol kategoriyalar ro'yxati
+func handlePublicCategories(w http.ResponseWriter, r *http.Request) {
+	cats, err := dbGetCategories()
+	if err != nil {
+		jsonError(w, "DB xato", http.StatusInternalServerError)
+		return
+	}
+	active := []map[string]interface{}{}
+	for _, c := range cats {
+		if c.IsActive {
+			active = append(active, map[string]interface{}{"id": c.ID, "name": c.Name})
+		}
+	}
+	jsonResponse(w, active)
+}
+
+// POST /api/report-error — frontenddan xatolik xabari (admin TG ga yuboriladi)
+func handleReportError(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Error      string `json:"error"`
+		TgUserID   int64  `json:"tg_user_id"`
+		TgUsername string `json:"tg_username"`
+		FIO        string `json:"fio"`
+		Telefon    string `json:"telefon"`
+		Lavozim    string `json:"lavozim"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		jsonError(w, "JSON xato", http.StatusBadRequest)
+		return
+	}
+
+	msg := fmt.Sprintf(
+		"🚨 XATOLIK — Rezume yuborishda\n\n"+
+			"❌ Xatolik: %s\n\n"+
+			"👤 FIO: %s\n"+
+			"📱 Telefon: %s\n"+
+			"💼 Lavozim: %s\n"+
+			"🆔 TG ID: %d\n"+
+			"📎 TG Username: @%s",
+		body.Error, body.FIO, body.Telefon, body.Lavozim, body.TgUserID, body.TgUsername,
+	)
+	sendTgMessage(adminTgID, msg)
+
+	jsonResponse(w, map[string]string{"status": "reported"})
+}
+
 // POST /rezume — public, rezume yuborish (DB + Telegram)
 func handleRezume(w http.ResponseWriter, r *http.Request) {
 	var anketa Anketa
 	if err := json.NewDecoder(r.Body).Decode(&anketa); err != nil {
+		fio := strings.TrimSpace(anketa.Familiya + " " + anketa.Ism)
+		notifyAdmin("JSON parse xato", err.Error(), fio, anketa.Telefon, anketa.TgUserID, anketa.TgUsername)
 		jsonError(w, "JSON xato: "+err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -28,6 +76,8 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 		rasmURL, err = saveImage(anketa.Rasm, anketa.TgUserID)
 		if err != nil {
 			log.Printf("Rasm saqlashda xato: %v", err)
+			fio := strings.TrimSpace(anketa.Familiya + " " + anketa.Ism)
+			notifyAdmin("Rasm saqlashda xato", err.Error(), fio, anketa.Telefon, anketa.TgUserID, anketa.TgUsername)
 		}
 	}
 
@@ -35,6 +85,8 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 	id, err := saveRezume(&anketa, rasmURL)
 	if err != nil {
 		log.Printf("DB saqlashda xato: %v", err)
+		fio := strings.TrimSpace(anketa.Familiya + " " + anketa.Ism)
+		notifyAdmin("DB saqlashda xato", err.Error(), fio, anketa.Telefon, anketa.TgUserID, anketa.TgUsername)
 	} else {
 		log.Printf("Rezume DB ga saqlandi: id=%d", id)
 	}
@@ -104,13 +156,40 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 
 	if tgErr != nil {
 		log.Printf("Telegram xato: %v", tgErr)
+		fio := strings.TrimSpace(anketa.Familiya + " " + anketa.Ism)
+		notifyAdmin("Telegramga yuborishda xato", tgErr.Error(), fio, anketa.Telefon, anketa.TgUserID, anketa.TgUsername)
 	}
 
-	// Foydalanuvchiga auto-xabar yuborish: "rezumeyingizni ko'rib chiqamiz"
+	// Foydalanuvchiga auto-xabar yuborish: to'liq ma'lumotlari bilan
 	if anketa.TgUserID != 0 {
 		userMsg := fmt.Sprintf(
-			"Assalomu alaykum, %s!\n\nRezumeyingiz qabul qilindi. Tez orada ko'rib chiqib, aloqaga chiqamiz.\n\nRahmat!",
+			"Assalomu alaykum, %s!\n\n"+
+				"Rezumeyingiz qabul qilindi. Tez orada ko'rib chiqib, aloqaga chiqamiz.\n\n"+
+				"Sizning ma'lumotlaringiz:\n"+
+				"━━━━━━━━━━━━━━━━━━━━\n"+
+				"Lavozim: %s\n"+
+				"FIO: %s\n"+
+				"Tug'ilgan sana: %s\n"+
+				"Bo'y: %d sm\n"+
+				"Vazn: %d kg\n"+
+				"Manzil: %s\n"+
+				"Mo'ljal: %s\n"+
+				"Umumiy tajriba: %s\n"+
+				"Chet el tajribasi: %s\n"+
+				"Ma'lumot: %s\n"+
+				"Oilaviy holat: %s\n"+
+				"Tillar:\n%s"+
+				"Telefon: %s\n"+
+				"Qo'shimcha: %s\n"+
+				"━━━━━━━━━━━━━━━━━━━━\n\n"+
+				"Rahmat!",
 			fio,
+			anketa.Lavozim, fio, anketa.TugilganSana,
+			anketa.BoySm, anketa.VaznKg,
+			anketa.YashashManzili, anketa.Moljal,
+			anketa.UmumiyTajriba, anketa.ChetElTajribasi,
+			anketa.Malumot, anketa.OilaviyHolat, tillarStr,
+			anketa.Telefon, anketa.Qoshimcha,
 		)
 		// Rasm bilan yuborish
 		if anketa.Rasm != "" && strings.Contains(anketa.Rasm, ",") {
@@ -279,4 +358,17 @@ func jsonError(w http.ResponseWriter, msg string, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(map[string]string{"error": msg})
+}
+
+func notifyAdmin(title, errMsg, fio, telefon string, tgUserID int64, tgUsername string) {
+	msg := fmt.Sprintf(
+		"🚨 XATOLIK — %s\n\n"+
+			"❌ Sabab: %s\n\n"+
+			"👤 FIO: %s\n"+
+			"📱 Telefon: %s\n"+
+			"🆔 TG ID: %d\n"+
+			"📎 TG Username: @%s",
+		title, errMsg, fio, telefon, tgUserID, tgUsername,
+	)
+	go sendTgMessage(adminTgID, msg)
 }

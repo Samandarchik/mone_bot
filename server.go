@@ -10,6 +10,7 @@ import (
 
 const botToken = "8550220546:AAFEII8AzNdMapEqT_VFtqiqv6h0obbLgzQ"
 const baseURL = "https://hr.monebakeryuz.uz"
+const adminTgID int64 = 1066137436
 
 // --- Telegram types ---
 
@@ -107,10 +108,12 @@ type Category struct {
 }
 
 type Branch struct {
-	ID        int64  `json:"id"`
-	Name      string `json:"name"`
-	IsActive  bool   `json:"is_active"`
-	CreatedAt string `json:"created_at"`
+	ID        int64   `json:"id"`
+	Name      string  `json:"name"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+	IsActive  bool    `json:"is_active"`
+	CreatedAt string  `json:"created_at"`
 }
 
 type UserRow struct {
@@ -131,16 +134,20 @@ type UserResponse struct {
 }
 
 type InterviewRow struct {
-	ID            int64  `json:"id"`
-	RezumeID      int64  `json:"rezume_id"`
-	InvitedByID   int64  `json:"invited_by_id"`
-	InvitedByName string `json:"invited_by_name"`
-	InterviewDate string `json:"interview_date"`
-	InterviewTime string `json:"interview_time"`
-	Rating        int    `json:"rating"`
-	RatingText    string `json:"rating_text"`
-	Comment       string `json:"comment"`
-	CreatedAt     string `json:"created_at"`
+	ID            int64   `json:"id"`
+	RezumeID      int64   `json:"rezume_id"`
+	InvitedByID   int64   `json:"invited_by_id"`
+	InvitedByName string  `json:"invited_by_name"`
+	InterviewDate string  `json:"interview_date"`
+	InterviewTime string  `json:"interview_time"`
+	BranchID      int64   `json:"branch_id"`
+	BranchName    string  `json:"branch_name"`
+	BranchLat     float64 `json:"branch_lat"`
+	BranchLng     float64 `json:"branch_lng"`
+	Rating        int     `json:"rating"`
+	RatingText    string  `json:"rating_text"`
+	Comment       string  `json:"comment"`
+	CreatedAt     string  `json:"created_at"`
 	// Rezume info
 	RezumeFIO     string `json:"rezume_fio"`
 	RezumeLavozim string `json:"rezume_lavozim"`
@@ -182,6 +189,8 @@ func main() {
 
 	// Public — rezume yuborish
 	mux.HandleFunc("POST /rezume", handleRezume)
+	mux.HandleFunc("POST /api/report-error", handleReportError)
+	mux.HandleFunc("GET /api/public/categories", handlePublicCategories)
 
 	// Auth
 	mux.HandleFunc("POST /api/auth/login", handleLogin)
@@ -199,6 +208,7 @@ func main() {
 	mux.HandleFunc("GET /api/interviews", authRequired(handleGetInterviews))
 	mux.HandleFunc("GET /api/interviews/{id}", authRequired(handleGetInterview))
 	mux.HandleFunc("PATCH /api/interviews/{id}", authRequired(handleUpdateInterview))
+	mux.HandleFunc("POST /api/interviews/{id}/send-location", authRequired(handleSendInterviewLocation))
 
 	// User API (super_admin)
 	mux.HandleFunc("POST /api/users", superAdminRequired(handleCreateUser))

@@ -7,7 +7,9 @@
       "Bash(sqlite3:*)",
       "Bash(flutter --version)",
       "Bash(kill:*)",
-      "Bash(go run:*)"
+      "Bash(go run:*)",
+      "Bash(wc:*)",
+      "Bash(flutter analyze:*)"
     ]
   }
 }

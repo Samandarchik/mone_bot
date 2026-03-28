@@ -9,7 +9,9 @@ import (
 // POST /api/branches — yangi filial yaratish (super_admin)
 func handleCreateBranch(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Name string `json:"name"`
+		Name      string  `json:"name"`
+		Latitude  float64 `json:"latitude"`
+		Longitude float64 `json:"longitude"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
@@ -20,7 +22,7 @@ func handleCreateBranch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := dbCreateBranch(body.Name)
+	id, err := dbCreateBranch(body.Name, body.Latitude, body.Longitude)
 	if err != nil {
 		jsonError(w, "Filial yaratishda xato: "+err.Error(), http.StatusBadRequest)
 		return
@@ -55,8 +57,10 @@ func handleUpdateBranch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		Name     *string `json:"name"`
-		IsActive *bool   `json:"is_active"`
+		Name      *string  `json:"name"`
+		Latitude  *float64 `json:"latitude"`
+		Longitude *float64 `json:"longitude"`
+		IsActive  *bool    `json:"is_active"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
@@ -64,16 +68,24 @@ func handleUpdateBranch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := existing.Name
+	latitude := existing.Latitude
+	longitude := existing.Longitude
 	isActive := existing.IsActive
 
 	if body.Name != nil {
 		name = *body.Name
 	}
+	if body.Latitude != nil {
+		latitude = *body.Latitude
+	}
+	if body.Longitude != nil {
+		longitude = *body.Longitude
+	}
 	if body.IsActive != nil {
 		isActive = *body.IsActive
 	}
 
-	if err := dbUpdateBranch(id, name, isActive); err != nil {
+	if err := dbUpdateBranch(id, name, latitude, longitude, isActive); err != nil {
 		jsonError(w, "Yangilashda xato: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

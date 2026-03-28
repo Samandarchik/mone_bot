@@ -107,6 +107,13 @@ func initDB() {
 	// Migration: users jadvaliga branch_id qo'shish (agar yo'q bo'lsa)
 	db.Exec("ALTER TABLE users ADD COLUMN branch_id INTEGER NOT NULL DEFAULT 0")
 
+	// Migration: branches jadvaliga latitude/longitude qo'shish
+	db.Exec("ALTER TABLE branches ADD COLUMN latitude REAL NOT NULL DEFAULT 0")
+	db.Exec("ALTER TABLE branches ADD COLUMN longitude REAL NOT NULL DEFAULT 0")
+
+	// Migration: interviews jadvaliga branch_id qo'shish
+	db.Exec("ALTER TABLE interviews ADD COLUMN branch_id INTEGER NOT NULL DEFAULT 0")
+
 	seedDB()
 	log.Println("SQLite baza tayyor")
 }
@@ -513,10 +520,10 @@ func ratingText(rating int) string {
 	}
 }
 
-func dbCreateInterview(rezumeID, invitedByID int64, date, time string) (int64, error) {
+func dbCreateInterview(rezumeID, invitedByID int64, date, time string, branchID int64) (int64, error) {
 	result, err := db.Exec(
-		"INSERT INTO interviews (rezume_id, invited_by_id, interview_date, interview_time) VALUES (?, ?, ?, ?)",
-		rezumeID, invitedByID, date, time,
+		"INSERT INTO interviews (rezume_id, invited_by_id, interview_date, interview_time, branch_id) VALUES (?, ?, ?, ?, ?)",
+		rezumeID, invitedByID, date, time, branchID,
 	)
 	if err != nil {
 		return 0, err
@@ -546,11 +553,14 @@ func dbGetInterviews(rezumeID int64, rating int, page, limit int) ([]InterviewRo
 	offset := (page - 1) * limit
 	query := fmt.Sprintf(
 		`SELECT i.id, i.rezume_id, i.invited_by_id, COALESCE(u.full_name, u.username),
-		 i.interview_date, i.interview_time, i.rating, i.comment, i.created_at,
+		 i.interview_date, i.interview_time, i.branch_id,
+		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
+		 i.rating, i.comment, i.created_at,
 		 COALESCE(r.familiya || ' ' || r.ism, ''), COALESCE(r.lavozim, ''), COALESCE(r.telefon, '')
 		 FROM interviews i
 		 LEFT JOIN users u ON u.id = i.invited_by_id
 		 LEFT JOIN rezumeler r ON r.id = i.rezume_id
+		 LEFT JOIN branches b ON b.id = i.branch_id
 		 WHERE %s ORDER BY i.id DESC LIMIT ? OFFSET ?`, where)
 	args = append(args, limit, offset)
 
@@ -565,7 +575,9 @@ func dbGetInterviews(rezumeID int64, rating int, page, limit int) ([]InterviewRo
 		var row InterviewRow
 		err := rows.Scan(
 			&row.ID, &row.RezumeID, &row.InvitedByID, &row.InvitedByName,
-			&row.InterviewDate, &row.InterviewTime, &row.Rating, &row.Comment, &row.CreatedAt,
+			&row.InterviewDate, &row.InterviewTime, &row.BranchID,
+			&row.BranchName, &row.BranchLat, &row.BranchLng,
+			&row.Rating, &row.Comment, &row.CreatedAt,
 			&row.RezumeFIO, &row.RezumeLavozim, &row.RezumeTelefon,
 		)
 		if err != nil {
@@ -581,14 +593,19 @@ func dbGetInterviewByID(id int64) (*InterviewRow, error) {
 	var row InterviewRow
 	err := db.QueryRow(
 		`SELECT i.id, i.rezume_id, i.invited_by_id, COALESCE(u.full_name, u.username),
-		 i.interview_date, i.interview_time, i.rating, i.comment, i.created_at,
+		 i.interview_date, i.interview_time, i.branch_id,
+		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
+		 i.rating, i.comment, i.created_at,
 		 COALESCE(r.familiya || ' ' || r.ism, ''), COALESCE(r.lavozim, ''), COALESCE(r.telefon, '')
 		 FROM interviews i
 		 LEFT JOIN users u ON u.id = i.invited_by_id
 		 LEFT JOIN rezumeler r ON r.id = i.rezume_id
+		 LEFT JOIN branches b ON b.id = i.branch_id
 		 WHERE i.id = ?`, id).Scan(
 		&row.ID, &row.RezumeID, &row.InvitedByID, &row.InvitedByName,
-		&row.InterviewDate, &row.InterviewTime, &row.Rating, &row.Comment, &row.CreatedAt,
+		&row.InterviewDate, &row.InterviewTime, &row.BranchID,
+		&row.BranchName, &row.BranchLat, &row.BranchLng,
+		&row.Rating, &row.Comment, &row.CreatedAt,
 		&row.RezumeFIO, &row.RezumeLavozim, &row.RezumeTelefon,
 	)
 	if err != nil {
@@ -616,8 +633,8 @@ func getBranchPtr(branchID int64) *Branch {
 	return b
 }
 
-func dbCreateBranch(name string) (int64, error) {
-	result, err := db.Exec("INSERT INTO branches (name) VALUES (?)", name)
+func dbCreateBranch(name string, latitude, longitude float64) (int64, error) {
+	result, err := db.Exec("INSERT INTO branches (name, latitude, longitude) VALUES (?, ?, ?)", name, latitude, longitude)
 	if err != nil {
 		return 0, err
 	}
@@ -625,7 +642,7 @@ func dbCreateBranch(name string) (int64, error) {
 }
 
 func dbGetBranches() ([]Branch, error) {
-	rows, err := db.Query("SELECT id, name, is_active, created_at FROM branches ORDER BY id")
+	rows, err := db.Query("SELECT id, name, latitude, longitude, is_active, created_at FROM branches ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -635,7 +652,7 @@ func dbGetBranches() ([]Branch, error) {
 	for rows.Next() {
 		var b Branch
 		var ia int
-		rows.Scan(&b.ID, &b.Name, &ia, &b.CreatedAt)
+		rows.Scan(&b.ID, &b.Name, &b.Latitude, &b.Longitude, &ia, &b.CreatedAt)
 		b.IsActive = ia == 1
 		results = append(results, b)
 	}
@@ -645,8 +662,8 @@ func dbGetBranches() ([]Branch, error) {
 func dbGetBranchByID(id int64) (*Branch, error) {
 	var b Branch
 	var ia int
-	err := db.QueryRow("SELECT id, name, is_active, created_at FROM branches WHERE id = ?", id).
-		Scan(&b.ID, &b.Name, &ia, &b.CreatedAt)
+	err := db.QueryRow("SELECT id, name, latitude, longitude, is_active, created_at FROM branches WHERE id = ?", id).
+		Scan(&b.ID, &b.Name, &b.Latitude, &b.Longitude, &ia, &b.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -654,12 +671,12 @@ func dbGetBranchByID(id int64) (*Branch, error) {
 	return &b, nil
 }
 
-func dbUpdateBranch(id int64, name string, isActive bool) error {
+func dbUpdateBranch(id int64, name string, latitude, longitude float64, isActive bool) error {
 	ia := 0
 	if isActive {
 		ia = 1
 	}
-	_, err := db.Exec("UPDATE branches SET name=?, is_active=? WHERE id=?", name, ia, id)
+	_, err := db.Exec("UPDATE branches SET name=?, latitude=?, longitude=?, is_active=? WHERE id=?", name, latitude, longitude, ia, id)
 	return err
 }
 
@@ -686,9 +703,12 @@ func attachInterviews(rezumeler []RezumeRow) {
 
 	rows, err := db.Query(fmt.Sprintf(
 		`SELECT i.id, i.rezume_id, i.invited_by_id, COALESCE(u.full_name, u.username, ''),
-		 i.interview_date, i.interview_time, i.rating, i.comment, i.created_at
+		 i.interview_date, i.interview_time, i.branch_id,
+		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
+		 i.rating, i.comment, i.created_at
 		 FROM interviews i
 		 LEFT JOIN users u ON u.id = i.invited_by_id
+		 LEFT JOIN branches b ON b.id = i.branch_id
 		 WHERE i.rezume_id IN (%s) ORDER BY i.id DESC`, ph), args...)
 	if err != nil {
 		return
@@ -699,7 +719,9 @@ func attachInterviews(rezumeler []RezumeRow) {
 	for rows.Next() {
 		var row InterviewRow
 		rows.Scan(&row.ID, &row.RezumeID, &row.InvitedByID, &row.InvitedByName,
-			&row.InterviewDate, &row.InterviewTime, &row.Rating, &row.Comment, &row.CreatedAt)
+			&row.InterviewDate, &row.InterviewTime, &row.BranchID,
+			&row.BranchName, &row.BranchLat, &row.BranchLng,
+			&row.Rating, &row.Comment, &row.CreatedAt)
 		row.RatingText = ratingText(row.Rating)
 		imap[row.RezumeID] = append(imap[row.RezumeID], row)
 	}

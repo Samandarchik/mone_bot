@@ -19,6 +19,7 @@ func handleCreateInterview(w http.ResponseWriter, r *http.Request) {
 		RezumeID      int64  `json:"rezume_id"`
 		InterviewDate string `json:"interview_date"`
 		InterviewTime string `json:"interview_time"`
+		BranchID      int64  `json:"branch_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
@@ -36,11 +37,25 @@ func handleCreateInterview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Branch ma'lumotlarini olish
+	var branchName string
+	var branchLat, branchLng float64
+	if body.BranchID > 0 {
+		branch, err := dbGetBranchByID(body.BranchID)
+		if err != nil {
+			jsonError(w, "Filial topilmadi", http.StatusBadRequest)
+			return
+		}
+		branchName = branch.Name
+		branchLat = branch.Latitude
+		branchLng = branch.Longitude
+	}
+
 	// Rezume statusini qabul qilish
 	updateRezumeStatus(body.RezumeID, "qabul")
 
 	// Interview yaratish
-	id, err := dbCreateInterview(body.RezumeID, user.ID, body.InterviewDate, body.InterviewTime)
+	id, err := dbCreateInterview(body.RezumeID, user.ID, body.InterviewDate, body.InterviewTime, body.BranchID)
 	if err != nil {
 		jsonError(w, "Interview yaratishda xato: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -53,12 +68,23 @@ func handleCreateInterview(w http.ResponseWriter, r *http.Request) {
 			"Assalomu alaykum, %s!\n\n"+
 				"Siz intervyuga taklif qilinyapsiz.\n\n"+
 				"Sana: %s\n"+
-				"Vaqt: %s\n\n"+
-				"Iltimos, o'z vaqtida keling.\n"+
+				"Vaqt: %s\n",
+			fio, body.InterviewDate, body.InterviewTime,
+		)
+		if branchName != "" {
+			msg += fmt.Sprintf("Filial: %s\n", branchName)
+		}
+		msg += fmt.Sprintf(
+			"\nIltimos, o'z vaqtida keling.\n"+
 				"Chaqirgan: %s",
-			fio, body.InterviewDate, body.InterviewTime, user.FullName,
+			user.FullName,
 		)
 		sendTgMessage(rezume.TgUserID, msg)
+
+		// Lokatsiyani yuborish
+		if branchLat != 0 && branchLng != 0 {
+			sendTgLocation(rezume.TgUserID, branchLat, branchLng)
+		}
 	}
 
 	interview, _ := dbGetInterviewByID(id)
@@ -150,3 +176,44 @@ func handleUpdateInterview(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, interview)
 }
 
+// POST /api/interviews/{id}/send-location — intervyu lokatsiyasini telegramga yuborish
+func handleSendInterviewLocation(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
+		return
+	}
+
+	interview, err := dbGetInterviewByID(id)
+	if err != nil {
+		jsonError(w, "Interview topilmadi", http.StatusNotFound)
+		return
+	}
+
+	// Rezumeni olish (tg_user_id kerak)
+	rezume, err := getRezumeByID(interview.RezumeID)
+	if err != nil {
+		jsonError(w, "Rezume topilmadi", http.StatusNotFound)
+		return
+	}
+
+	if rezume.TgUserID == 0 {
+		jsonError(w, "Foydalanuvchining Telegram ID si yo'q", http.StatusBadRequest)
+		return
+	}
+
+	if interview.BranchLat == 0 && interview.BranchLng == 0 {
+		jsonError(w, "Filialning lokatsiyasi belgilanmagan", http.StatusBadRequest)
+		return
+	}
+
+	// Xabar yuborish
+	msg := fmt.Sprintf(
+		"📍 Uchrashuv joyi: %s\n\nSana: %s\nVaqt: %s",
+		interview.BranchName, interview.InterviewDate, interview.InterviewTime,
+	)
+	sendTgMessage(rezume.TgUserID, msg)
+	sendTgLocation(rezume.TgUserID, interview.BranchLat, interview.BranchLng)
+
+	jsonResponse(w, map[string]string{"status": "sent"})
+}

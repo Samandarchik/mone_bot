@@ -360,6 +360,22 @@ func editMessageCaption(chatID int64, messageID int64, caption string) {
 	resp.Body.Close()
 }
 
+func sendTgLocation(chatID int64, latitude, longitude float64) {
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendLocation", botToken)
+	payload := map[string]interface{}{
+		"chat_id":   chatID,
+		"latitude":  latitude,
+		"longitude": longitude,
+	}
+	jsonData, _ := json.Marshal(payload)
+	resp, err := http.Post(url, "application/json", bytes.NewReader(jsonData))
+	if err != nil {
+		log.Printf("sendTgLocation xato: %v", err)
+		return
+	}
+	resp.Body.Close()
+}
+
 func answerCallback(callbackID string, text string) {
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/answerCallbackQuery", botToken)
 	payload := map[string]interface{}{
