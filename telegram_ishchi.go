@@ -99,6 +99,7 @@ func handleIshchiBotMessage(msg *TgMessage) {
 }
 
 // ===================== TELEGRAM API (ishchi bot) =====================
+
 func sendIshchiTgMessage(chatID int64, text string) {
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", ishchiBotToken)
 	payload := map[string]interface{}{
