@@ -138,6 +138,15 @@ func initDB() {
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN status_by INTEGER NOT NULL DEFAULT 0")
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN status_by_name TEXT NOT NULL DEFAULT ''")
 
+	// ishchi_categories jadvalini yaratish
+	db.Exec(`CREATE TABLE IF NOT EXISTS ishchi_categories (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		tg_group_id INTEGER NOT NULL DEFAULT 0,
+		is_active INTEGER NOT NULL DEFAULT 1,
+		created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+	)`)
+
 	seedDB()
 	log.Println("SQLite baza tayyor")
 }
@@ -858,4 +867,59 @@ func saveIshchiAnketa(a *IshchiAnketa, rasmURL string) (int64, error) {
 		return 0, err
 	}
 	return result.LastInsertId()
+}
+
+// ===================== ISHCHI CATEGORY CRUD =====================
+
+func dbCreateIshchiCategory(name string, tgGroupID int64) (int64, error) {
+	result, err := db.Exec("INSERT INTO ishchi_categories (name, tg_group_id) VALUES (?, ?)", name, tgGroupID)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func dbGetIshchiCategories() ([]Category, error) {
+	rows, err := db.Query("SELECT id, name, tg_group_id, is_active, created_at FROM ishchi_categories ORDER BY id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	cats := []Category{}
+	for rows.Next() {
+		var c Category
+		var ia int
+		rows.Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+		c.IsActive = ia == 1
+		cats = append(cats, c)
+	}
+	return cats, nil
+}
+
+func dbGetIshchiCategoryByID(id int64) (*Category, error) {
+	var c Category
+	var ia int
+	err := db.QueryRow("SELECT id, name, tg_group_id, is_active, created_at FROM ishchi_categories WHERE id = ?", id).
+		Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	c.IsActive = ia == 1
+	return &c, nil
+}
+
+func dbUpdateIshchiCategory(id int64, name string, tgGroupID int64, isActive bool) error {
+	ia := 0
+	if isActive {
+		ia = 1
+	}
+	_, err := db.Exec("UPDATE ishchi_categories SET name=?, tg_group_id=?, is_active=? WHERE id=?",
+		name, tgGroupID, ia, id)
+	return err
+}
+
+func dbDeleteIshchiCategory(id int64) error {
+	_, err := db.Exec("DELETE FROM ishchi_categories WHERE id = ?", id)
+	return err
 }

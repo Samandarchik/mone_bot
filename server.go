@@ -301,6 +301,12 @@ func main() {
 	mux.HandleFunc("PATCH /api/categories/{id}", superAdminRequired(handleUpdateCategory))
 	mux.HandleFunc("DELETE /api/categories/{id}", superAdminRequired(handleDeleteCategory))
 
+	// Ishchi Category API
+	mux.HandleFunc("POST /api/ishchi-categories", superAdminRequired(handleCreateIshchiCategory))
+	mux.HandleFunc("GET /api/ishchi-categories", authRequired(handleGetIshchiCategories))
+	mux.HandleFunc("PATCH /api/ishchi-categories/{id}", superAdminRequired(handleUpdateIshchiCategory))
+	mux.HandleFunc("DELETE /api/ishchi-categories/{id}", superAdminRequired(handleDeleteIshchiCategory))
+
 	// Swagger
 	mux.HandleFunc("GET /swagger", handleSwaggerUI)
 	mux.HandleFunc("GET /swagger.json", handleSwaggerJSON)
