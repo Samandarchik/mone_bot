@@ -142,6 +142,8 @@ type IshchiAnketa struct {
 	Vakansiya    string `json:"vakansiya"`
 	FIO          string `json:"fio"`
 	TugilganSana string `json:"tugilgan_sana"`
+	BoySm        int    `json:"boy_sm"`
+	VaznKg       int    `json:"vazn_kg"`
 	Manzil       string `json:"manzil"`
 	OilaviyHolat string `json:"oilaviy_holat"`
 	Bolalar      string `json:"bolalar"`
@@ -161,6 +163,8 @@ type IshchiRow struct {
 	Vakansiya    string `json:"vakansiya"`
 	FIO          string `json:"fio"`
 	TugilganSana string `json:"tugilgan_sana"`
+	BoySm        int    `json:"boy_sm"`
+	VaznKg       int    `json:"vazn_kg"`
 	Manzil       string `json:"manzil"`
 	OilaviyHolat string `json:"oilaviy_holat"`
 	Bolalar      string `json:"bolalar"`

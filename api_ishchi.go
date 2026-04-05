@@ -40,6 +40,8 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 		"Вакансия: %s\n"+
 			"ФИО: %s\n"+
 			"Дата рождения: %s\n"+
+			"Рост: %d см\n"+
+			"Вес: %d кг\n"+
 			"Адрес: %s\n"+
 			"Семейный статус: %s\n"+
 			"Дети: %s\n"+
@@ -51,6 +53,7 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 			"Телефон: %s\n"+
 			"━━━━━━━━━━━━━━━━━━━━",
 		anketa.Vakansiya, anketa.FIO, anketa.TugilganSana,
+		anketa.BoySm, anketa.VaznKg,
 		anketa.Manzil, anketa.OilaviyHolat, anketa.Bolalar,
 		anketa.Tillar, anketa.Malumot, anketa.Grafik,
 		anketa.Sudimlik, anketa.Haydovchilik, anketa.Telefon,
@@ -78,6 +81,8 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 				"Vakansiya: %s\n"+
 				"FIO: %s\n"+
 				"Tug'ilgan sana: %s\n"+
+				"Bo'y: %d sm\n"+
+				"Vazn: %d kg\n"+
 				"Manzil: %s\n"+
 				"Oilaviy holat: %s\n"+
 				"Bolalar: %s\n"+
@@ -91,6 +96,7 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 				"Rahmat!",
 			anketa.FIO,
 			anketa.Vakansiya, anketa.FIO, anketa.TugilganSana,
+			anketa.BoySm, anketa.VaznKg,
 			anketa.Manzil, anketa.OilaviyHolat, anketa.Bolalar,
 			anketa.Tillar, anketa.Malumot, anketa.Grafik,
 			anketa.Sudimlik, anketa.Haydovchilik, anketa.Telefon,
