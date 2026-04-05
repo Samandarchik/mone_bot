@@ -137,10 +137,11 @@ textarea{resize:vertical}
 
 <div class="header">
   <div class="header-inner">
-    <div class="logo">Ishchi kerak <span data-uz="Anketa" data-ru="Анкета">Анкета</span></div>
+    <div class="logo">Ishchi kerak <span data-uz="Anketa" data-ru="Анкета" data-en="Application">Анкета</span></div>
     <div class="lang-sw">
       <button onclick="switchLang('uz')">UZ</button>
       <button class="active" onclick="switchLang('ru')">RU</button>
+      <button onclick="switchLang('en')">EN</button>
     </div>
   </div>
 </div>
@@ -151,36 +152,37 @@ textarea{resize:vertical}
 
 <!-- 1. Vakansiya -->
 <div class="card" style="animation-delay:.05s">
-  <span class="lbl"><span class="step-num">1</span><span data-uz="Vakansiya" data-ru="Вакансия">Вакансия</span></span>
+  <span class="lbl"><span class="step-num">1</span><span data-uz="Vakansiya" data-ru="Вакансия" data-en="Position">Вакансия</span></span>
   <div class="bg" id="g-vakansiya">
-    <button class="btn" data-value="Няня, русскоговорящая" data-uz="Enaga (ruscha gapiradigan)" data-ru="Няня, русскоговорящая" onclick="sel(this,'vakansiya')">Няня, русскоговорящая</button>
-    <button class="btn" data-value="Педагог английского языка с русским переводом" data-uz="Ingliz tili o'qituvchisi (rus tarjimali)" data-ru="Педагог английского языка с русским переводом" onclick="sel(this,'vakansiya')">Педагог английского языка с русским переводом</button>
-    <button class="btn" data-value="Педагог арабского языка с русским переводом" data-uz="Arab tili o'qituvchisi (rus tarjimali)" data-ru="Педагог арабского языка с русским переводом" onclick="sel(this,'vakansiya')">Педагог арабского языка с русским переводом</button>
-    <button class="btn" data-value="Педагог китайского языка с русским переводом" data-uz="Xitoy tili o'qituvchisi (rus tarjimali)" data-ru="Педагог китайского языка с русским переводом" onclick="sel(this,'vakansiya')">Педагог китайского языка с русским переводом</button>
+    <button class="btn" data-value="Педагог китайского языка с русским переводом" data-uz="Xitoy tili o'qituvchisi (rus tarjimali)" data-ru="Педагог китайского языка с русским переводом" data-en="Chinese teacher (with Russian)" onclick="sel(this,'vakansiya')">Педагог китайского языка с русским переводом</button>
+    <button class="btn" data-value="Педагог испанского языка с русским переводом" data-uz="Ispan tili o'qituvchisi (rus tarjimali)" data-ru="Педагог испанского языка с русским переводом" data-en="Spanish teacher (with Russian)" onclick="sel(this,'vakansiya')">Педагог испанского языка с русским переводом</button>
+    <button class="btn" data-value="Педагог английского языка с русским переводом" data-uz="Ingliz tili o'qituvchisi (rus tarjimali)" data-ru="Педагог английского языка с русским переводом" data-en="English teacher (with Russian)" onclick="sel(this,'vakansiya')">Педагог английского языка с русским переводом</button>
+    <button class="btn" data-value="Педагог арабского языка с русским переводом" data-uz="Arab tili o'qituvchisi (rus tarjimali)" data-ru="Педагог арабского языка с русским переводом" data-en="Arabic teacher (with Russian)" onclick="sel(this,'vakansiya')">Педагог арабского языка с русским переводом</button>
+    <button class="btn" data-value="Няня, русскоговорящая" data-uz="Enaga (ruscha gapiradigan)" data-ru="Няня, русскоговорящая" data-en="Nanny (Russian-speaking)" onclick="sel(this,'vakansiya')">Няня, русскоговорящая</button>
   </div>
 </div>
 
 <!-- 2. Familiya -->
 <div class="card" style="animation-delay:.1s">
-  <span class="lbl"><span class="step-num">2</span><span data-uz="Familiya" data-ru="Фамилия">Фамилия</span></span>
-  <input type="text" id="familiya" data-uz-ph="Familiyangizni kiriting" data-ru-ph="Введите фамилию" placeholder="Введите фамилию">
+  <span class="lbl"><span class="step-num">2</span><span data-uz="Familiya" data-ru="Фамилия" data-en="Last name">Фамилия</span></span>
+  <input type="text" id="familiya" data-uz-ph="Familiyangizni kiriting" data-ru-ph="Введите фамилию" data-en-ph="Enter last name" placeholder="Введите фамилию">
 </div>
 
 <!-- 3. Ism -->
 <div class="card" style="animation-delay:.13s">
-  <span class="lbl"><span class="step-num">3</span><span data-uz="Ism" data-ru="Имя">Имя</span></span>
-  <input type="text" id="ism" data-uz-ph="Ismingizni kiriting" data-ru-ph="Введите имя" placeholder="Введите имя">
+  <span class="lbl"><span class="step-num">3</span><span data-uz="Ism" data-ru="Имя" data-en="First name">Имя</span></span>
+  <input type="text" id="ism" data-uz-ph="Ismingizni kiriting" data-ru-ph="Введите имя" data-en-ph="Enter first name" placeholder="Введите имя">
 </div>
 
 <!-- 4. Otchestvo -->
 <div class="card" style="animation-delay:.16s">
-  <span class="lbl"><span class="step-num">4</span><span data-uz="Sharif (Otchestvo)" data-ru="Отчество">Отчество</span></span>
-  <input type="text" id="sharif" data-uz-ph="Sharifingizni kiriting" data-ru-ph="Введите отчество" placeholder="Введите отчество">
+  <span class="lbl"><span class="step-num">4</span><span data-uz="Sharif (Otchestvo)" data-ru="Отчество" data-en="Middle name">Отчество</span></span>
+  <input type="text" id="sharif" data-uz-ph="Sharifingizni kiriting" data-ru-ph="Введите отчество" data-en-ph="Enter middle name" placeholder="Введите отчество">
 </div>
 
 <!-- 5. Vazn -->
 <div class="card" style="animation-delay:.2s">
-  <span class="lbl"><span class="step-num">5</span><span data-uz="Vazn (kg)" data-ru="Вес (кг)">Вес (кг)</span></span>
+  <span class="lbl"><span class="step-num">5</span><span data-uz="Vazn (kg)" data-ru="Вес (кг)" data-en="Weight (kg)">Вес (кг)</span></span>
   <div class="rrow">
     <input type="range" min="40" max="150" step="1" value="70" id="vazn" oninput="document.getElementById('vv').textContent=this.value;updateProgress()">
     <span class="rval"><span id="vv">70</span></span>
@@ -189,7 +191,7 @@ textarea{resize:vertical}
 
 <!-- 6. Boy -->
 <div class="card" style="animation-delay:.22s">
-  <span class="lbl"><span class="step-num">6</span><span data-uz="Bo'y (sm)" data-ru="Рост (см)">Рост (см)</span></span>
+  <span class="lbl"><span class="step-num">6</span><span data-uz="Bo'y (sm)" data-ru="Рост (см)" data-en="Height (cm)">Рост (см)</span></span>
   <div class="rrow">
     <input type="range" min="150" max="210" step="1" value="170" id="boy" oninput="document.getElementById('bv').textContent=this.value;updateProgress()">
     <span class="rval"><span id="bv">170</span></span>
@@ -198,9 +200,9 @@ textarea{resize:vertical}
 
 <!-- 7. Tugilgan sana -->
 <div class="card" style="animation-delay:.25s">
-  <span class="lbl"><span class="step-num">7</span><span data-uz="Tug'ilgan sana" data-ru="Дата рождения">Дата рождения</span></span>
+  <span class="lbl"><span class="step-num">7</span><span data-uz="Tug'ilgan sana" data-ru="Дата рождения" data-en="Date of birth">Дата рождения</span></span>
   <div class="date-display" id="date-display" onclick="openDatePicker()">
-    <span id="date-text" class="placeholder" data-uz="Sanani tanlang" data-ru="Выберите дату">Выберите дату</span>
+    <span id="date-text" class="placeholder" data-uz="Sanani tanlang" data-ru="Выберите дату" data-en="Select date">Выберите дату</span>
   </div>
   <input type="hidden" id="tugilgan">
 </div>
@@ -208,9 +210,9 @@ textarea{resize:vertical}
 <div class="picker-overlay" id="picker-overlay" onclick="if(event.target===this)closeDatePicker()">
   <div class="picker-sheet">
     <div class="picker-header">
-      <button class="picker-cancel" onclick="closeDatePicker()" data-uz="Bekor" data-ru="Отмена">Отмена</button>
-      <span style="font-weight:600;font-size:16px;color:#1c1c1e" data-uz="Tug'ilgan sana" data-ru="Дата рождения">Дата рождения</span>
-      <button class="picker-done" onclick="confirmDate()" data-uz="Tayyor" data-ru="Готово">Готово</button>
+      <button class="picker-cancel" onclick="closeDatePicker()" data-uz="Bekor" data-ru="Отмена" data-en="Cancel">Отмена</button>
+      <span style="font-weight:600;font-size:16px;color:#1c1c1e" data-uz="Tug'ilgan sana" data-ru="Дата рождения" data-en="Date of birth">Дата рождения</span>
+      <button class="picker-done" onclick="confirmDate()" data-uz="Tayyor" data-ru="Готово" data-en="Done">Готово</button>
     </div>
     <div class="picker-body">
       <div class="picker-col" id="pick-day"></div>
@@ -225,128 +227,140 @@ textarea{resize:vertical}
 
 <!-- 8. Oblast -->
 <div class="card" style="animation-delay:.3s">
-  <span class="lbl"><span class="step-num">8</span><span data-uz="Viloyat" data-ru="Область">Область</span></span>
-  <input type="text" id="oblast" data-uz-ph="Viloyat nomi" data-ru-ph="Название области" placeholder="Название области">
+  <span class="lbl"><span class="step-num">8</span><span data-uz="Viloyat" data-ru="Область" data-en="Region">Область</span></span>
+  <input type="text" id="oblast" data-uz-ph="Viloyat nomi" data-ru-ph="Название области" data-en-ph="Region name" placeholder="Название области">
 </div>
 
 <!-- 9. Shahar -->
 <div class="card" style="animation-delay:.33s">
-  <span class="lbl"><span class="step-num">9</span><span data-uz="Shahar" data-ru="Город">Город</span></span>
-  <input type="text" id="shahar" data-uz-ph="Shahar nomi" data-ru-ph="Название города" placeholder="Название города">
+  <span class="lbl"><span class="step-num">9</span><span data-uz="Shahar" data-ru="Город" data-en="City">Город</span></span>
+  <input type="text" id="shahar" data-uz-ph="Shahar nomi" data-ru-ph="Название города" data-en-ph="City name" placeholder="Название города">
 </div>
 
 <!-- 10. Tuman -->
 <div class="card" style="animation-delay:.36s">
-  <span class="lbl"><span class="step-num">10</span><span data-uz="Tuman" data-ru="Район">Район</span></span>
-  <input type="text" id="tuman" data-uz-ph="Tuman nomi" data-ru-ph="Название района" placeholder="Название района">
+  <span class="lbl"><span class="step-num">10</span><span data-uz="Tuman" data-ru="Район" data-en="District">Район</span></span>
+  <input type="text" id="tuman" data-uz-ph="Tuman nomi" data-ru-ph="Название района" data-en-ph="District name" placeholder="Название района">
 </div>
 
 <!-- 11. Moljal -->
 <div class="card" style="animation-delay:.39s">
-  <span class="lbl"><span class="step-num">11</span><span data-uz="Mo'ljal" data-ru="Ориентир, если есть номер дома">Ориентир, если есть номер дома</span></span>
-  <input type="text" id="moljal" data-uz-ph="Mo'ljal, uy raqami bo'lsa" data-ru-ph="Ориентир, если есть номер дома" placeholder="Ориентир, если есть номер дома">
+  <span class="lbl"><span class="step-num">11</span><span data-uz="Mo'ljal" data-ru="Ориентир, если есть номер дома укажите" data-en="Landmark, specify house number if any">Ориентир, если есть номер дома укажите</span></span>
+  <input type="text" id="moljal" data-uz-ph="Mo'ljal, uy raqami bo'lsa yozing" data-ru-ph="Ориентир, если есть номер дома укажите" data-en-ph="Landmark, specify house number if any" placeholder="Ориентир, если есть номер дома укажите">
 </div>
 
 <!-- 12. Oilaviy holat -->
 <div class="card" style="animation-delay:.42s">
-  <span class="lbl"><span class="step-num">12</span><span data-uz="Oilaviy holat" data-ru="Семейный статус">Семейный статус</span></span>
+  <span class="lbl"><span class="step-num">12</span><span data-uz="Oilaviy holat" data-ru="Семейный статус" data-en="Marital status">Семейный статус</span></span>
   <div class="bg" id="g-oila">
-    <button class="btn" data-value="Замужем" data-uz="Turmushga chiqqan" data-ru="Замужем" onclick="sel(this,'oila')">Замужем</button>
-    <button class="btn" data-value="Не в браке" data-uz="Turmushga chiqmagan" data-ru="Не в браке" onclick="sel(this,'oila')">Не в браке</button>
-    <button class="btn" data-value="Разведена" data-uz="Ajrashgan" data-ru="Разведена" onclick="sel(this,'oila')">Разведена</button>
+    <button class="btn" data-value="Замужем" data-uz="Turmushga chiqqan" data-ru="Замужем" data-en="Married" onclick="sel(this,'oila')">Замужем</button>
+    <button class="btn" data-value="Не в браке" data-uz="Turmushga chiqmagan" data-ru="Не в браке" data-en="Single" onclick="sel(this,'oila')">Не в браке</button>
+    <button class="btn" data-value="Разведена" data-uz="Ajrashgan" data-ru="Разведена" data-en="Divorced" onclick="sel(this,'oila')">Разведена</button>
   </div>
 </div>
 
 <!-- 13. Bolalar -->
 <div class="card" style="animation-delay:.45s">
-  <span class="lbl"><span class="step-num">13</span><span data-uz="Bolalar" data-ru="Дети">Дети</span></span>
+  <span class="lbl"><span class="step-num">13</span><span data-uz="Bolalar" data-ru="Дети" data-en="Children">Дети</span></span>
   <div class="bg" id="g-bolalar">
-    <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" onclick="sel(this,'bolalar')">Есть</button>
-    <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" onclick="sel(this,'bolalar')">Нету</button>
+    <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" data-en="Yes" onclick="sel(this,'bolalar')">Есть</button>
+    <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" data-en="No" onclick="sel(this,'bolalar')">Нету</button>
   </div>
 </div>
 
 <!-- 14. Tillar -->
 <div class="card" style="animation-delay:.48s">
-  <span class="lbl"><span class="step-num">14</span><span data-uz="Til bilimi" data-ru="Знания языка">Знания языка</span></span>
+  <span class="lbl"><span class="step-num">14</span><span data-uz="Til bilimi" data-ru="Знания языка" data-en="Language skills">Знания языка</span></span>
   <div class="bg" id="g-tillar">
-    <button class="btn" data-value="Русский" data-uz="Rus tili" data-ru="Русский" onclick="multiSel(this,'tillar')">Русский</button>
-    <button class="btn" data-value="Английский" data-uz="Ingliz tili" data-ru="Английский" onclick="multiSel(this,'tillar')">Английский</button>
-    <button class="btn" data-value="Арабский" data-uz="Arab tili" data-ru="Арабский" onclick="multiSel(this,'tillar')">Арабский</button>
-    <button class="btn" data-value="Турецкий" data-uz="Turk tili" data-ru="Турецкий" onclick="multiSel(this,'tillar')">Турецкий</button>
-    <button class="btn" data-value="Китайский" data-uz="Xitoy tili" data-ru="Китайский" onclick="multiSel(this,'tillar')">Китайский</button>
-    <button class="btn" data-value="Испанский" data-uz="Ispan tili" data-ru="Испанский" onclick="multiSel(this,'tillar')">Испанский</button>
-    <button class="btn" data-value="Узбекский" data-uz="O'zbek tili" data-ru="Узбекский" onclick="multiSel(this,'tillar')">Узбекский</button>
-    <button class="btn" data-value="Таджикский" data-uz="Tojik tili" data-ru="Таджикский" onclick="multiSel(this,'tillar')">Таджикский</button>
+    <button class="btn" data-value="Китайский" data-uz="Xitoy tili" data-ru="Китайский" data-en="Chinese" onclick="multiSel(this,'tillar')">Китайский</button>
+    <button class="btn" data-value="Испанский" data-uz="Ispan tili" data-ru="Испанский" data-en="Spanish" onclick="multiSel(this,'tillar')">Испанский</button>
+    <button class="btn" data-value="Английский" data-uz="Ingliz tili" data-ru="Английский" data-en="English" onclick="multiSel(this,'tillar')">Английский</button>
+    <button class="btn" data-value="Арабский" data-uz="Arab tili" data-ru="Арабский" data-en="Arabic" onclick="multiSel(this,'tillar')">Арабский</button>
+    <button class="btn" data-value="Русский" data-uz="Rus tili" data-ru="Русский" data-en="Russian" onclick="multiSel(this,'tillar')">Русский</button>
+    <button class="btn" data-value="Турецкий" data-uz="Turk tili" data-ru="Турецкий" data-en="Turkish" onclick="multiSel(this,'tillar')">Турецкий</button>
+    <button class="btn" data-value="Узбекский" data-uz="O'zbek tili" data-ru="Узбекский" data-en="Uzbek" onclick="multiSel(this,'tillar')">Узбекский</button>
+    <button class="btn" data-value="Таджикский" data-uz="Tojik tili" data-ru="Таджикский" data-en="Tajik" onclick="multiSel(this,'tillar')">Таджикский</button>
   </div>
 </div>
 
 <!-- 15. Malumot -->
 <div class="card" style="animation-delay:.51s">
-  <span class="lbl"><span class="step-num">15</span><span data-uz="Ma'lumoti" data-ru="Образования">Образования</span></span>
+  <span class="lbl"><span class="step-num">15</span><span data-uz="Ma'lumoti" data-ru="Образования" data-en="Education">Образования</span></span>
   <div class="bg" id="g-malumot">
-    <button class="btn" data-value="Среднее" data-uz="O'rta" data-ru="Среднее" onclick="sel(this,'malumot')">Среднее</button>
-    <button class="btn" data-value="Высшее" data-uz="Oliy" data-ru="Высшее" onclick="sel(this,'malumot')">Высшее</button>
+    <button class="btn" data-value="Средняя школа / Лицей" data-uz="O'rta maktab / Litsey" data-ru="Средняя школа / Лицей" data-en="High school / Lyceum" onclick="sel(this,'malumot')">Средняя школа / Лицей</button>
+    <button class="btn" data-value="Высшее (Бакалавриат)" data-uz="Oliy (Bakalavr)" data-ru="Высшее (Бакалавриат)" data-en="Bachelor's degree" onclick="sel(this,'malumot')">Высшее (Бакалавриат)</button>
+    <button class="btn" data-value="Магистратура" data-uz="Magistratura" data-ru="Магистратура" data-en="Master's degree" onclick="sel(this,'malumot')">Магистратура</button>
   </div>
 </div>
 
 <!-- 16. Grafik -->
 <div class="card" style="animation-delay:.54s">
-  <span class="lbl"><span class="step-num">16</span><span data-uz="Ish grafigi" data-ru="График">График</span></span>
+  <span class="lbl"><span class="step-num">16</span><span data-uz="Ish grafigi" data-ru="График" data-en="Work schedule">График</span></span>
   <div class="bg" id="g-grafik">
-    <button class="btn" data-value="С проживанием" data-uz="Yashab ishlash" data-ru="С проживанием" onclick="sel(this,'grafik')">С проживанием</button>
-    <button class="btn" data-value="Без проживания" data-uz="Yashab ishlamasdan" data-ru="Без проживания" onclick="sel(this,'grafik')">Без проживания</button>
+    <button class="btn" data-value="С проживанием" data-uz="Yashab ishlash" data-ru="С проживанием" data-en="Live-in" onclick="sel(this,'grafik')">С проживанием</button>
+    <button class="btn" data-value="Без проживания" data-uz="Yashab ishlamasdan" data-ru="Без проживания" data-en="Live-out" onclick="sel(this,'grafik')">Без проживания</button>
   </div>
 </div>
 
 <!-- 17. Sudimlik -->
 <div class="card" style="animation-delay:.57s">
-  <span class="lbl"><span class="step-num">17</span><span data-uz="Sudlanganlik" data-ru="Судимость">Судимость</span></span>
+  <span class="lbl"><span class="step-num">17</span><span data-uz="Sudlanganlik" data-ru="Судимость" data-en="Criminal record">Судимость</span></span>
   <div class="bg" id="g-sudimlik">
-    <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" onclick="sel(this,'sudimlik')">Есть</button>
-    <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" onclick="sel(this,'sudimlik')">Нету</button>
+    <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" data-en="Yes" onclick="sel(this,'sudimlik')">Есть</button>
+    <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" data-en="No" onclick="sel(this,'sudimlik')">Нету</button>
   </div>
 </div>
 
 <!-- 18. Haydovchilik -->
 <div class="card" style="animation-delay:.6s">
-  <span class="lbl"><span class="step-num">18</span><span data-uz="Haydovchilik guvohnomasi" data-ru="Водительские удостоверения">Водительские удостоверения</span></span>
+  <span class="lbl"><span class="step-num">18</span><span data-uz="Haydovchilik guvohnomasi" data-ru="Водительские удостоверения" data-en="Driver's license">Водительские удостоверения</span></span>
   <div class="bg" id="g-haydovchilik">
-    <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" onclick="sel(this,'haydovchilik')">Есть</button>
-    <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" onclick="sel(this,'haydovchilik')">Нету</button>
-    <button class="btn" data-value="Пока учусь, скоро будет" data-uz="Hozir o'qiyapman, tez orada bo'ladi" data-ru="Пока учусь, скоро будет" onclick="sel(this,'haydovchilik')">Пока учусь, скоро будет</button>
+    <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" data-en="Yes" onclick="sel(this,'haydovchilik')">Есть</button>
+    <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" data-en="No" onclick="sel(this,'haydovchilik')">Нету</button>
+    <button class="btn" data-value="Пока учусь, скоро будет" data-uz="Hozir o'qiyapman, tez orada bo'ladi" data-ru="Пока учусь, скоро будет" data-en="Currently learning, coming soon" onclick="sel(this,'haydovchilik')">Пока учусь, скоро будет</button>
   </div>
 </div>
 
 <!-- 19. Telefon -->
 <div class="card" style="animation-delay:.63s">
-  <span class="lbl"><span class="step-num">19</span><span data-uz="Telefon" data-ru="Телефон">Телефон</span></span>
+  <span class="lbl"><span class="step-num">19</span><span data-uz="Telefon" data-ru="Телефон" data-en="Phone">Телефон</span></span>
   <div id="tel-wrap" style="display:flex;align-items:center;border:2px solid #e8e8ef;border-radius:12px;background:#fafaff;transition:all .2s;cursor:text" onclick="document.getElementById('telefon').focus()">
     <span style="padding:12px 4px 12px 16px;font-size:14px;color:#1a1a2e;white-space:nowrap">+998</span>
     <input type="tel" id="telefon" placeholder="901234567" maxlength="9" style="border:none;background:transparent;box-shadow:none;padding:12px 16px 12px 4px;outline:none" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onfocus="document.getElementById('tel-wrap').style.borderColor='#667eea';document.getElementById('tel-wrap').style.background='#fff';document.getElementById('tel-wrap').style.boxShadow='0 0 0 4px rgba(102,126,234,.12)'" onblur="document.getElementById('tel-wrap').style.borderColor='#e8e8ef';document.getElementById('tel-wrap').style.background='#fafaff';document.getElementById('tel-wrap').style.boxShadow='none'">
   </div>
 </div>
 
-<!-- 20. Rasm -->
-<div class="card" style="animation-delay:.66s">
-  <span class="lbl"><span class="step-num">20</span><span data-uz="Rasm yuklash" data-ru="Загрузить фото">Загрузить фото</span></span>
-  <p style="font-size:13px;color:#64748b;margin-bottom:10px;font-weight:600" data-uz="Namuna — rasmingiz shunday bo'lishi kerak:" data-ru="Образец — ваше фото должно быть таким:">Образец — ваше фото должно быть таким:</p>
+<!-- 20. Telegram -->
+<div class="card" style="animation-delay:.66s" id="tg-card" style="display:none">
+  <span class="lbl"><span class="step-num">20</span><span data-uz="Telegram" data-ru="Telegram" data-en="Telegram">Telegram</span></span>
+  <div id="tg-auto" style="display:none;margin-bottom:10px">
+    <div style="display:flex;align-items:center;padding:12px 16px;border:2px solid #e8e8ef;border-radius:12px;background:#f0f0ff">
+      <span style="color:#667eea;font-weight:600;font-size:14px" id="tg-auto-val"></span>
+    </div>
+  </div>
+  <input type="text" id="tg-extra" data-uz-ph="Telegram username (ixtiyoriy)" data-ru-ph="Telegram username (необязательно)" data-en-ph="Telegram username (optional)" placeholder="Telegram username (необязательно)">
+</div>
+
+<!-- 21. Rasm -->
+<div class="card" style="animation-delay:.69s">
+  <span class="lbl"><span class="step-num">21</span><span data-uz="Rasm yuklash" data-ru="Загрузить фото" data-en="Upload photo">Загрузить фото</span></span>
+  <p style="font-size:13px;color:#64748b;margin-bottom:10px;font-weight:600" data-uz="Namuna — rasmingiz shunday bo'lishi kerak:" data-ru="Образец — ваше фото должно быть таким:" data-en="Example — your photo should look like this:">Образец — ваше фото должно быть таким:</p>
   <div class="photo-samples">
     <img src="https://moneapp.monebakeryuz.uz/static/1_resized.jpg" class="sample-img" style="width:140px;height:190px;object-fit:cover;border:3px solid #e8e8ef;border-radius:14px" onclick="showImg(this.src)">
     <img src="https://moneapp.monebakeryuz.uz/static/2_resized.jpg" class="sample-img" style="width:140px;height:190px;object-fit:cover;border:3px solid #e8e8ef;border-radius:14px" onclick="showImg(this.src)">
   </div>
-  <p style="font-size:12px;color:#ef4444;margin-bottom:10px;font-weight:600;text-align:center" data-uz="Rasm yuklanmasa anketa qabul qilinmaydi!" data-ru="Без фото анкета не будет принята!">Без фото анкета не будет принята!</p>
+  <p style="font-size:12px;color:#ef4444;margin-bottom:10px;font-weight:600;text-align:center" data-uz="Rasm yuklanmasa anketa qabul qilinmaydi!" data-ru="Без фото анкета не будет принята!" data-en="Application will not be accepted without a photo!">Без фото анкета не будет принята!</p>
   <div class="photo-box" onclick="document.getElementById('photo-inp').click()" id="photo-box">
     <div id="photo-content" style="text-align:center">
       <div style="font-size:32px;color:#c0c0d0">+</div>
-      <p style="font-size:11px;color:#94a3b8;margin-top:4px" data-uz="Rasm yuklang" data-ru="Загрузить">Загрузить</p>
+      <p style="font-size:11px;color:#94a3b8;margin-top:4px" data-uz="Rasm yuklang" data-ru="Загрузить" data-en="Upload">Загрузить</p>
     </div>
   </div>
   <input type="file" id="photo-inp" accept="image/*" style="display:none" onchange="prevPhoto(this)">
 </div>
 
-<button class="save-btn" id="save-btn" onclick="submitForm()" data-uz="Saqlash va yuborish" data-ru="Сохранить и отправить">Сохранить и отправить</button>
-<div class="msg ok" id="msg-ok" data-uz="Anketa muvaffaqiyatli yuborildi!" data-ru="Анкета успешно отправлена!">Анкета успешно отправлена!</div>
+<button class="save-btn" id="save-btn" onclick="submitForm()" data-uz="Saqlash va yuborish" data-ru="Сохранить и отправить" data-en="Save and submit">Сохранить и отправить</button>
+<div class="msg ok" id="msg-ok" data-uz="Anketa muvaffaqiyatli yuborildi!" data-ru="Анкета успешно отправлена!" data-en="Application submitted successfully!">Анкета успешно отправлена!</div>
 <div class="msg err" id="msg-err">Xatolik yuz berdi.</div>
 </div>
 
@@ -371,6 +385,12 @@ let urlTgUsername='';
         updateProgress();
       },100);
     }
+    if(urlTgUsername){
+      setTimeout(()=>{
+        document.getElementById('tg-auto').style.display='block';
+        document.getElementById('tg-auto-val').textContent='@'+urlTgUsername;
+      },100);
+    }
   }
 })();
 
@@ -391,6 +411,7 @@ function switchLang(lang){
 // Date picker
 const months=['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
 const monthsRu=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const monthsEn=['January','February','March','April','May','June','July','August','September','October','November','December'];
 let pickDay=15,pickMonth=5,pickYear=1990;
 
 function buildPickerCol(col,items,selected,onScroll){
@@ -432,7 +453,7 @@ function openDatePicker(){
   const monthCol=document.getElementById('pick-month');
   const yearCol=document.getElementById('pick-year');
   const days=Array.from({length:31},(_,i)=>String(i+1).padStart(2,'0'));
-  const mList=curLang==='ru'?monthsRu:months;
+  const mList=curLang==='ru'?monthsRu:curLang==='en'?monthsEn:months;
   const years=[];for(let y=1960;y<=2010;y++)years.push(String(y));
   buildPickerCol(dayCol,days,pickDay-1);
   buildPickerCol(monthCol,mList,pickMonth);
@@ -455,7 +476,7 @@ function confirmDate(){
   const m=getSelectedIdx(monthCol);
   const y=getSelectedIdx(yearCol)+1960;
   pickDay=d;pickMonth=m;pickYear=y;
-  const mList=curLang==='ru'?monthsRu:months;
+  const mList=curLang==='ru'?monthsRu:curLang==='en'?monthsEn:months;
   const dateStr=String(d).padStart(2,'0')+'.'+String(m+1).padStart(2,'0')+'.'+y;
   const displayStr=d+' '+mList[m]+' '+y;
   document.getElementById('tugilgan').value=dateStr;
@@ -537,7 +558,7 @@ function prevPhoto(input){
     URL.revokeObjectURL(url);
   };
   img.onerror=function(){
-    document.getElementById('msg-err').textContent=curLang==='uz'?'Rasm formatini o\'qib bo\'lmadi. JPG yoki PNG yuklang.':'Не удалось прочитать формат изображения. Загрузите JPG или PNG.';
+    document.getElementById('msg-err').textContent=curLang==='uz'?'Rasm formatini o\'qib bo\'lmadi. JPG yoki PNG yuklang.':curLang==='en'?'Could not read image format. Please upload JPG or PNG.':'Не удалось прочитать формат изображения. Загрузите JPG или PNG.';
     document.getElementById('msg-err').style.display='block';
     URL.revokeObjectURL(url);
   };
@@ -546,49 +567,50 @@ function prevPhoto(input){
 
 async function submitForm(){
   const required=[
-    {id:'familiya',uz:'Familiya',ru:'Фамилия'},
-    {id:'ism',uz:'Ism',ru:'Имя'},
-    {id:'sharif',uz:'Sharif',ru:'Отчество'},
-    {id:'tugilgan',uz:'Tug\'ilgan sana',ru:'Дата рождения'},
-    {id:'oblast',uz:'Viloyat',ru:'Область'},
-    {id:'shahar',uz:'Shahar',ru:'Город'},
-    {id:'tuman',uz:'Tuman',ru:'Район'},
-    {id:'moljal',uz:'Mo\'ljal',ru:'Ориентир'},
-    {id:'telefon',uz:'Telefon',ru:'Телефон'}
+    {id:'familiya',uz:'Familiya',ru:'Фамилия',en:'Last name'},
+    {id:'ism',uz:'Ism',ru:'Имя',en:'First name'},
+    {id:'sharif',uz:'Sharif',ru:'Отчество',en:'Middle name'},
+    {id:'tugilgan',uz:'Tug\'ilgan sana',ru:'Дата рождения',en:'Date of birth'},
+    {id:'oblast',uz:'Viloyat',ru:'Область',en:'Region'},
+    {id:'shahar',uz:'Shahar',ru:'Город',en:'City'},
+    {id:'tuman',uz:'Tuman',ru:'Район',en:'District'},
+    {id:'moljal',uz:'Mo\'ljal',ru:'Ориентир',en:'Landmark'},
+    {id:'telefon',uz:'Telefon',ru:'Телефон',en:'Phone'}
   ];
   const stateRequired=[
-    {key:'vakansiya',uz:'Vakansiya',ru:'Вакансия'},
-    {key:'oila',uz:'Oilaviy holat',ru:'Семейный статус'},
-    {key:'bolalar',uz:'Bolalar',ru:'Дети'},
-    {key:'malumot',uz:'Ma\'lumot',ru:'Образования'},
-    {key:'grafik',uz:'Grafik',ru:'График'},
-    {key:'sudimlik',uz:'Sudimlik',ru:'Судимость'},
-    {key:'haydovchilik',uz:'Haydovchilik guvohnomasi',ru:'Водительские удостоверения'}
+    {key:'vakansiya',uz:'Vakansiya',ru:'Вакансия',en:'Position'},
+    {key:'oila',uz:'Oilaviy holat',ru:'Семейный статус',en:'Marital status'},
+    {key:'bolalar',uz:'Bolalar',ru:'Дети',en:'Children'},
+    {key:'malumot',uz:'Ma\'lumot',ru:'Образования',en:'Education'},
+    {key:'grafik',uz:'Grafik',ru:'График',en:'Schedule'},
+    {key:'sudimlik',uz:'Sudimlik',ru:'Судимость',en:'Criminal record'},
+    {key:'haydovchilik',uz:'Haydovchilik guvohnomasi',ru:'Водительские удостоверения',en:'Driver\'s license'}
   ];
   const missing=[];
+  const t=f=>f[curLang]||f.ru;
   for(const f of required){
-    if(!document.getElementById(f.id).value.trim()) missing.push(curLang==='uz'?f.uz:f.ru);
+    if(!document.getElementById(f.id).value.trim()) missing.push(t(f));
   }
   for(const s of stateRequired){
     const v=state[s.key];
-    if(!v||(Array.isArray(v)&&v.length===0)) missing.push(curLang==='uz'?s.uz:s.ru);
+    if(!v||(Array.isArray(v)&&v.length===0)) missing.push(t(s));
   }
-  if(state.tillar.length===0) missing.push(curLang==='uz'?'Til bilimi':'Знания языка');
-  if(!photoBase64) missing.push(curLang==='uz'?'Rasm':'Фото');
+  if(state.tillar.length===0) missing.push(curLang==='uz'?'Til bilimi':curLang==='en'?'Language skills':'Знания языка');
+  if(!photoBase64) missing.push(curLang==='uz'?'Rasm':curLang==='en'?'Photo':'Фото');
   if(missing.length>0){
-    document.getElementById('msg-err').textContent=(curLang==='uz'?'Iltimos, to\'ldiring: ':'Пожалуйста, заполните: ')+missing.join(', ');
+    document.getElementById('msg-err').textContent=(curLang==='uz'?'Iltimos, to\'ldiring: ':curLang==='en'?'Please fill in: ':'Пожалуйста, заполните: ')+missing.join(', ');
     document.getElementById('msg-err').style.display='block';
     return;
   }
   const telVal=document.getElementById('telefon').value.replace(/[^0-9]/g,'');
   if(telVal.length!==9){
-    document.getElementById('msg-err').textContent=curLang==='uz'?'Telefon raqam 9 ta raqamdan iborat bo\'lishi kerak':'Номер телефона должен содержать 9 цифр';
+    document.getElementById('msg-err').textContent=curLang==='uz'?'Telefon raqam 9 ta raqamdan iborat bo\'lishi kerak':curLang==='en'?'Phone number must contain 9 digits':'Номер телефона должен содержать 9 цифр';
     document.getElementById('msg-err').style.display='block';
     return;
   }
   const btn=document.getElementById('save-btn');
   btn.disabled=true;
-  btn.textContent=curLang==='uz'?'Yuborilmoqda...':'Отправляется...';
+  btn.textContent=curLang==='uz'?'Yuborilmoqda...':curLang==='en'?'Submitting...':'Отправляется...';
   document.getElementById('msg-ok').style.display='none';
   document.getElementById('msg-err').style.display='none';
 
@@ -610,8 +632,9 @@ async function submitForm(){
     haydovchilik:state.haydovchilik,
     telefon:'+998'+document.getElementById('telefon').value,
     rasm:photoBase64,
+    lang:curLang,
     tg_user_id:urlTgUserID,
-    tg_username:urlTgUsername
+    tg_username:document.getElementById('tg-extra').value.trim().replace('@','')||urlTgUsername
   };
 
   try{
@@ -622,17 +645,17 @@ async function submitForm(){
     });
     if(res.ok){
       document.getElementById('msg-ok').style.display='block';
-      btn.textContent=curLang==='uz'?'Yuborildi!':'Отправлено!';
+      btn.textContent=curLang==='uz'?'Yuborildi!':curLang==='en'?'Submitted!':'Отправлено!';
       document.getElementById('progress').style.width='100%';
     }else{
       const errText=await res.text();
       throw new Error(errText);
     }
   }catch(e){
-    document.getElementById('msg-err').textContent=(curLang==='uz'?'Xatolik: ':'Ошибка: ')+e.message;
+    document.getElementById('msg-err').textContent=(curLang==='uz'?'Xatolik: ':curLang==='en'?'Error: ':'Ошибка: ')+e.message;
     document.getElementById('msg-err').style.display='block';
     btn.disabled=false;
-    btn.textContent=curLang==='uz'?'Saqlash va yuborish':'Сохранить и отправить';
+    btn.textContent=curLang==='uz'?'Saqlash va yuborish':curLang==='en'?'Save and submit':'Сохранить и отправить';
   }
 }
 </script>

@@ -138,9 +138,10 @@ func initDB() {
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN status_by INTEGER NOT NULL DEFAULT 0")
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN status_by_name TEXT NOT NULL DEFAULT ''")
 
-	// Migration: ishchi_anketalar jadvaliga boy_sm va vazn_kg qo'shish
+	// Migration: ishchi_anketalar jadvaliga boy_sm, vazn_kg, lang qo'shish
 	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN boy_sm INTEGER NOT NULL DEFAULT 0")
 	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN vazn_kg INTEGER NOT NULL DEFAULT 0")
+	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN lang TEXT NOT NULL DEFAULT ''")
 
 	// ishchi_categories jadvalini yaratish
 	db.Exec(`CREATE TABLE IF NOT EXISTS ishchi_categories (
@@ -804,7 +805,7 @@ func getIshchiAnketalar(vakansiya, status, search string, page, limit int) ([]Is
 
 	offset := (page - 1) * limit
 	query := fmt.Sprintf(
-		`SELECT id, vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, oilaviy_holat, bolalar,
+		`SELECT id, vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
 		 rasm_url, tg_user_id, tg_username, status, created_at
 		 FROM ishchi_anketalar WHERE %s ORDER BY id DESC LIMIT ? OFFSET ?`, where)
@@ -820,7 +821,7 @@ func getIshchiAnketalar(vakansiya, status, search string, page, limit int) ([]Is
 	for rows.Next() {
 		var r IshchiRow
 		err := rows.Scan(
-			&r.ID, &r.Vakansiya, &r.FIO, &r.TugilganSana, &r.BoySm, &r.VaznKg, &r.Manzil,
+			&r.ID, &r.Vakansiya, &r.FIO, &r.TugilganSana, &r.BoySm, &r.VaznKg, &r.Manzil, &r.Lang,
 			&r.OilaviyHolat, &r.Bolalar, &r.Tillar, &r.Malumot,
 			&r.Grafik, &r.Sudimlik, &r.Haydovchilik, &r.Telefon,
 			&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.Status, &r.CreatedAt,
@@ -836,11 +837,11 @@ func getIshchiAnketalar(vakansiya, status, search string, page, limit int) ([]Is
 func getIshchiAnketaByID(id int64) (*IshchiRow, error) {
 	var r IshchiRow
 	err := db.QueryRow(
-		`SELECT id, vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, oilaviy_holat, bolalar,
+		`SELECT id, vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
 		 rasm_url, tg_user_id, tg_username, status, created_at
 		 FROM ishchi_anketalar WHERE id = ?`, id).Scan(
-		&r.ID, &r.Vakansiya, &r.FIO, &r.TugilganSana, &r.BoySm, &r.VaznKg, &r.Manzil,
+		&r.ID, &r.Vakansiya, &r.FIO, &r.TugilganSana, &r.BoySm, &r.VaznKg, &r.Manzil, &r.Lang,
 		&r.OilaviyHolat, &r.Bolalar, &r.Tillar, &r.Malumot,
 		&r.Grafik, &r.Sudimlik, &r.Haydovchilik, &r.Telefon,
 		&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.Status, &r.CreatedAt,
@@ -858,11 +859,11 @@ func deleteIshchiAnketa(id int64) error {
 
 func saveIshchiAnketa(a *IshchiAnketa, rasmURL string) (int64, error) {
 	result, err := db.Exec(`INSERT INTO ishchi_anketalar
-		(vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, oilaviy_holat, bolalar,
+		(vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
 		 rasm_url, tg_user_id, tg_username)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		a.Vakansiya, a.FIO, a.TugilganSana, a.BoySm, a.VaznKg, a.Manzil,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		a.Vakansiya, a.FIO, a.TugilganSana, a.BoySm, a.VaznKg, a.Manzil, a.Lang,
 		a.OilaviyHolat, a.Bolalar, a.Tillar, a.Malumot,
 		a.Grafik, a.Sudimlik, a.Haydovchilik, a.Telefon,
 		rasmURL, a.TgUserID, a.TgUsername,
