@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -95,6 +96,8 @@ type RezumeRow struct {
 	TgUserID        int64      `json:"tg_user_id"`
 	TgUsername      string     `json:"tg_username"`
 	Status          string         `json:"status"`
+	StatusBy        int64          `json:"status_by"`
+	StatusByName    string         `json:"status_by_name"`
 	CreatedAt       string         `json:"created_at"`
 	Interviews      []InterviewRow `json:"interviews"`
 }
@@ -133,6 +136,47 @@ type UserResponse struct {
 	Branch     *Branch    `json:"branch"`
 }
 
+// --- Ishchi anketa types ---
+
+type IshchiAnketa struct {
+	Vakansiya    string `json:"vakansiya"`
+	FIO          string `json:"fio"`
+	TugilganSana string `json:"tugilgan_sana"`
+	Manzil       string `json:"manzil"`
+	OilaviyHolat string `json:"oilaviy_holat"`
+	Bolalar      string `json:"bolalar"`
+	Tillar       string `json:"tillar"`
+	Malumot      string `json:"malumot"`
+	Grafik       string `json:"grafik"`
+	Sudimlik     string `json:"sudimlik"`
+	Haydovchilik string `json:"haydovchilik"`
+	Telefon      string `json:"telefon"`
+	Rasm         string `json:"rasm"`
+	TgUserID     int64  `json:"tg_user_id"`
+	TgUsername   string `json:"tg_username"`
+}
+
+type IshchiRow struct {
+	ID           int64  `json:"id"`
+	Vakansiya    string `json:"vakansiya"`
+	FIO          string `json:"fio"`
+	TugilganSana string `json:"tugilgan_sana"`
+	Manzil       string `json:"manzil"`
+	OilaviyHolat string `json:"oilaviy_holat"`
+	Bolalar      string `json:"bolalar"`
+	Tillar       string `json:"tillar"`
+	Malumot      string `json:"malumot"`
+	Grafik       string `json:"grafik"`
+	Sudimlik     string `json:"sudimlik"`
+	Haydovchilik string `json:"haydovchilik"`
+	Telefon      string `json:"telefon"`
+	RasmUrl      string `json:"rasm_url"`
+	TgUserID     int64  `json:"tg_user_id"`
+	TgUsername   string `json:"tg_username"`
+	Status       string `json:"status"`
+	CreatedAt    string `json:"created_at"`
+}
+
 type InterviewRow struct {
 	ID            int64   `json:"id"`
 	RezumeID      int64   `json:"rezume_id"`
@@ -166,6 +210,9 @@ var (
 
 var htmlPage string
 var adminPage string
+var demoPage string
+var privacyPage string
+var ishchiPage string
 
 func main() {
 	data, err := os.ReadFile("index.html")
@@ -180,15 +227,35 @@ func main() {
 	}
 	adminPage = string(adminData)
 
+	demoData, err := os.ReadFile("demo.html")
+	if err != nil {
+		log.Fatal("demo.html faylni o'qishda xato: ", err)
+	}
+	demoPage = string(demoData)
+
+	privacyData, err := os.ReadFile("privacy.html")
+	if err != nil {
+		log.Fatal("privacy.html faylni o'qishda xato: ", err)
+	}
+	privacyPage = string(privacyData)
+
+	ishchiData, err := os.ReadFile("ishchi.html")
+	if err != nil {
+		log.Fatal("ishchi.html faylni o'qishda xato: ", err)
+	}
+	ishchiPage = string(ishchiData)
+
 	os.MkdirAll("uploads", 0755)
 	initDB()
 
 	go startBotPolling()
+	go startIshchiBotPolling()
 
 	mux := http.NewServeMux()
 
 	// Public — rezume yuborish
 	mux.HandleFunc("POST /rezume", handleRezume)
+	mux.HandleFunc("POST /ishchi-rezume", handleIshchiRezume)
 	mux.HandleFunc("POST /api/report-error", handleReportError)
 	mux.HandleFunc("GET /api/public/categories", handlePublicCategories)
 
@@ -202,6 +269,11 @@ func main() {
 	mux.HandleFunc("GET /api/rezumeler/{id}", authRequired(handleGetRezume))
 	mux.HandleFunc("DELETE /api/rezumeler/{id}", authRequired(handleDeleteRezume))
 	mux.HandleFunc("PATCH /api/rezumeler/{id}/status", authRequired(handleUpdateStatus))
+
+	// Ishchi Anketa API (auth kerak)
+	mux.HandleFunc("GET /api/ishchi-anketalar", authRequired(handleGetIshchiAnketalar))
+	mux.HandleFunc("GET /api/ishchi-anketalar/{id}", authRequired(handleGetIshchiAnketa))
+	mux.HandleFunc("DELETE /api/ishchi-anketalar/{id}", authRequired(handleDeleteIshchiAnketa))
 
 	// Interview API
 	mux.HandleFunc("POST /api/interviews", authRequired(handleCreateInterview))
@@ -237,7 +309,10 @@ func main() {
 	mux.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 
 	// Frontend
+	mux.HandleFunc("GET /privacy", handlePrivacy)
+	mux.HandleFunc("GET /demo", handleDemo)
 	mux.HandleFunc("GET /admin", handleAdmin)
+	mux.HandleFunc("/ishchi/", handleIshchi)
 	mux.HandleFunc("/", handleRoot)
 
 	handler := corsMiddleware(mux)
@@ -249,12 +324,31 @@ func main() {
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if strings.HasPrefix(r.URL.Path, "/ishchi/") || r.URL.Path == "/ishchi" {
+		fmt.Fprint(w, ishchiPage)
+		return
+	}
 	fmt.Fprint(w, htmlPage)
 }
 
 func handleAdmin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, adminPage)
+}
+
+func handlePrivacy(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, privacyPage)
+}
+
+func handleDemo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, demoPage)
+}
+
+func handleIshchi(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, ishchiPage)
 }
 
 func corsMiddleware(next http.Handler) http.Handler {

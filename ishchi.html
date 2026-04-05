@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ishchi kerak - Anketa</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh}
+
+.header{background:rgba(255,255,255,.15);backdrop-filter:blur(20px);padding:16px 20px;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.2)}
+.header-inner{max-width:640px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.logo{color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.5px}
+.logo span{opacity:.7;font-weight:400;font-size:14px;margin-left:8px}
+.lang-sw{display:flex;gap:4px;background:rgba(255,255,255,.15);border-radius:10px;padding:3px}
+.lang-sw button{padding:6px 16px;border:none;border-radius:8px;background:transparent;color:rgba(255,255,255,.8);font-size:13px;cursor:pointer;font-weight:600;transition:all .2s;font-family:inherit}
+.lang-sw button.active{background:#fff;color:#764ba2;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+
+.wrap{max-width:640px;margin:0 auto;padding:24px 16px 40px}
+
+.progress-bar{background:rgba(255,255,255,.2);border-radius:20px;height:6px;margin-bottom:24px;overflow:hidden}
+.progress-fill{height:100%;background:#fff;border-radius:20px;transition:width .4s ease;width:0%}
+
+.card{background:#fff;border-radius:16px;padding:20px 24px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);transition:transform .2s;animation:fadeUp .4s ease both}
+.card:hover{transform:translateY(-1px)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:50%;font-size:12px;font-weight:700;margin-right:10px;flex-shrink:0}
+.lbl{font-size:15px;color:#1a1a2e;margin-bottom:14px;display:flex;align-items:center;font-weight:600}
+.bg{display:flex;flex-wrap:wrap;gap:8px}
+
+.btn{
+  padding:10px 18px;
+  border:2px solid #e8e8ef;
+  border-radius:12px;
+  background:#fafaff;
+  color:#4a4a6a;
+  font-size:13px;
+  cursor:pointer;
+  transition:all .2s;
+  font-weight:500;
+  font-family:inherit;
+}
+.btn:hover{border-color:#667eea;background:#f0f0ff;color:#667eea}
+.btn.on{
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  border-color:transparent;
+  color:#fff;
+  font-weight:600;
+  box-shadow:0 4px 12px rgba(102,126,234,.4);
+  transform:scale(1.02);
+}
+
+input[type=text],input[type=tel],textarea{
+  width:100%;
+  padding:12px 16px;
+  border:2px solid #e8e8ef;
+  border-radius:12px;
+  font-size:14px;
+  background:#fafaff;
+  color:#1a1a2e;
+  outline:none;
+  font-family:inherit;
+  transition:all .2s;
+}
+input:focus,textarea:focus{border-color:#667eea;background:#fff;box-shadow:0 0 0 4px rgba(102,126,234,.12)}
+textarea{resize:vertical}
+
+.photo-box{border:2px dashed #d0d0e0;border-radius:16px;padding:2rem;text-align:center;cursor:pointer;background:#fafaff;transition:all .2s}
+.photo-box:hover{border-color:#667eea;background:#f0f0ff}
+
+.save-btn{width:100%;padding:16px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px;transition:all .2s;font-family:inherit;box-shadow:0 4px 16px rgba(34,197,94,.4)}
+.save-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(34,197,94,.5)}
+.save-btn:active{transform:translateY(0)}
+.save-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+
+.msg{border-radius:14px;padding:16px 20px;font-size:14px;margin-top:12px;display:none;font-weight:600;animation:fadeUp .3s ease}
+.msg.ok{background:#dcfce7;color:#166534;border:2px solid #86efac}
+.msg.err{background:#fee2e2;color:#991b1b;border:2px solid #fca5a5}
+
+.date-display{display:flex;align-items:center;gap:10px;padding:12px 16px;border:2px solid #e8e8ef;border-radius:12px;background:#fafaff;cursor:pointer;transition:all .2s;font-size:14px;color:#1a1a2e;font-weight:500}
+.date-display:hover{border-color:#667eea}
+.date-display .placeholder{color:#94a3b8;font-weight:400}
+
+.picker-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:10000;justify-content:center;align-items:flex-end;backdrop-filter:blur(4px)}
+.picker-overlay.show{display:flex}
+
+.picker-sheet{background:#f2f2f7;border-radius:20px 20px 0 0;width:100%;max-width:640px;padding:0;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+.picker-header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #d1d1d6}
+.picker-header button{background:none;border:none;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;padding:4px 8px}
+.picker-cancel{color:#8e8e93}
+.picker-done{color:#007aff}
+
+.picker-body{display:flex;height:220px;overflow:hidden;position:relative;background:#fff;border-radius:0 0 20px 20px}
+.picker-body::before{content:'';position:absolute;top:0;left:0;right:0;height:88px;background:linear-gradient(to bottom,rgba(255,255,255,.95),rgba(255,255,255,.6));z-index:2;pointer-events:none}
+.picker-body::after{content:'';position:absolute;bottom:0;left:0;right:0;height:88px;background:linear-gradient(to top,rgba(255,255,255,.95),rgba(255,255,255,.6));z-index:2;pointer-events:none}
+.picker-highlight{position:absolute;top:50%;left:0;right:0;height:44px;transform:translateY(-50%);background:rgba(120,120,128,.12);border-top:0.5px solid rgba(60,60,67,.15);border-bottom:0.5px solid rgba(60,60,67,.15);z-index:1;pointer-events:none}
+
+.picker-col{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;scroll-snap-type:y mandatory;position:relative;z-index:3}
+.picker-col::-webkit-scrollbar{display:none}
+.picker-col{-ms-overflow-style:none;scrollbar-width:none}
+.picker-item{height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#1c1c1e;scroll-snap-align:center;font-weight:400;opacity:.3;transition:opacity .15s}
+.picker-item.active{opacity:1;font-weight:600}
+.picker-spacer{height:88px}
+
+.picker-col-sep{width:1px;background:rgba(60,60,67,.08);align-self:stretch;margin:44px 0}
+
+.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);z-index:9999;justify-content:center;align-items:center;cursor:pointer;backdrop-filter:blur(10px);animation:fadeIn .2s ease}
+.overlay.show{display:flex}
+.overlay img{max-width:92%;max-height:92%;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+@media(max-width:480px){
+  .card{padding:16px 18px}
+  .btn{padding:9px 14px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="img-overlay" onclick="this.classList.remove('show')">
+  <img id="overlay-img" src="">
+</div>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">Ishchi kerak <span data-uz="Anketa" data-ru="Анкета">Анкета</span></div>
+    <div class="lang-sw">
+      <button onclick="switchLang('uz')">UZ</button>
+      <button class="active" onclick="switchLang('ru')">RU</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<!-- 1. Vakansiya -->
+<div class="card" style="animation-delay:.05s">
+  <span class="lbl"><span class="step-num">1</span><span data-uz="Vakansiya" data-ru="Вакансия">Вакансия</span></span>
+  <div class="bg" id="g-vakansiya">
+    <button class="btn" data-value="Няня" data-uz="Enaga" data-ru="Няня" onclick="sel(this,'vakansiya')">Няня</button>
+    <button class="btn" data-value="Домработница" data-uz="Uy xodiması" data-ru="Домработница" onclick="sel(this,'vakansiya')">Домработница</button>
+    <button class="btn" data-value="Педагог английского языка" data-uz="Ingliz tili o'qituvchisi" data-ru="Педагог английского языка" onclick="sel(this,'vakansiya')">Педагог английского языка</button>
+    <button class="btn" data-value="Педагог арабского языка" data-uz="Arab tili o'qituvchisi" data-ru="Педагог арабского языка" onclick="sel(this,'vakansiya')">Педагог арабского языка</button>
+  </div>
+</div>
+
+<!-- 2. FIO -->
+<div class="card" style="animation-delay:.1s">
+  <span class="lbl"><span class="step-num">2</span><span data-uz="Familiya Ism Sharif" data-ru="Фамилия Имя Отчество">Фамилия Имя Отчество</span></span>
+  <input type="text" id="fio" data-uz-ph="Familiya Ism Sharif" data-ru-ph="Фамилия Имя Отчество" placeholder="Фамилия Имя Отчество">
+</div>
+
+<!-- 3. Tugilgan sana -->
+<div class="card" style="animation-delay:.15s">
+  <span class="lbl"><span class="step-num">3</span><span data-uz="Tug'ilgan sana" data-ru="Дата рождения">Дата рождения</span></span>
+  <div class="date-display" id="date-display" onclick="openDatePicker()">
+    <span id="date-text" class="placeholder" data-uz="Sanani tanlang" data-ru="Выберите дату">Выберите дату</span>
+  </div>
+  <input type="hidden" id="tugilgan">
+</div>
+
+<div class="picker-overlay" id="picker-overlay" onclick="if(event.target===this)closeDatePicker()">
+  <div class="picker-sheet">
+    <div class="picker-header">
+      <button class="picker-cancel" onclick="closeDatePicker()" data-uz="Bekor" data-ru="Отмена">Отмена</button>
+      <span style="font-weight:600;font-size:16px;color:#1c1c1e" data-uz="Tug'ilgan sana" data-ru="Дата рождения">Дата рождения</span>
+      <button class="picker-done" onclick="confirmDate()" data-uz="Tayyor" data-ru="Готово">Готово</button>
+    </div>
+    <div class="picker-body">
+      <div class="picker-col" id="pick-day"></div>
+      <div class="picker-col-sep"></div>
+      <div class="picker-col" id="pick-month"></div>
+      <div class="picker-col-sep"></div>
+      <div class="picker-col" id="pick-year"></div>
+      <div class="picker-highlight"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Manzil -->
+<div class="card" style="animation-delay:.2s">
+  <span class="lbl"><span class="step-num">4</span><span data-uz="Manzil" data-ru="Адрес">Адрес</span></span>
+  <input type="text" id="manzil" data-uz-ph="Shahar, ko'cha, uy raqami" data-ru-ph="Город, улица, дом" placeholder="Город, улица, дом">
+</div>
+
+<!-- 5. Oilaviy holat -->
+<div class="card" style="animation-delay:.25s">
+  <span class="lbl"><span class="step-num">5</span><span data-uz="Oilaviy holat" data-ru="Семейный статус">Семейный статус</span></span>
+  <div class="bg" id="g-oila">
+    <button class="btn" data-value="Замужем" data-uz="Turmushga chiqqan" data-ru="Замужем" onclick="sel(this,'oila')">Замужем</button>
+    <button class="btn" data-value="Не в браке" data-uz="Turmushga chiqmagan" data-ru="Не в браке" onclick="sel(this,'oila')">Не в браке</button>
+    <button class="btn" data-value="Разведена" data-uz="Ajrashgan" data-ru="Разведена" onclick="sel(this,'oila')">Разведена</button>
+  </div>
+</div>
+
+<!-- 6. Bolalar -->
+<div class="card" style="animation-delay:.3s">
+  <span class="lbl"><span class="step-num">6</span><span data-uz="Bolalar" data-ru="Дети">Дети</span></span>
+  <div class="bg" id="g-bolalar">
+    <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" onclick="sel(this,'bolalar')">Есть</button>
+    <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" onclick="sel(this,'bolalar')">Нету</button>
+  </div>
+</div>
+
+<!-- 7. Tillar -->
+<div class="card" style="animation-delay:.35s">
+  <span class="lbl"><span class="step-num">7</span><span data-uz="Til bilimi" data-ru="Знания языка">Знания языка</span></span>
+  <input type="text" id="tillar" data-uz-ph="Masalan: rus, o'zbek, ingliz" data-ru-ph="Например: русский, узбекский, английский" placeholder="Например: русский, узбекский, английский">
+</div>
+
+<!-- 8. Malumot -->
+<div class="card" style="animation-delay:.4s">
+  <span class="lbl"><span class="step-num">8</span><span data-uz="Ma'lumoti" data-ru="Образования">Образования</span></span>
+  <div class="bg" id="g-malumot">
+    <button class="btn" data-value="Среднее" data-uz="O'rta" data-ru="Среднее" onclick="sel(this,'malumot')">Среднее</button>
+    <button class="btn" data-value="Высшее" data-uz="Oliy" data-ru="Высшее" onclick="sel(this,'malumot')">Высшее</button>
+  </div>
+</div>
+
+<!-- 9. Grafik -->
+<div class="card" style="animation-delay:.45s">
+  <span class="lbl"><span class="step-num">9</span><span data-uz="Ish grafigi" data-ru="График">График</span></span>
+  <div class="bg" id="g-grafik">
+    <button class="btn" data-value="С проживанием" data-uz="Yashab ishlash" data-ru="С проживанием" onclick="sel(this,'grafik')">С проживанием</button>
+    <button class="btn" data-value="Без проживания" data-uz="Yashab ishlamasdan" data-ru="Без проживания" onclick="sel(this,'grafik')">Без проживания</button>
+  </div>
+</div>
+
+<!-- 10. Sudimlik -->
+<div class="card" style="animation-delay:.5s">
+  <span class="lbl"><span class="step-num">10</span><span data-uz="Sudlanganlik" data-ru="Судимость">Судимость</span></span>
+  <div class="bg" id="g-sudimlik">
+    <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" onclick="sel(this,'sudimlik')">Есть</button>
+    <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" onclick="sel(this,'sudimlik')">Нету</button>
+  </div>
+</div>
+
+<!-- 11. Haydovchilik -->
+<div class="card" style="animation-delay:.55s">
+  <span class="lbl"><span class="step-num">11</span><span data-uz="Haydovchilik guvohnomasi" data-ru="Водительские удостоверения">Водительские удостоверения</span></span>
+  <div class="bg" id="g-haydovchilik">
+    <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" onclick="sel(this,'haydovchilik')">Есть</button>
+    <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" onclick="sel(this,'haydovchilik')">Нету</button>
+  </div>
+</div>
+
+<!-- 12. Telefon -->
+<div class="card" style="animation-delay:.6s">
+  <span class="lbl"><span class="step-num">12</span><span data-uz="Telefon" data-ru="Телефон">Телефон</span></span>
+  <div id="tel-wrap" style="display:flex;align-items:center;border:2px solid #e8e8ef;border-radius:12px;background:#fafaff;transition:all .2s;cursor:text" onclick="document.getElementById('telefon').focus()">
+    <span style="padding:12px 4px 12px 16px;font-size:14px;color:#1a1a2e;white-space:nowrap">+998</span>
+    <input type="tel" id="telefon" placeholder="901234567" maxlength="9" style="border:none;background:transparent;box-shadow:none;padding:12px 16px 12px 4px;outline:none" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onfocus="document.getElementById('tel-wrap').style.borderColor='#667eea';document.getElementById('tel-wrap').style.background='#fff';document.getElementById('tel-wrap').style.boxShadow='0 0 0 4px rgba(102,126,234,.12)'" onblur="document.getElementById('tel-wrap').style.borderColor='#e8e8ef';document.getElementById('tel-wrap').style.background='#fafaff';document.getElementById('tel-wrap').style.boxShadow='none'">
+  </div>
+</div>
+
+<!-- 13. Rasm -->
+<div class="card" style="animation-delay:.65s">
+  <span class="lbl"><span class="step-num">13</span><span data-uz="Rasm yuklash" data-ru="Загрузить фото">Загрузить фото</span></span>
+  <div class="photo-box" onclick="document.getElementById('photo-inp').click()" id="photo-box">
+    <div id="photo-content">
+      <div style="font-size:36px;color:#c0c0d0">+</div>
+      <p style="font-size:14px;color:#64748b;margin-top:8px;font-weight:500" data-uz="Rasmingizni yuklang" data-ru="Загрузите ваше фото">Загрузите ваше фото</p>
+      <p style="font-size:12px;color:#94a3b8;margin-top:4px">JPG, PNG — max 5MB</p>
+      <p style="font-size:12px;color:#ef4444;margin-top:6px;font-weight:600" data-uz="Iltimos, namunadagidek to'liq ko'rinishda rasm yuklang. Rasm yuklanmasa anketa qabul qilinmaydi!" data-ru="Пожалуйста, загрузите фото в полный рост, как на образце. Без фото анкета не будет принята!">Без фото анкета не будет принята!</p>
+    </div>
+  </div>
+  <input type="file" id="photo-inp" accept="image/*" style="display:none" onchange="prevPhoto(this)">
+</div>
+
+<button class="save-btn" id="save-btn" onclick="submitForm()" data-uz="Saqlash va yuborish" data-ru="Сохранить и отправить">Сохранить и отправить</button>
+<div class="msg ok" id="msg-ok" data-uz="Anketa muvaffaqiyatli yuborildi!" data-ru="Анкета успешно отправлена!">Анкета успешно отправлена!</div>
+<div class="msg err" id="msg-err">Xatolik yuz berdi.</div>
+</div>
+
+
+<script>
+let curLang='ru';
+
+// URL dan telefon, tg_user_id, username ni olish
+// Format: /ishchi/+998XXXXXXXXX/tg_user_id/username
+let urlTgUserID=0;
+let urlTgUsername='';
+(function(){
+  const pathParts=window.location.pathname.split('/').filter(Boolean);
+  // pathParts[0] = 'ishchi', pathParts[1] = '+998...', pathParts[2] = tg_user_id, pathParts[3] = username
+  if(pathParts.length>=3){
+    const phone=(pathParts[1]||'').replace('+','');
+    urlTgUserID=parseInt(pathParts[2])||0;
+    urlTgUsername=pathParts[3]||'';
+    if(phone.startsWith('998')&&phone.length===12){
+      setTimeout(()=>{
+        document.getElementById('telefon').value=phone.substring(3);
+        updateProgress();
+      },100);
+    }
+  }
+})();
+
+function switchLang(lang){
+  curLang=lang;
+  document.querySelectorAll('.lang-sw button').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.lang-sw button[onclick="switchLang(\''+lang+'\')"]').classList.add('active');
+  document.querySelectorAll('[data-uz]').forEach(el=>{
+    const text=el.getAttribute('data-'+lang);
+    if(text) el.textContent=text;
+  });
+  document.querySelectorAll('[data-uz-ph]').forEach(el=>{
+    const ph=el.getAttribute('data-'+lang+'-ph');
+    if(ph) el.placeholder=ph;
+  });
+}
+
+// Date picker
+const months=['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
+const monthsRu=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+let pickDay=15,pickMonth=5,pickYear=1990;
+
+function buildPickerCol(col,items,selected,onScroll){
+  col.innerHTML='<div class="picker-spacer"></div>'+items.map((item,i)=>'<div class="picker-item" data-idx="'+i+'">'+item+'</div>').join('')+'<div class="picker-spacer"></div>';
+  const target=col.querySelector('[data-idx="'+selected+'"]');
+  if(target) col.scrollTop=target.offsetTop-col.offsetTop-88;
+  updateActive(col);
+  col.onscroll=()=>{updateActive(col);if(onScroll)onScroll()};
+}
+
+function updateActive(col){
+  const items=col.querySelectorAll('.picker-item');
+  const center=col.scrollTop+col.offsetHeight/2;
+  items.forEach(item=>{
+    const itemCenter=item.offsetTop+22;
+    const dist=Math.abs(center-itemCenter);
+    item.classList.toggle('active',dist<22);
+  });
+}
+
+function getSelectedIdx(col){
+  const items=col.querySelectorAll('.picker-item');
+  const center=col.scrollTop+col.offsetHeight/2;
+  let closest=0,minDist=Infinity;
+  items.forEach((item,i)=>{
+    const d=Math.abs(item.offsetTop+22-center);
+    if(d<minDist){minDist=d;closest=i}
+  });
+  return closest;
+}
+
+function snapTo(col,idx){
+  const item=col.querySelector('[data-idx="'+idx+'"]');
+  if(item) col.scrollTo({top:item.offsetTop-col.offsetTop-88,behavior:'smooth'});
+}
+
+function openDatePicker(){
+  const dayCol=document.getElementById('pick-day');
+  const monthCol=document.getElementById('pick-month');
+  const yearCol=document.getElementById('pick-year');
+  const days=Array.from({length:31},(_,i)=>String(i+1).padStart(2,'0'));
+  const mList=curLang==='ru'?monthsRu:months;
+  const years=[];for(let y=1960;y<=2010;y++)years.push(String(y));
+  buildPickerCol(dayCol,days,pickDay-1);
+  buildPickerCol(monthCol,mList,pickMonth);
+  buildPickerCol(yearCol,years,pickYear-1960);
+  document.getElementById('picker-overlay').classList.add('show');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>{snapTo(dayCol,pickDay-1);snapTo(monthCol,pickMonth);snapTo(yearCol,pickYear-1960)},50);
+}
+
+function closeDatePicker(){
+  document.getElementById('picker-overlay').classList.remove('show');
+  document.body.style.overflow='';
+}
+
+function confirmDate(){
+  const dayCol=document.getElementById('pick-day');
+  const monthCol=document.getElementById('pick-month');
+  const yearCol=document.getElementById('pick-year');
+  const d=getSelectedIdx(dayCol)+1;
+  const m=getSelectedIdx(monthCol);
+  const y=getSelectedIdx(yearCol)+1960;
+  pickDay=d;pickMonth=m;pickYear=y;
+  const mList=curLang==='ru'?monthsRu:months;
+  const dateStr=String(d).padStart(2,'0')+'.'+String(m+1).padStart(2,'0')+'.'+y;
+  const displayStr=d+' '+mList[m]+' '+y;
+  document.getElementById('tugilgan').value=dateStr;
+  const txt=document.getElementById('date-text');
+  txt.textContent=displayStr;
+  txt.classList.remove('placeholder');
+  closeDatePicker();
+  updateProgress();
+}
+
+const state={vakansiya:'',oila:'',bolalar:'',malumot:'',grafik:'',sudimlik:'',haydovchilik:''};
+let photoBase64=null;
+
+function updateProgress(){
+  let filled=0;const total=13;
+  if(state.vakansiya)filled++;
+  if(document.getElementById('fio').value)filled++;
+  if(document.getElementById('tugilgan').value)filled++;
+  if(document.getElementById('manzil').value)filled++;
+  if(state.oila)filled++;
+  if(state.bolalar)filled++;
+  if(document.getElementById('tillar').value)filled++;
+  if(state.malumot)filled++;
+  if(state.grafik)filled++;
+  if(state.sudimlik)filled++;
+  if(state.haydovchilik)filled++;
+  if(document.getElementById('telefon').value)filled++;
+  if(photoBase64)filled++;
+  document.getElementById('progress').style.width=Math.round(filled/total*100)+'%';
+}
+
+document.addEventListener('input',updateProgress);
+
+function sel(btn,group){
+  document.getElementById('g-'+group).querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  state[group]=btn.getAttribute('data-value')||btn.textContent.trim();
+  updateProgress();
+}
+
+function prevPhoto(input){
+  if(!input.files[0])return;
+  const file=input.files[0];
+  const img=new Image();
+  const url=URL.createObjectURL(file);
+  img.onload=function(){
+    const canvas=document.createElement('canvas');
+    const maxW=1200,maxH=1600;
+    let w=img.width,h=img.height;
+    if(w>maxW||h>maxH){const r=Math.min(maxW/w,maxH/h);w*=r;h*=r;}
+    canvas.width=w;canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    photoBase64=canvas.toDataURL('image/jpeg',0.85);
+    document.getElementById('photo-content').innerHTML='<img src="'+photoBase64+'" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #667eea;box-shadow:0 4px 16px rgba(102,126,234,.3)"><p style="font-size:13px;margin-top:10px;color:#64748b;font-weight:500">'+file.name+'</p>';
+    updateProgress();
+    URL.revokeObjectURL(url);
+  };
+  img.onerror=function(){
+    document.getElementById('msg-err').textContent=curLang==='uz'?'Rasm formatini o\'qib bo\'lmadi. JPG yoki PNG yuklang.':'Не удалось прочитать формат изображения. Загрузите JPG или PNG.';
+    document.getElementById('msg-err').style.display='block';
+    URL.revokeObjectURL(url);
+  };
+  img.src=url;
+}
+
+async function submitForm(){
+  const required=[
+    {id:'fio',uz:'FIO',ru:'ФИО'},
+    {id:'tugilgan',uz:'Tug\'ilgan sana',ru:'Дата рождения'},
+    {id:'manzil',uz:'Manzil',ru:'Адрес'},
+    {id:'tillar',uz:'Tillar',ru:'Знания языка'},
+    {id:'telefon',uz:'Telefon',ru:'Телефон'}
+  ];
+  const stateRequired=[
+    {key:'vakansiya',uz:'Vakansiya',ru:'Вакансия'},
+    {key:'oila',uz:'Oilaviy holat',ru:'Семейный статус'},
+    {key:'bolalar',uz:'Bolalar',ru:'Дети'},
+    {key:'malumot',uz:'Ma\'lumot',ru:'Образования'},
+    {key:'grafik',uz:'Grafik',ru:'График'},
+    {key:'sudimlik',uz:'Sudimlik',ru:'Судимость'},
+    {key:'haydovchilik',uz:'Haydovchilik guvohnomasi',ru:'Водительские удостоверения'}
+  ];
+  const missing=[];
+  for(const f of required){
+    if(!document.getElementById(f.id).value.trim()) missing.push(curLang==='uz'?f.uz:f.ru);
+  }
+  for(const s of stateRequired){
+    if(!state[s.key]) missing.push(curLang==='uz'?s.uz:s.ru);
+  }
+  if(!photoBase64) missing.push(curLang==='uz'?'Rasm':'Фото');
+  if(missing.length>0){
+    document.getElementById('msg-err').textContent=(curLang==='uz'?'Iltimos, to\'ldiring: ':'Пожалуйста, заполните: ')+missing.join(', ');
+    document.getElementById('msg-err').style.display='block';
+    return;
+  }
+  const telVal=document.getElementById('telefon').value.replace(/[^0-9]/g,'');
+  if(telVal.length!==9){
+    document.getElementById('msg-err').textContent=curLang==='uz'?'Telefon raqam 9 ta raqamdan iborat bo\'lishi kerak':'Номер телефона должен содержать 9 цифр';
+    document.getElementById('msg-err').style.display='block';
+    return;
+  }
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true;
+  btn.textContent=curLang==='uz'?'Yuborilmoqda...':'Отправляется...';
+  document.getElementById('msg-ok').style.display='none';
+  document.getElementById('msg-err').style.display='none';
+
+  const payload={
+    vakansiya:state.vakansiya,
+    fio:document.getElementById('fio').value,
+    tugilgan_sana:document.getElementById('tugilgan').value,
+    manzil:document.getElementById('manzil').value,
+    oilaviy_holat:state.oila,
+    bolalar:state.bolalar,
+    tillar:document.getElementById('tillar').value,
+    malumot:state.malumot,
+    grafik:state.grafik,
+    sudimlik:state.sudimlik,
+    haydovchilik:state.haydovchilik,
+    telefon:'+998'+document.getElementById('telefon').value,
+    rasm:photoBase64,
+    tg_user_id:urlTgUserID,
+    tg_username:urlTgUsername
+  };
+
+  try{
+    const res=await fetch('/ishchi-rezume',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(res.ok){
+      document.getElementById('msg-ok').style.display='block';
+      btn.textContent=curLang==='uz'?'Yuborildi!':'Отправлено!';
+      document.getElementById('progress').style.width='100%';
+    }else{
+      const errText=await res.text();
+      throw new Error(errText);
+    }
+  }catch(e){
+    document.getElementById('msg-err').textContent=(curLang==='uz'?'Xatolik: ':'Ошибка: ')+e.message;
+    document.getElementById('msg-err').style.display='block';
+    btn.disabled=false;
+    btn.textContent=curLang==='uz'?'Saqlash va yuborish':'Сохранить и отправить';
+  }
+}
+</script>
+</body>
+</html>

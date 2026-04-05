@@ -9,7 +9,6 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -115,48 +114,6 @@ func handleCallbackQuery(cb *TgCallback) {
 	action := parts[0]
 
 	switch action {
-	case "accept":
-		var rezumeID, tgUserID int64
-		if len(parts) == 3 {
-			rezumeID, _ = strconv.ParseInt(parts[1], 10, 64)
-			tgUserID, _ = strconv.ParseInt(parts[2], 10, 64)
-		} else {
-			tgUserID, _ = strconv.ParseInt(parts[1], 10, 64)
-		}
-
-		// DB da statusni yangilash
-		if rezumeID > 0 {
-			updateRezumeStatus(rezumeID, "qabul")
-		}
-
-		if cb.Message != nil {
-			newCaption := cb.Message.Text + "\n\n✅ QABUL QILINDI"
-			editMessageCaption(cb.Message.Chat.ID, cb.Message.MessageID, newCaption)
-		}
-		answerCallback(cb.ID, "Qabul qilindi!")
-
-		// Foydalanuvchiga auto-xabar (qabul qilindi, intervyu dastur orqali belgilanadi)
-		if tgUserID != 0 {
-			sendTgMessage(tgUserID, "Tabriklaymiz! Sizning rezumeyingiz qabul qilindi. Tez orada siz bilan bog'lanamiz.")
-		}
-
-	case "reject":
-		var rezumeID int64
-		if len(parts) == 3 {
-			rezumeID, _ = strconv.ParseInt(parts[1], 10, 64)
-		}
-
-		// DB da statusni yangilash
-		if rezumeID > 0 {
-			updateRezumeStatus(rezumeID, "rad")
-		}
-
-		if cb.Message != nil {
-			newCaption := cb.Message.Text + "\n\n❌ QABUL QILINMADI"
-			editMessageCaption(cb.Message.Chat.ID, cb.Message.MessageID, newCaption)
-		}
-		answerCallback(cb.ID, "Qabul qilinmadi")
-
 	case "day":
 		if len(parts) < 3 {
 			return
@@ -164,6 +121,8 @@ func handleCallbackQuery(cb *TgCallback) {
 		dayCode := parts[1]
 		tgUserID := cb.From.ID
 		assignSlot(tgUserID, dayCode, cb)
+	default:
+		answerCallback(cb.ID, "Bu tugma endi ishlamaydi. Iltimos, dastur orqali qabul/rad qiling.")
 	}
 }
 

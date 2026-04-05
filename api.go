@@ -137,21 +137,12 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 		groupID = cat.TgGroupID
 	}
 
-	// Callback data: rezume ID + tg_user_id
-	replyMarkup := map[string]interface{}{
-		"inline_keyboard": [][]map[string]string{
-			{
-				{"text": "✅ Qabul qilish", "callback_data": fmt.Sprintf("accept:%d:%d", id, anketa.TgUserID)},
-				{"text": "❌ Qabul qilmaslik", "callback_data": fmt.Sprintf("reject:%d:%d", id, anketa.TgUserID)},
-			},
-		},
-	}
-
+	// Telegram guruhga faqat rezume yuborish (qabul/rad tugmalarsiz)
 	var tgErr error
 	if anketa.Rasm != "" && strings.Contains(anketa.Rasm, ",") {
-		tgErr = sendPhotoToTelegram(groupID, anketa.Rasm, caption, replyMarkup)
+		tgErr = sendPhotoToTelegram(groupID, anketa.Rasm, caption, nil)
 	} else {
-		tgErr = sendMessageToTelegramWithKeyboard(groupID, caption, replyMarkup)
+		tgErr = sendMessageToTelegramWithKeyboard(groupID, caption, nil)
 	}
 
 	if tgErr != nil {
@@ -313,7 +304,14 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := updateRezumeStatus(id, body.Status); err != nil {
+	// Admin ma'lumotlarini olish
+	user := getUserFromCtx(r)
+	adminName := user.FullName
+	if adminName == "" {
+		adminName = user.Username
+	}
+
+	if err := updateRezumeStatusWithAdmin(id, body.Status, user.ID, adminName); err != nil {
 		jsonError(w, "Statusni yangilashda xato", http.StatusInternalServerError)
 		return
 	}

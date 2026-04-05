@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MONE HR — Demo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f1a;--card:#1a1a2e;--card2:#16213e;--glass:rgba(255,255,255,.06);
+  --text:#f1f1f1;--text2:#8b8fa3;--text3:#5a5e72;
+  --accent:#667eea;--accent2:#764ba2;--green:#22c55e;--orange:#f59e0b;--red:#ef4444;--blue:#3b82f6;
+  --gradient:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(102,126,234,.15),transparent 70%);top:-100px;right:-100px;pointer-events:none}
+.hero::after{content:'';position:absolute;width:500px;height:500px;background:radial-gradient(circle,rgba(118,75,162,.12),transparent 70%);bottom:-150px;left:-100px;pointer-events:none}
+.hero-inner{max-width:1100px;margin:0 auto;padding:40px 24px;display:flex;align-items:center;gap:60px;position:relative;z-index:1}
+.hero-text{flex:1}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--glass);border:1px solid rgba(102,126,234,.3);border-radius:40px;padding:6px 16px;font-size:12px;font-weight:600;color:var(--accent);margin-bottom:24px;backdrop-filter:blur(10px)}
+.badge .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:52px;font-weight:900;line-height:1.1;margin-bottom:16px;letter-spacing:-1.5px}
+.hero h1 span{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:18px;color:var(--text2);line-height:1.7;margin-bottom:36px;max-width:500px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--gradient);color:#fff;padding:14px 28px;border-radius:14px;text-decoration:none;font-weight:700;font-size:15px;transition:all .3s;box-shadow:0 4px 20px rgba(102,126,234,.4)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(102,126,234,.5)}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:var(--glass);color:var(--text);padding:14px 28px;border-radius:14px;text-decoration:none;font-weight:600;font-size:15px;border:1px solid rgba(255,255,255,.1);transition:all .3s;backdrop-filter:blur(10px)}
+.btn-outline:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}
+
+.hero-visual{flex:0 0 400px;position:relative}
+.phone-mock{width:280px;height:560px;background:var(--card);border-radius:36px;border:3px solid rgba(255,255,255,.08);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);margin:0 auto;position:relative}
+.phone-notch{width:120px;height:28px;background:var(--bg);border-radius:0 0 16px 16px;margin:0 auto;position:relative;z-index:2}
+.phone-screen{padding:16px}
+.phone-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.phone-logo{font-size:18px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.phone-avatar{width:32px;height:32px;background:var(--gradient);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.phone-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.phone-stat{background:rgba(255,255,255,.04);border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,.06)}
+.phone-stat-num{font-size:22px;font-weight:800;margin-bottom:2px}
+.phone-stat-label{font-size:10px;color:var(--text2);font-weight:500}
+.phone-stat.s1 .phone-stat-num{color:var(--blue)}
+.phone-stat.s2 .phone-stat-num{color:var(--green)}
+.phone-stat.s3 .phone-stat-num{color:var(--orange)}
+.phone-stat.s4 .phone-stat-num{color:var(--red)}
+.phone-list-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+.phone-item{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border-radius:10px;margin-bottom:6px;border:1px solid rgba(255,255,255,.04)}
+.phone-item-avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.phone-item-info{flex:1;min-width:0}
+.phone-item-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phone-item-role{font-size:10px;color:var(--text3)}
+.phone-item-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px}
+.floating-card{position:absolute;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 18px;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:float 4s ease-in-out infinite;z-index:3}
+.floating-card.fc1{top:60px;right:-30px;animation-delay:0s}
+.floating-card.fc2{bottom:80px;left:-40px;animation-delay:2s}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.fc-row{display:flex;align-items:center;gap:8px}
+.fc-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.fc-text{font-size:12px;font-weight:600}
+.fc-sub{font-size:10px;color:var(--text3)}
+
+/* Section */
+section{padding:80px 24px}
+.section-title{text-align:center;margin-bottom:56px}
+.section-title h2{font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:12px}
+.section-title h2 span{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.section-title p{font-size:16px;color:var(--text2);max-width:500px;margin:0 auto}
+
+/* Features */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1100px;margin:0 auto}
+.feature-card{background:var(--glass);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:32px;transition:all .3s;backdrop-filter:blur(10px)}
+.feature-card:hover{border-color:rgba(102,126,234,.3);transform:translateY(-4px);box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.feature-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px}
+.feature-card h3{font-size:18px;font-weight:700;margin-bottom:8px}
+.feature-card p{font-size:14px;color:var(--text2);line-height:1.7}
+.fi-blue{background:rgba(59,130,246,.15)}
+.fi-green{background:rgba(34,197,94,.15)}
+.fi-orange{background:rgba(245,158,11,.15)}
+.fi-purple{background:rgba(139,92,246,.15)}
+.fi-red{background:rgba(239,68,68,.15)}
+.fi-cyan{background:rgba(6,182,212,.15)}
+
+/* Demo Table */
+.demo-section{max-width:1100px;margin:0 auto}
+.demo-table-wrap{background:var(--card);border-radius:20px;border:1px solid rgba(255,255,255,.06);overflow:hidden}
+.demo-table-header{padding:24px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)}
+.demo-table-header h3{font-size:18px;font-weight:700}
+.demo-filters{display:flex;gap:8px;flex-wrap:wrap}
+.demo-filter{padding:7px 16px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--text2);cursor:pointer;transition:all .2s;font-family:inherit}
+.demo-filter.active{background:var(--gradient);border-color:transparent;color:#fff}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:14px 20px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.06)}
+td{padding:14px 20px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.03)}
+tr:hover td{background:rgba(255,255,255,.02)}
+.td-user{display:flex;align-items:center;gap:12px}
+.td-avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.td-name{font-weight:600}
+.td-sub{font-size:11px;color:var(--text3)}
+.status-badge{display:inline-flex;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700}
+.status-yangi{background:rgba(59,130,246,.15);color:#60a5fa}
+.status-qabul{background:rgba(34,197,94,.15);color:#4ade80}
+.status-rad{background:rgba(239,68,68,.15);color:#f87171}
+.status-kutilmoqda{background:rgba(245,158,11,.15);color:#fbbf24}
+
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;max-width:1100px;margin:0 auto 40px}
+.stat-item{background:var(--glass);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:24px;text-align:center;backdrop-filter:blur(10px)}
+.stat-num{font-size:36px;font-weight:900;margin-bottom:4px}
+.stat-label{font-size:13px;color:var(--text2);font-weight:500}
+.stat-num.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-num.green{background:linear-gradient(135deg,#22c55e,#4ade80);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-num.orange{background:linear-gradient(135deg,#f59e0b,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-num.red{background:linear-gradient(135deg,#ef4444,#f87171);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-num.purple{background:linear-gradient(135deg,#8b5cf6,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* Screenshots */
+.screenshots{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;max-width:1100px;margin:0 auto}
+.screenshot{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:16px;transition:all .3s;width:220px}
+.screenshot:hover{transform:translateY(-4px);border-color:rgba(102,126,234,.3)}
+.ss-img{width:100%;aspect-ratio:9/16;background:var(--glass);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:12px;overflow:hidden;position:relative}
+.ss-label{font-size:13px;font-weight:600;text-align:center}
+.ss-sub{font-size:11px;color:var(--text3);text-align:center;margin-top:4px}
+
+/* CTA / Contact */
+.cta{text-align:center;padding:80px 24px}
+.cta-box{max-width:700px;margin:0 auto;background:var(--gradient);border-radius:24px;padding:56px 40px;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;width:300px;height:300px;background:rgba(255,255,255,.08);border-radius:50%;top:-100px;right:-80px}
+.cta-box::after{content:'';position:absolute;width:200px;height:200px;background:rgba(255,255,255,.05);border-radius:50%;bottom:-60px;left:-40px}
+.cta-box h2{font-size:32px;font-weight:800;margin-bottom:12px;position:relative;z-index:1}
+.cta-box p{font-size:16px;opacity:.85;margin-bottom:32px;position:relative;z-index:1;line-height:1.7}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;background:#fff;color:#764ba2;padding:16px 36px;border-radius:14px;text-decoration:none;font-weight:800;font-size:16px;transition:all .3s;position:relative;z-index:1;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.cta-btn svg{width:22px;height:22px}
+
+/* Login demo */
+.login-demo{max-width:420px;margin:0 auto}
+.login-card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:40px 32px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-card h3{font-size:24px;font-weight:800;margin-bottom:6px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-card .sub{color:var(--text2);font-size:14px;margin-bottom:28px}
+.login-field{margin-bottom:18px}
+.login-field label{display:block;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.login-field .input-display{width:100%;padding:14px 16px;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.08);border-radius:12px;font-size:15px;color:var(--text);font-family:inherit}
+.login-note{background:rgba(102,126,234,.1);border:1px solid rgba(102,126,234,.2);border-radius:12px;padding:14px 18px;margin-top:24px;font-size:13px;color:var(--accent);display:flex;align-items:flex-start;gap:10px;line-height:1.6}
+.login-note svg{flex-shrink:0;margin-top:2px}
+
+/* Footer */
+footer{text-align:center;padding:32px 24px;border-top:1px solid rgba(255,255,255,.06);color:var(--text3);font-size:13px}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline}
+
+/* Responsive */
+@media(max-width:900px){
+  .hero-inner{flex-direction:column;text-align:center;gap:40px}
+  .hero p{margin:0 auto 36px}
+  .hero-btns{justify-content:center}
+  .hero-visual{flex:none;width:100%;max-width:350px}
+  .floating-card{display:none}
+  .hero h1{font-size:36px}
+  table{font-size:12px}
+  th,td{padding:10px 12px}
+}
+@media(max-width:600px){
+  .hero h1{font-size:28px}
+  .stats-bar{grid-template-columns:1fr 1fr}
+  .features-grid{grid-template-columns:1fr}
+  .demo-table-header{flex-direction:column;gap:12px}
+  .screenshots{gap:12px}
+  .screenshot{width:160px}
+}
+</style>
+</head>
+<body>
+
+<!-- ========== HERO ========== -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="badge"><span class="dot"></span> Demo rejim — sinab ko'ring</div>
+      <h1>HR boshqaruv tizimi <span>MONE</span></h1>
+      <p>Rezumelerni qabul qilish, xodimlarni boshqarish va intervyu jarayonlarini avtomatlashtirish uchun zamonaviy platforma.</p>
+      <div class="hero-btns">
+        <a href="#features" class="btn-primary">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Imkoniyatlarni ko'rish
+        </a>
+        <a href="#contact" class="btn-outline">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Bog'lanish
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="phone-mock">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="phone-header">
+            <div class="phone-logo">MONE HR</div>
+            <div class="phone-avatar">SA</div>
+          </div>
+          <div class="phone-stats">
+            <div class="phone-stat s1"><div class="phone-stat-num">247</div><div class="phone-stat-label">Jami rezume</div></div>
+            <div class="phone-stat s2"><div class="phone-stat-num">58</div><div class="phone-stat-label">Qabul</div></div>
+            <div class="phone-stat s3"><div class="phone-stat-num">34</div><div class="phone-stat-label">Kutilmoqda</div></div>
+            <div class="phone-stat s4"><div class="phone-stat-num">12</div><div class="phone-stat-label">Rad etilgan</div></div>
+          </div>
+          <div class="phone-list-title">So'nggi arizalar</div>
+          <div class="phone-item">
+            <div class="phone-item-avatar" style="background:rgba(59,130,246,.15);color:#60a5fa">AK</div>
+            <div class="phone-item-info">
+              <div class="phone-item-name">Aliyeva Kamola</div>
+              <div class="phone-item-role">Konditer</div>
+            </div>
+            <div class="phone-item-badge" style="background:rgba(34,197,94,.15);color:#4ade80">Yangi</div>
+          </div>
+          <div class="phone-item">
+            <div class="phone-item-avatar" style="background:rgba(139,92,246,.15);color:#a78bfa">BT</div>
+            <div class="phone-item-info">
+              <div class="phone-item-name">Botirov Temur</div>
+              <div class="phone-item-role">Oshpaz</div>
+            </div>
+            <div class="phone-item-badge" style="background:rgba(245,158,11,.15);color:#fbbf24">Ko'rilmoqda</div>
+          </div>
+          <div class="phone-item">
+            <div class="phone-item-avatar" style="background:rgba(236,72,153,.15);color:#f472b6">NS</div>
+            <div class="phone-item-info">
+              <div class="phone-item-name">Nazarova Sevara</div>
+              <div class="phone-item-role">Ofitsiant</div>
+            </div>
+            <div class="phone-item-badge" style="background:rgba(59,130,246,.15);color:#60a5fa">Intervyu</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="floating-card fc1">
+        <div class="fc-row">
+          <div class="fc-icon" style="background:rgba(34,197,94,.15)">&#10003;</div>
+          <div>
+            <div class="fc-text" style="color:#4ade80">+12 bugun</div>
+            <div class="fc-sub">Yangi rezumeler</div>
+          </div>
+        </div>
+      </div>
+      <div class="floating-card fc2">
+        <div class="fc-row">
+          <div class="fc-icon" style="background:rgba(59,130,246,.15)">&#128197;</div>
+          <div>
+            <div class="fc-text">3 ta intervyu</div>
+            <div class="fc-sub">Bugun rejalashtirilgan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== STATS ========== -->
+<section>
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-num blue">247</div>
+      <div class="stat-label">Jami rezumeler</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num green">58</div>
+      <div class="stat-label">Qabul qilingan</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num orange">34</div>
+      <div class="stat-label">Ko'rib chiqilmoqda</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num red">12</div>
+      <div class="stat-label">Rad etilgan</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num purple">89</div>
+      <div class="stat-label">Intervyular</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FEATURES ========== -->
+<section id="features">
+  <div class="section-title">
+    <h2>Asosiy <span>imkoniyatlar</span></h2>
+    <p>HR jarayonlarini boshqarish uchun barcha kerakli vositalar bir joyda</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon fi-blue">&#128196;</div>
+      <h3>Rezumeler boshqaruvi</h3>
+      <p>Telegram bot orqali keladigan barcha rezumelerni bir joyda ko'ring, filtrlang va statusini boshqaring. Har bir nomzodning to'liq ma'lumotlari.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-green">&#128197;</div>
+      <h3>Intervyu rejalashtirish</h3>
+      <p>Nomzodlarga intervyu vaqtini belgilang, filial manzilini yuboring. Lokatsiya Telegram orqali avtomatik yuboriladi.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-orange">&#128202;</div>
+      <h3>Dashboard va statistika</h3>
+      <p>Real vaqtda statistika: yangi rezumeler, qabul qilinganlar, rad etilganlar va intervyular soni bir qarashda.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-purple">&#128101;</div>
+      <h3>Foydalanuvchilar boshqaruvi</h3>
+      <p>HR xodimlarini qo'shing, rollarni belgilang, filialga biriktiring. Super admin va admin rollari mavjud.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-red">&#127959;</div>
+      <h3>Filiallar boshqaruvi</h3>
+      <p>Filiallarni yarating, lokatsiya koordinatalarini kiriting. Intervyu uchun manzil avtomatik yuboriladi.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-cyan">&#129302;</div>
+      <h3>Telegram bot integratsiya</h3>
+      <p>Nomzodlar Telegram bot orqali anketa to'ldiradi. Ma'lumotlar real vaqtda tizimga tushadi va bildirishnoma keladi.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== DEMO TABLE ========== -->
+<section id="demo-data">
+  <div class="section-title">
+    <h2>Demo <span>ma'lumotlar</span></h2>
+    <p>Tizimda rezumeler qanday ko'rinishini ko'ring</p>
+  </div>
+  <div class="demo-section">
+    <div class="demo-table-wrap">
+      <div class="demo-table-header">
+        <h3>&#128203; Rezumeler ro'yxati</h3>
+        <div class="demo-filters">
+          <button class="demo-filter active" onclick="filterTable('all',this)">Hammasi</button>
+          <button class="demo-filter" onclick="filterTable('yangi',this)">Yangi</button>
+          <button class="demo-filter" onclick="filterTable('qabul',this)">Qabul</button>
+          <button class="demo-filter" onclick="filterTable('kutilmoqda',this)">Kutilmoqda</button>
+          <button class="demo-filter" onclick="filterTable('rad',this)">Rad</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Nomzod</th>
+              <th>Lavozim</th>
+              <th>Telefon</th>
+              <th>Tajriba</th>
+              <th>Status</th>
+              <th>Sana</th>
+            </tr>
+          </thead>
+          <tbody id="demoTableBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== APP SCREENS ========== -->
+<section>
+  <div class="section-title">
+    <h2>Ilova <span>ekranlari</span></h2>
+    <p>Mobil ilovaning asosiy bo'limlari</p>
+  </div>
+  <div class="screenshots">
+    <div class="screenshot">
+      <div class="ss-img">&#128200;</div>
+      <div class="ss-label">Dashboard</div>
+      <div class="ss-sub">Umumiy statistika</div>
+    </div>
+    <div class="screenshot">
+      <div class="ss-img">&#128203;</div>
+      <div class="ss-label">Rezumeler</div>
+      <div class="ss-sub">Barcha arizalar ro'yxati</div>
+    </div>
+    <div class="screenshot">
+      <div class="ss-img">&#128197;</div>
+      <div class="ss-label">Intervyular</div>
+      <div class="ss-sub">Suhbat jadvali</div>
+    </div>
+    <div class="screenshot">
+      <div class="ss-img">&#128101;</div>
+      <div class="ss-label">Foydalanuvchilar</div>
+      <div class="ss-sub">Xodimlar boshqaruvi</div>
+    </div>
+    <div class="screenshot">
+      <div class="ss-img">&#127959;</div>
+      <div class="ss-label">Filiallar</div>
+      <div class="ss-sub">Filiallar va lokatsiya</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== LOGIN DEMO ========== -->
+<section>
+  <div class="section-title">
+    <h2>Demo <span>kirish</span> ma'lumotlari</h2>
+    <p>Sinab ko'rish uchun quyidagi ma'lumotlardan foydalaning</p>
+  </div>
+  <div class="login-demo">
+    <div class="login-card">
+      <h3>MONE HR</h3>
+      <div class="sub">Tizimga kirish uchun demo akkaunt</div>
+      <div class="login-field">
+        <label>Login</label>
+        <div class="input-display">admin</div>
+      </div>
+      <div class="login-field">
+        <label>Parol</label>
+        <div class="input-display">admin123</div>
+      </div>
+      <div class="login-note">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <span>Bu demo akkaunt. Barcha ma'lumotlar test rejimida. Super admin huquqlari bilan tizimning barcha bo'limlarini sinab ko'rishingiz mumkin.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== CTA / CONTACT ========== -->
+<section class="cta" id="contact">
+  <div class="cta-box">
+    <h2>Loyiha yoqdimi?</h2>
+    <p>Dasturchi bilan bog'lanish, takliflar berish yoki xuddi shunday tizim buyurtma qilish uchun Telegram orqali murojaat qiling.</p>
+    <a href="https://t.me/uzaidev" target="_blank" class="cta-btn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      Telegram orqali yozish
+    </a>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer>
+  <p>&copy; 2026 MONE HR — Ishga qabul boshqaruv tizimi &nbsp;|&nbsp; Dasturchi: <a href="https://t.me/uzaidev" target="_blank">@uzaidev</a></p>
+</footer>
+
+<script>
+const demoData = [
+  {name:"Aliyeva Kamola", initials:"AK", color:"#3b82f6", role:"Konditer", phone:"+998 90 123 45 67", exp:"3 yil", status:"yangi", date:"2026-03-29"},
+  {name:"Botirov Temur", initials:"BT", color:"#8b5cf6", role:"Oshpaz", phone:"+998 91 234 56 78", exp:"5 yil", status:"qabul", date:"2026-03-28"},
+  {name:"Nazarova Sevara", initials:"NS", color:"#ec4899", role:"Ofitsiant", phone:"+998 93 345 67 89", exp:"1 yil", status:"kutilmoqda", date:"2026-03-28"},
+  {name:"Xasanov Jasur", initials:"XJ", color:"#f59e0b", role:"Pishiriqchi", phone:"+998 94 456 78 90", exp:"2 yil", status:"yangi", date:"2026-03-27"},
+  {name:"Rahimova Dilnoza", initials:"RD", color:"#22c55e", role:"Kassir", phone:"+998 95 567 89 01", exp:"4 yil", status:"qabul", date:"2026-03-27"},
+  {name:"Karimov Sardor", initials:"KS", color:"#06b6d4", role:"Oshpaz", phone:"+998 97 678 90 12", exp:"6 yil", status:"rad", date:"2026-03-26"},
+  {name:"Toshmatova Gulnora", initials:"TG", color:"#a855f7", role:"Konditer", phone:"+998 90 789 01 23", exp:"2 yil", status:"yangi", date:"2026-03-26"},
+  {name:"Abdullayev Bobur", initials:"AB", color:"#ef4444", role:"Yordamchi oshpaz", phone:"+998 91 890 12 34", exp:"1 yil", status:"kutilmoqda", date:"2026-03-25"},
+  {name:"Mirzayeva Shahlo", initials:"MS", color:"#14b8a6", role:"Ofitsiant", phone:"+998 93 901 23 45", exp:"3 yil", status:"qabul", date:"2026-03-25"},
+  {name:"Yusupov Otabek", initials:"YO", color:"#f97316", role:"Kuryer", phone:"+998 94 012 34 56", exp:"2 yil", status:"yangi", date:"2026-03-24"},
+  {name:"Ergasheva Madina", initials:"EM", color:"#6366f1", role:"Tozalovchi", phone:"+998 95 123 45 67", exp:"1 yil", status:"rad", date:"2026-03-24"},
+  {name:"Sobirov Azizbek", initials:"SA", color:"#84cc16", role:"Oshpaz", phone:"+998 97 234 56 78", exp:"7 yil", status:"qabul", date:"2026-03-23"},
+];
+
+const statusLabels = {yangi:"Yangi",qabul:"Qabul",kutilmoqda:"Kutilmoqda",rad:"Rad etilgan"};
+
+function renderTable(filter) {
+  const tbody = document.getElementById('demoTableBody');
+  const filtered = filter === 'all' ? demoData : demoData.filter(d => d.status === filter);
+  tbody.innerHTML = filtered.map(d => `
+    <tr data-status="${d.status}">
+      <td>
+        <div class="td-user">
+          <div class="td-avatar" style="background:${d.color}15;color:${d.color}">${d.initials}</div>
+          <div><div class="td-name">${d.name}</div></div>
+        </div>
+      </td>
+      <td>${d.role}</td>
+      <td style="color:var(--text2)">${d.phone}</td>
+      <td>${d.exp}</td>
+      <td><span class="status-badge status-${d.status}">${statusLabels[d.status]}</span></td>
+      <td style="color:var(--text3)">${d.date}</td>
+    </tr>
+  `).join('');
+}
+
+function filterTable(status, btn) {
+  document.querySelectorAll('.demo-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable(status);
+}
+
+renderTable('all');
+</script>
+
+</body>
+</html>
