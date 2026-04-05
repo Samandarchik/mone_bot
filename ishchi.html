@@ -178,23 +178,21 @@ textarea{resize:vertical}
   <input type="text" id="sharif" data-uz-ph="Sharifingizni kiriting" data-ru-ph="Введите отчество" placeholder="Введите отчество">
 </div>
 
-<!-- 5-6. Boy va Vazn -->
+<!-- 5. Vazn -->
 <div class="card" style="animation-delay:.2s">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-  <div>
-    <span class="lbl"><span class="step-num">5</span><span data-uz="Bo'y (sm)" data-ru="Рост (см)">Рост (см)</span></span>
-    <div class="rrow">
-      <input type="range" min="150" max="210" step="1" value="170" id="boy" oninput="document.getElementById('bv').textContent=this.value;updateProgress()">
-      <span class="rval"><span id="bv">170</span></span>
-    </div>
+  <span class="lbl"><span class="step-num">5</span><span data-uz="Vazn (kg)" data-ru="Вес (кг)">Вес (кг)</span></span>
+  <div class="rrow">
+    <input type="range" min="40" max="150" step="1" value="70" id="vazn" oninput="document.getElementById('vv').textContent=this.value;updateProgress()">
+    <span class="rval"><span id="vv">70</span></span>
   </div>
-  <div>
-    <span class="lbl"><span class="step-num">6</span><span data-uz="Vazn (kg)" data-ru="Вес (кг)">Вес (кг)</span></span>
-    <div class="rrow">
-      <input type="range" min="40" max="150" step="1" value="70" id="vazn" oninput="document.getElementById('vv').textContent=this.value;updateProgress()">
-      <span class="rval"><span id="vv">70</span></span>
-    </div>
-  </div>
+</div>
+
+<!-- 6. Boy -->
+<div class="card" style="animation-delay:.22s">
+  <span class="lbl"><span class="step-num">6</span><span data-uz="Bo'y (sm)" data-ru="Рост (см)">Рост (см)</span></span>
+  <div class="rrow">
+    <input type="range" min="150" max="210" step="1" value="170" id="boy" oninput="document.getElementById('bv').textContent=this.value;updateProgress()">
+    <span class="rval"><span id="bv">170</span></span>
   </div>
 </div>
 
@@ -245,8 +243,8 @@ textarea{resize:vertical}
 
 <!-- 11. Moljal -->
 <div class="card" style="animation-delay:.39s">
-  <span class="lbl"><span class="step-num">11</span><span data-uz="Mo'ljal" data-ru="Ориентир">Ориентир</span></span>
-  <input type="text" id="moljal" data-uz-ph="Yaqin atrofdagi joy" data-ru-ph="Ближайший ориентир" placeholder="Ближайший ориентир">
+  <span class="lbl"><span class="step-num">11</span><span data-uz="Mo'ljal" data-ru="Ориентир, если есть номер дома">Ориентир, если есть номер дома</span></span>
+  <input type="text" id="moljal" data-uz-ph="Mo'ljal, uy raqami bo'lsa" data-ru-ph="Ориентир, если есть номер дома" placeholder="Ориентир, если есть номер дома">
 </div>
 
 <!-- 12. Oilaviy holat -->
@@ -279,6 +277,7 @@ textarea{resize:vertical}
     <button class="btn" data-value="Китайский" data-uz="Xitoy tili" data-ru="Китайский" onclick="multiSel(this,'tillar')">Китайский</button>
     <button class="btn" data-value="Испанский" data-uz="Ispan tili" data-ru="Испанский" onclick="multiSel(this,'tillar')">Испанский</button>
     <button class="btn" data-value="Узбекский" data-uz="O'zbek tili" data-ru="Узбекский" onclick="multiSel(this,'tillar')">Узбекский</button>
+    <button class="btn" data-value="Таджикский" data-uz="Tojik tili" data-ru="Таджикский" onclick="multiSel(this,'tillar')">Таджикский</button>
   </div>
 </div>
 
@@ -315,6 +314,7 @@ textarea{resize:vertical}
   <div class="bg" id="g-haydovchilik">
     <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" onclick="sel(this,'haydovchilik')">Есть</button>
     <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" onclick="sel(this,'haydovchilik')">Нету</button>
+    <button class="btn" data-value="Пока учусь, скоро будет" data-uz="Hozir o'qiyapman, tez orada bo'ladi" data-ru="Пока учусь, скоро будет" onclick="sel(this,'haydovchilik')">Пока учусь, скоро будет</button>
   </div>
 </div>
 
