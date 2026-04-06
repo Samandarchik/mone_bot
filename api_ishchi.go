@@ -36,12 +36,20 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Telegram caption
-	tg2 := ""
+	tgInfo := ""
+	if anketa.TgUsername != "" {
+		tgInfo = "\nTelegram: @" + anketa.TgUsername
+	}
 	if anketa.TgUsername2 != "" {
-		tg2 = "\nTelegram 2: @" + anketa.TgUsername2
+		tgInfo += "\nTelegram 2: @" + anketa.TgUsername2
+	}
+	if anketa.TgUserID != 0 {
+		tgInfo += fmt.Sprintf("\nTelegram ID: %d", anketa.TgUserID)
 	}
 	caption := fmt.Sprintf(
-		"Вакансия: %s\n"+
+		"📋 Новая анкета (Ishchi kerak)\n"+
+			"━━━━━━━━━━━━━━━━━━━━\n"+
+			"Вакансия: %s\n"+
 			"ФИО: %s\n"+
 			"Дата рождения: %s\n"+
 			"Рост: %d см\n"+
@@ -60,15 +68,32 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 		anketa.BoySm, anketa.VaznKg,
 		anketa.Manzil, anketa.OilaviyHolat, anketa.Bolalar,
 		anketa.Tillar, anketa.Malumot, anketa.Grafik,
-		anketa.Sudimlik, anketa.Haydovchilik, anketa.Telefon, tg2,
+		anketa.Sudimlik, anketa.Haydovchilik, anketa.Telefon, tgInfo,
 	)
 
-	// Admin TG ga yuborish (ishchi bot orqali)
+	// Ishchi kategoriyasining guruhiga yuborish
+	ishchiCats, _ := dbGetIshchiCategories()
+	var groupID int64
+	for _, c := range ishchiCats {
+		if c.Name == anketa.Vakansiya && c.TgGroupID != 0 {
+			groupID = c.TgGroupID
+			break
+		}
+	}
+
 	var tgErr error
 	if anketa.Rasm != "" && strings.Contains(anketa.Rasm, ",") {
+		// Admin ga yuborish
 		tgErr = sendIshchiPhotoToTelegram(adminTgID, anketa.Rasm, caption)
+		// Kategoriya guruhiga yuborish
+		if groupID != 0 {
+			sendIshchiPhotoToTelegram(groupID, anketa.Rasm, caption)
+		}
 	} else {
 		sendIshchiTgMessage(adminTgID, caption)
+		if groupID != 0 {
+			sendIshchiTgMessage(groupID, caption)
+		}
 	}
 
 	if tgErr != nil {
