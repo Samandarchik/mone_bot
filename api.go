@@ -104,58 +104,6 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 
 	fio := strings.TrimSpace(anketa.Familiya + " " + anketa.Ism + " " + anketa.Sharif)
 
-	tg2Str := ""
-	if anketa.TgUsername2 != "" {
-		tg2Str = "\nTelegram 2: @" + anketa.TgUsername2
-	}
-
-	caption := fmt.Sprintf(
-		"Должность: %s\n"+
-			"ФИО: %s\n"+
-			"Дата рождения: %s\n"+
-			"Рост: %d см\n"+
-			"Вес: %d кг\n"+
-			"Адрес: %s\n"+
-			"Ориентир: %s\n"+
-			"Общий стаж: %s\n"+
-			"Работа за рубежом: %s\n"+
-			"Образование: %s\n"+
-			"Семейное положение: %s\n"+
-			"Tillar:\n%s"+
-			"Телефон: %s\n"+
-			"Qo'shimcha: %s%s\n"+
-			"━━━━━━━━━━━━━━━━━━━━",
-		anketa.Lavozim, fio, anketa.TugilganSana,
-		anketa.BoySm, anketa.VaznKg,
-		anketa.YashashManzili, anketa.Moljal,
-		anketa.UmumiyTajriba, anketa.ChetElTajribasi,
-		anketa.Malumot, anketa.OilaviyHolat, tillarStr,
-		anketa.Telefon, anketa.Qoshimcha, tg2Str,
-	)
-
-	// Guruh ID ni kategoriyadan olish
-	cat, catErr := getCategoryByName(anketa.Lavozim)
-	var groupID int64
-	if catErr != nil || cat.TgGroupID == 0 {
-		groupID = -1003862297561
-	} else {
-		groupID = cat.TgGroupID
-	}
-
-	// Telegram guruhga faqat rezume yuborish (qabul/rad tugmalarsiz)
-	var tgErr error
-	if anketa.Rasm != "" && strings.Contains(anketa.Rasm, ",") {
-		tgErr = sendPhotoToTelegram(groupID, anketa.Rasm, caption, nil)
-	} else {
-		tgErr = sendMessageToTelegramWithKeyboard(groupID, caption, nil)
-	}
-
-	if tgErr != nil {
-		log.Printf("Telegram xato: %v", tgErr)
-		fio := strings.TrimSpace(anketa.Familiya + " " + anketa.Ism)
-		notifyAdmin("Telegramga yuborishda xato", tgErr.Error(), fio, anketa.Telefon, anketa.TgUserID, anketa.TgUsername)
-	}
-
 	// Foydalanuvchiga auto-xabar yuborish: to'liq ma'lumotlari bilan
 	if anketa.TgUserID != 0 {
 		userMsg := fmt.Sprintf(
@@ -196,7 +144,7 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, map[string]interface{}{"status": "ok", "id": id})
-	log.Printf("Anketa yuborildi: %s -> guruh %d (tg_user: %d)", fio, groupID, anketa.TgUserID)
+	log.Printf("Anketa yuborildi: %s (tg_user: %d)", fio, anketa.TgUserID)
 
 	// WebSocket orqali yangi rezumeni broadcast qilish
 	if id > 0 {
