@@ -114,6 +114,13 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(w, map[string]interface{}{"status": "ok", "id": id})
 	log.Printf("Ishchi anketa yuborildi: %s (tg_user: %d)", anketa.FIO, anketa.TgUserID)
+
+	// WS broadcast
+	if id > 0 {
+		if row, err := getIshchiAnketaByID(id); err == nil {
+			broadcastNewIshchi(row)
+		}
+	}
 }
 
 // GET /api/ishchi-anketalar
@@ -183,6 +190,9 @@ func handleUpdateIshchiAnketa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonResponse(w, map[string]string{"status": "updated"})
+	if row, err := getIshchiAnketaByID(id); err == nil {
+		broadcastIshchiUpdate(row)
+	}
 }
 
 // DELETE /api/ishchi-anketalar/{id}
@@ -197,4 +207,5 @@ func handleDeleteIshchiAnketa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonResponse(w, map[string]string{"status": "deleted"})
+	broadcastIshchiDelete(id)
 }

@@ -197,6 +197,13 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(w, map[string]interface{}{"status": "ok", "id": id})
 	log.Printf("Anketa yuborildi: %s -> guruh %d (tg_user: %d)", fio, groupID, anketa.TgUserID)
+
+	// WebSocket orqali yangi rezumeni broadcast qilish
+	if id > 0 {
+		if rez, err := getRezumeByID(id); err == nil {
+			broadcastNewRezume(rez)
+		}
+	}
 }
 
 // GET /api/rezumeler — foydalanuvchi kategoriyalari bo'yicha filtrlangan
@@ -285,6 +292,7 @@ func handleDeleteRezume(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, map[string]string{"status": "deleted"})
+	broadcastRezumeDelete(id)
 }
 
 // PATCH /api/rezumeler/{id}/status — qabul/rad qilish
@@ -331,6 +339,7 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	// Rad qilinsa — xabar yuborilmaydi
 
 	jsonResponse(w, map[string]string{"status": "updated"})
+	broadcastRezumeStatusUpdate(id, body.Status, adminName)
 }
 
 // --- Yordamchi funksiyalar ---

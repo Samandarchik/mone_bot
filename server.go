@@ -264,6 +264,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Public — rezume yuborish
+	mux.HandleFunc("/ws/rezumeler", handleWebSocket)
 	mux.HandleFunc("POST /rezume", handleRezume)
 	mux.HandleFunc("POST /ishchi-rezume", handleIshchiRezume)
 	mux.HandleFunc("POST /api/report-error", handleReportError)

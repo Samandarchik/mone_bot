@@ -288,8 +288,8 @@ textarea{resize:vertical}
   <span class="lbl"><span class="step-num">15</span><span data-uz="Ma'lumoti" data-ru="Образования" data-en="Education">Образования</span></span>
   <div class="bg" id="g-malumot">
     <button class="btn" data-value="Средняя школа / Лицей" data-uz="O'rta maktab / Litsey" data-ru="Средняя школа / Лицей" data-en="High school / Lyceum" onclick="sel(this,'malumot')">Средняя школа / Лицей</button>
-    <button class="btn" data-value="Высшее (Бакалавриат)" data-uz="Oliy (Bakalavr)" data-ru="Высшее (Бакалавриат)" data-en="Bachelor's degree" onclick="sel(this,'malumot')">Высшее (Бакалавриат)</button>
-    <button class="btn" data-value="Магистратура" data-uz="Magistratura" data-ru="Магистратура" data-en="Master's degree" onclick="sel(this,'malumot')">Магистратура</button>
+    <button class="btn" data-value="Высшее (Бакалавриат)" data-uz="Oliy (Bakalavr)" data-ru="Высшее (Бакалавриат)" data-en="Bachelor degree" onclick="sel(this,'malumot')">Высшее (Бакалавриат)</button>
+    <button class="btn" data-value="Магистратура" data-uz="Magistratura" data-ru="Магистратура" data-en="Master degree" onclick="sel(this,'malumot')">Магистратура</button>
   </div>
 </div>
 
@@ -313,7 +313,7 @@ textarea{resize:vertical}
 
 <!-- 18. Haydovchilik -->
 <div class="card" style="animation-delay:.6s">
-  <span class="lbl"><span class="step-num">18</span><span data-uz="Haydovchilik guvohnomasi" data-ru="Водительские удостоверения" data-en="Driver's license">Водительские удостоверения</span></span>
+  <span class="lbl"><span class="step-num">18</span><span data-uz="Haydovchilik guvohnomasi" data-ru="Водительские удостоверения" data-en="Driving license">Водительские удостоверения</span></span>
   <div class="bg" id="g-haydovchilik">
     <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" data-en="Yes" onclick="sel(this,'haydovchilik')">Есть</button>
     <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" data-en="No" onclick="sel(this,'haydovchilik')">Нету</button>
@@ -587,7 +587,7 @@ async function submitForm(){
     {key:'malumot',uz:'Ma\'lumot',ru:'Образования',en:'Education'},
     {key:'grafik',uz:'Grafik',ru:'График',en:'Schedule'},
     {key:'sudimlik',uz:'Sudimlik',ru:'Судимость',en:'Criminal record'},
-    {key:'haydovchilik',uz:'Haydovchilik guvohnomasi',ru:'Водительские удостоверения',en:'Driver\'s license'}
+    {key:'haydovchilik',uz:'Haydovchilik guvohnomasi',ru:'Водительские удостоверения',en:'Driving license'}
   ];
   const missing=[];
   const t=f=>f[curLang]||f.ru;

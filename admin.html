@@ -377,10 +377,6 @@ tr:hover td{background:rgba(54,153,255,.02)}
               </div>
               <select class="filter-select" id="ishVakansiya" onchange="loadIshchiAnketalar()">
                 <option value="">Barcha vakansiya</option>
-                <option value="Няня">Няня</option>
-                <option value="Домработница">Домработница</option>
-                <option value="Педагог английского языка">Педагог англ. тили</option>
-                <option value="Педагог арабского языка">Педагог араб тили</option>
               </select>
             </div>
           </div>
@@ -1167,7 +1163,25 @@ async function showRezumeDetail(id) {
 
 // ===== ISHCHI ANKETALAR =====
 let ishPage = 1;
+let ishCatsLoaded = false;
+async function loadIshchiVakansiyaFilter() {
+  if (ishCatsLoaded) return;
+  try {
+    const cats = await api('GET', '/api/ishchi-categories');
+    const sel = document.getElementById('ishVakansiya');
+    if (cats && cats.length > 0) {
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+    }
+    ishCatsLoaded = true;
+  } catch(e) {}
+}
 async function loadIshchiAnketalar(page) {
+  loadIshchiVakansiyaFilter();
   if (page) ishPage = page;
   const search = document.getElementById('ishSearch').value.trim();
   const vakansiya = document.getElementById('ishVakansiya').value;
@@ -1233,6 +1247,8 @@ async function showIshchiDetail(id) {
             <p style="color:var(--text2);margin-bottom:16px">${r.vakansiya}</p>
             <span style="font-size:13px;color:var(--text2);margin-bottom:16px;display:block">ID: ${r.id} | ${formatDate(r.created_at)}</span>
             <div class="detail-row"><span class="detail-label">Tug'ilgan sana</span><span class="detail-value">${r.tugilgan_sana || '-'}</span></div>
+            <div class="detail-row"><span class="detail-label">Bo'y</span><span class="detail-value">${r.boy_sm ? r.boy_sm + ' sm' : '-'}</span></div>
+            <div class="detail-row"><span class="detail-label">Vazn</span><span class="detail-value">${r.vazn_kg ? r.vazn_kg + ' kg' : '-'}</span></div>
             <div class="detail-row"><span class="detail-label">Manzil</span><span class="detail-value">${r.manzil || '-'}</span></div>
             <div class="detail-row"><span class="detail-label">Oilaviy holat</span><span class="detail-value">${r.oilaviy_holat || '-'}</span></div>
             <div class="detail-row"><span class="detail-label">Bolalar</span><span class="detail-value">${r.bolalar || '-'}</span></div>

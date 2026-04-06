@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const ishchiBotToken = "8730848638:AAEBDJ1RK7-ybqR29jb1ZrDyZOB3nJiQZ9s"
+const ishchiBotToken = "8759082054:AAHNHn_l6Nqg4S6GGXj88veIKqrgtuJ1a5U"
 
 var ishchiUserStates = make(map[int64]string)
 
