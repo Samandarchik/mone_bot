@@ -9,7 +9,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh}
 
-.header{background:rgba(255,255,255,.15);backdrop-filter:blur(20px);padding:16px 20px;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.2)}
+.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:16px 20px;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.2)}
 .header-inner{max-width:640px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
 .logo{color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.5px}
 .logo span{opacity:.7;font-weight:400;font-size:14px;margin-left:8px}
@@ -336,7 +336,7 @@ textarea{resize:vertical}
   <div style="margin-top:14px">
     <span class="sec-title" data-uz="Qo'shimcha til" data-ru="Дополнительный язык">Qo'shimcha til</span>
     <div class="add-lang">
-      <input type="text" id="extra-lang-name" data-uz-ph="Til nomi (masalan: Turk tili)" data-ru-ph="Название языка (например: Турецкий)" placeholder="Til nomi (masalan: Turk tili)">
+      <input type="text" id="extra-lang-name" data-uz-ph="Til nomi (masalan: Tojik tili)" data-ru-ph="Название языка (например: Таджикский)" placeholder="Til nomi (masalan: Tojik tili)">
       <button onclick="addExtraLang()" data-uz="+ Qo'shish" data-ru="+ Добавить">+ Qo'shish</button>
     </div>
     <div id="extra-langs" class="added-lang"></div>
@@ -357,10 +357,6 @@ textarea{resize:vertical}
     <div style="display:flex;align-items:center;padding:12px 16px;border:2px solid #e8e8ef;border-radius:12px;background:#f0f0ff">
       <span style="color:#667eea;font-weight:600;font-size:14px" id="tg-auto-val"></span>
     </div>
-  </div>
-  <div style="display:flex;align-items:center;border:2px solid #e8e8ef;border-radius:12px;background:#fafaff;transition:all .2s;margin-bottom:10px" id="tg-extra-wrap">
-    <span style="padding:12px 4px 12px 16px;font-size:14px;color:#667eea;font-weight:600">@</span>
-    <input type="text" id="tg-extra" data-uz-ph="Asosiy telegram username yozing" data-ru-ph="Укажите username основного Telegram аккаунта" placeholder="Asosiy telegram username yozing" style="border:none;background:transparent;box-shadow:none;padding:12px 16px 12px 4px;outline:none;width:100%">
   </div>
   <div style="display:flex;align-items:center;border:2px solid #e8e8ef;border-radius:12px;background:#fafaff;transition:all .2s" id="tg-extra2-wrap">
     <span style="padding:12px 4px 12px 16px;font-size:14px;color:#667eea;font-weight:600">@</span>
@@ -581,7 +577,7 @@ function updateProgress(){
   if(state.oila)filled++;
   if(langs.en||langs.ru||langs.tr||langs.uz)filled++;
   if(document.getElementById('telefon').value)filled++;
-  if(document.getElementById('tg-extra').value||urlTgUsername)filled++;
+  if(urlTgUsername)filled++;
   if(photoBase64)filled++;
   document.getElementById('progress').style.width=Math.round(filled/total*100)+'%';
 }
@@ -735,7 +731,7 @@ async function submitForm(){
     qoshimcha:document.getElementById('extra').value,
     rasm:photoBase64,
     tg_user_id:urlTgUserID,
-    tg_username:document.getElementById('tg-extra').value.trim().replace('@','')||urlTgUsername,
+    tg_username:urlTgUsername,
     tg_username2:document.getElementById('tg-extra2').value.trim().replace('@','')
   };
 
