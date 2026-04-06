@@ -72,6 +72,7 @@ type Anketa struct {
 	Rasm            string     `json:"rasm"`
 	TgUserID        int64      `json:"tg_user_id"`
 	TgUsername      string     `json:"tg_username"`
+	TgUsername2     string     `json:"tg_username2"`
 }
 
 type RezumeRow struct {
@@ -95,6 +96,7 @@ type RezumeRow struct {
 	RasmUrl         string     `json:"rasm_url"`
 	TgUserID        int64      `json:"tg_user_id"`
 	TgUsername      string     `json:"tg_username"`
+	TgUsername2     string     `json:"tg_username2"`
 	Status          string         `json:"status"`
 	StatusBy        int64          `json:"status_by"`
 	StatusByName    string         `json:"status_by_name"`
@@ -157,6 +159,7 @@ type IshchiAnketa struct {
 	Rasm         string `json:"rasm"`
 	TgUserID     int64  `json:"tg_user_id"`
 	TgUsername   string `json:"tg_username"`
+	TgUsername2  string `json:"tg_username2"`
 }
 
 type IshchiRow struct {
@@ -179,6 +182,7 @@ type IshchiRow struct {
 	RasmUrl      string `json:"rasm_url"`
 	TgUserID     int64  `json:"tg_user_id"`
 	TgUsername   string `json:"tg_username"`
+	TgUsername2  string `json:"tg_username2"`
 	Status       string `json:"status"`
 	CreatedAt    string `json:"created_at"`
 }
@@ -279,6 +283,7 @@ func main() {
 	// Ishchi Anketa API (auth kerak)
 	mux.HandleFunc("GET /api/ishchi-anketalar", authRequired(handleGetIshchiAnketalar))
 	mux.HandleFunc("GET /api/ishchi-anketalar/{id}", authRequired(handleGetIshchiAnketa))
+	mux.HandleFunc("PUT /api/ishchi-anketalar/{id}", authRequired(handleUpdateIshchiAnketa))
 	mux.HandleFunc("DELETE /api/ishchi-anketalar/{id}", authRequired(handleDeleteIshchiAnketa))
 
 	// Interview API

@@ -104,6 +104,11 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 
 	fio := strings.TrimSpace(anketa.Familiya + " " + anketa.Ism + " " + anketa.Sharif)
 
+	tg2Str := ""
+	if anketa.TgUsername2 != "" {
+		tg2Str = "\nTelegram 2: @" + anketa.TgUsername2
+	}
+
 	caption := fmt.Sprintf(
 		"Должность: %s\n"+
 			"ФИО: %s\n"+
@@ -118,14 +123,14 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 			"Семейное положение: %s\n"+
 			"Tillar:\n%s"+
 			"Телефон: %s\n"+
-			"Qo'shimcha: %s\n"+
+			"Qo'shimcha: %s%s\n"+
 			"━━━━━━━━━━━━━━━━━━━━",
 		anketa.Lavozim, fio, anketa.TugilganSana,
 		anketa.BoySm, anketa.VaznKg,
 		anketa.YashashManzili, anketa.Moljal,
 		anketa.UmumiyTajriba, anketa.ChetElTajribasi,
 		anketa.Malumot, anketa.OilaviyHolat, tillarStr,
-		anketa.Telefon, anketa.Qoshimcha,
+		anketa.Telefon, anketa.Qoshimcha, tg2Str,
 	)
 
 	// Guruh ID ni kategoriyadan olish

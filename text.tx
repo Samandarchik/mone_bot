@@ -1,4 +1,3 @@
 go build -o web_bot *.go
 pkill web_bot
 nohup ./web_bot > web_bot.log 2>&1 &
-new

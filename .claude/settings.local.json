@@ -9,19 +9,7 @@
       "Bash(kill:*)",
       "Bash(go run:*)",
       "Bash(wc:*)",
-      "Bash(flutter analyze:*)",
-      "Bash(git init:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(openssl rand:*)",
-      "Bash(./auto_update)",
-      "Bash(curl -s http://localhost:9091/api/projects)",
-      "Bash(python3 -m json.tool)",
-      "Bash(curl -s http://localhost:9091/api/logs)",
-      "Bash(curl -s http://localhost:9091/api/projects/mone_bot)",
-      "Bash(curl -s -X POST http://localhost:9091/api/projects -H 'Content-Type: application/json' -d '{\"name\":\"test_app\",\"repo\":\"Samandarchik/test_app\",\"path\":\"/root/test_app\",\"branch\":\"main\",\"build_cmd\":\"go build -o test_app .\",\"process_name\":\"test_app\",\"run_cmd\":\"nohup ./test_app > test_app.log 2>&1 &\",\"secret\":\"mysecret\"}')",
-      "Bash(curl -s -X DELETE http://localhost:9091/api/projects/test_app)",
-      "Bash(python3 -m json.tool pkill -f auto_update)"
+      "Bash(flutter analyze:*)"
     ]
   }
 }

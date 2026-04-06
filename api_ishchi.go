@@ -36,6 +36,10 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Telegram caption
+	tg2 := ""
+	if anketa.TgUsername2 != "" {
+		tg2 = "\nTelegram 2: @" + anketa.TgUsername2
+	}
 	caption := fmt.Sprintf(
 		"Вакансия: %s\n"+
 			"ФИО: %s\n"+
@@ -50,13 +54,13 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 			"График: %s\n"+
 			"Судимость: %s\n"+
 			"Водительские удостоверения: %s\n"+
-			"Телефон: %s\n"+
+			"Телефон: %s%s\n"+
 			"━━━━━━━━━━━━━━━━━━━━",
 		anketa.Vakansiya, anketa.FIO, anketa.TugilganSana,
 		anketa.BoySm, anketa.VaznKg,
 		anketa.Manzil, anketa.OilaviyHolat, anketa.Bolalar,
 		anketa.Tillar, anketa.Malumot, anketa.Grafik,
-		anketa.Sudimlik, anketa.Haydovchilik, anketa.Telefon,
+		anketa.Sudimlik, anketa.Haydovchilik, anketa.Telefon, tg2,
 	)
 
 	// Admin TG ga yuborish (ishchi bot orqali)
@@ -160,6 +164,25 @@ func handleGetIshchiAnketa(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonResponse(w, anketa)
+}
+
+// PUT /api/ishchi-anketalar/{id}
+func handleUpdateIshchiAnketa(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
+		return
+	}
+	var anketa IshchiAnketa
+	if err := json.NewDecoder(r.Body).Decode(&anketa); err != nil {
+		jsonError(w, "JSON xato: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := updateIshchiAnketa(id, &anketa); err != nil {
+		jsonError(w, "Yangilashda xato: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(w, map[string]string{"status": "updated"})
 }
 
 // DELETE /api/ishchi-anketalar/{id}

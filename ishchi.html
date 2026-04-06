@@ -338,9 +338,13 @@ textarea{resize:vertical}
       <span style="color:#667eea;font-weight:600;font-size:14px" id="tg-auto-val"></span>
     </div>
   </div>
-  <div style="display:flex;align-items:center;border:2px solid #e8e8ef;border-radius:12px;background:#fafaff;transition:all .2s" id="tg-extra-wrap">
+  <div style="display:flex;align-items:center;border:2px solid #e8e8ef;border-radius:12px;background:#fafaff;transition:all .2s;margin-bottom:10px" id="tg-extra-wrap">
     <span style="padding:12px 4px 12px 16px;font-size:14px;color:#667eea;font-weight:600">@</span>
     <input type="text" id="tg-extra" data-uz-ph="Asosiy telegram username yozing" data-ru-ph="Укажите username основного Telegram аккаунта" data-en-ph="Enter your main Telegram username" placeholder="Укажите username основного Telegram аккаунта" style="border:none;background:transparent;box-shadow:none;padding:12px 16px 12px 4px;outline:none;width:100%">
+  </div>
+  <div style="display:flex;align-items:center;border:2px solid #e8e8ef;border-radius:12px;background:#fafaff;transition:all .2s" id="tg-extra2-wrap">
+    <span style="padding:12px 4px 12px 16px;font-size:14px;color:#667eea;font-weight:600">@</span>
+    <input type="text" id="tg-extra2" data-uz-ph="Ikkinchi telegram username (ixtiyoriy)" data-ru-ph="Укажите второе ссылка телеграмма если есть" data-en-ph="Second Telegram username (optional)" placeholder="Укажите второе ссылка телеграмма если есть" style="border:none;background:transparent;box-shadow:none;padding:12px 16px 12px 4px;outline:none;width:100%">
   </div>
 </div>
 
@@ -637,7 +641,8 @@ async function submitForm(){
     rasm:photoBase64,
     lang:curLang,
     tg_user_id:urlTgUserID,
-    tg_username:document.getElementById('tg-extra').value.trim().replace('@','')||urlTgUsername
+    tg_username:document.getElementById('tg-extra').value.trim().replace('@','')||urlTgUsername,
+    tg_username2:document.getElementById('tg-extra2').value.trim().replace('@','')
   };
 
   try{

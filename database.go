@@ -143,6 +143,10 @@ func initDB() {
 	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN vazn_kg INTEGER NOT NULL DEFAULT 0")
 	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN lang TEXT NOT NULL DEFAULT ''")
 
+	// Migration: tg_username2 qo'shish
+	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN tg_username2 TEXT NOT NULL DEFAULT ''")
+	db.Exec("ALTER TABLE rezumeler ADD COLUMN tg_username2 TEXT NOT NULL DEFAULT ''")
+
 	// ishchi_categories jadvalini yaratish
 	db.Exec(`CREATE TABLE IF NOT EXISTS ishchi_categories (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -197,13 +201,13 @@ func saveRezume(a *Anketa, rasmURL string) (int64, error) {
 		(lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi,
 		 malumot, oilaviy_holat, tillar, telefon, qoshimcha, rasm_url,
-		 tg_user_id, tg_username)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 tg_user_id, tg_username, tg_username2)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		a.Lavozim, a.Familiya, a.Ism, a.Sharif, a.TugilganSana,
 		a.BoySm, a.VaznKg, a.YashashManzili, a.Moljal,
 		a.UmumiyTajriba, a.ChetElTajribasi, a.Malumot, a.OilaviyHolat,
 		string(tillarJSON), a.Telefon, a.Qoshimcha, rasmURL,
-		a.TgUserID, a.TgUsername,
+		a.TgUserID, a.TgUsername, a.TgUsername2,
 	)
 	if err != nil {
 		return 0, err
@@ -250,7 +254,7 @@ func getRezumeler(lavozim, status, search string, allowedCategories []string, pa
 	query := fmt.Sprintf(
 		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
-		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, status, status_by, status_by_name, created_at
+		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, created_at
 		 FROM rezumeler WHERE %s ORDER BY id DESC LIMIT ? OFFSET ?`, where)
 	args = append(args, limit, offset)
 
@@ -268,7 +272,7 @@ func getRezumeler(lavozim, status, search string, allowedCategories []string, pa
 			&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 			&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 			&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
-			&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.Status, &r.StatusBy, &r.StatusByName, &r.CreatedAt,
+			&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.CreatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -288,12 +292,12 @@ func getRezumeByID(id int64) (*RezumeRow, error) {
 	err := db.QueryRow(
 		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
-		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, status, status_by, status_by_name, created_at
+		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, created_at
 		 FROM rezumeler WHERE id = ?`, id).Scan(
 		&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 		&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 		&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
-		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.Status, &r.StatusBy, &r.StatusByName, &r.CreatedAt,
+		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -807,7 +811,7 @@ func getIshchiAnketalar(vakansiya, status, search string, page, limit int) ([]Is
 	query := fmt.Sprintf(
 		`SELECT id, vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
-		 rasm_url, tg_user_id, tg_username, status, created_at
+		 rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, created_at
 		 FROM ishchi_anketalar WHERE %s ORDER BY id DESC LIMIT ? OFFSET ?`, where)
 	args = append(args, limit, offset)
 
@@ -824,7 +828,7 @@ func getIshchiAnketalar(vakansiya, status, search string, page, limit int) ([]Is
 			&r.ID, &r.Vakansiya, &r.FIO, &r.TugilganSana, &r.BoySm, &r.VaznKg, &r.Manzil, &r.Lang,
 			&r.OilaviyHolat, &r.Bolalar, &r.Tillar, &r.Malumot,
 			&r.Grafik, &r.Sudimlik, &r.Haydovchilik, &r.Telefon,
-			&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.Status, &r.CreatedAt,
+			&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.CreatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -839,12 +843,12 @@ func getIshchiAnketaByID(id int64) (*IshchiRow, error) {
 	err := db.QueryRow(
 		`SELECT id, vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
-		 rasm_url, tg_user_id, tg_username, status, created_at
+		 rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, created_at
 		 FROM ishchi_anketalar WHERE id = ?`, id).Scan(
 		&r.ID, &r.Vakansiya, &r.FIO, &r.TugilganSana, &r.BoySm, &r.VaznKg, &r.Manzil, &r.Lang,
 		&r.OilaviyHolat, &r.Bolalar, &r.Tillar, &r.Malumot,
 		&r.Grafik, &r.Sudimlik, &r.Haydovchilik, &r.Telefon,
-		&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.Status, &r.CreatedAt,
+		&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -861,17 +865,31 @@ func saveIshchiAnketa(a *IshchiAnketa, rasmURL string) (int64, error) {
 	result, err := db.Exec(`INSERT INTO ishchi_anketalar
 		(vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
-		 rasm_url, tg_user_id, tg_username)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 rasm_url, tg_user_id, tg_username, tg_username2)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		a.Vakansiya, a.FIO, a.TugilganSana, a.BoySm, a.VaznKg, a.Manzil, a.Lang,
 		a.OilaviyHolat, a.Bolalar, a.Tillar, a.Malumot,
 		a.Grafik, a.Sudimlik, a.Haydovchilik, a.Telefon,
-		rasmURL, a.TgUserID, a.TgUsername,
+		rasmURL, a.TgUserID, a.TgUsername, a.TgUsername2,
 	)
 	if err != nil {
 		return 0, err
 	}
 	return result.LastInsertId()
+}
+
+func updateIshchiAnketa(id int64, a *IshchiAnketa) error {
+	_, err := db.Exec(`UPDATE ishchi_anketalar SET
+		vakansiya=?, fio=?, tugilgan_sana=?, boy_sm=?, vazn_kg=?, manzil=?,
+		oilaviy_holat=?, bolalar=?, tillar=?, malumot=?, grafik=?,
+		sudimlik=?, haydovchilik=?, telefon=?, tg_username=?, tg_username2=?
+		WHERE id=?`,
+		a.Vakansiya, a.FIO, a.TugilganSana, a.BoySm, a.VaznKg, a.Manzil,
+		a.OilaviyHolat, a.Bolalar, a.Tillar, a.Malumot, a.Grafik,
+		a.Sudimlik, a.Haydovchilik, a.Telefon, a.TgUsername, a.TgUsername2,
+		id,
+	)
+	return err
 }
 
 // ===================== ISHCHI CATEGORY CRUD =====================

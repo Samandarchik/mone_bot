@@ -657,6 +657,128 @@ tr:hover td{background:rgba(54,153,255,.02)}
   </div>
 </div>
 
+<!-- Ishchi Edit Modal -->
+<div class="modal-overlay" id="ishchiEditModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-head">
+      <h3>Ishchi anketani tahrirlash</h3>
+      <button class="modal-close" onclick="closeModal('ishchiEditModal')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    </div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto">
+      <input type="hidden" id="ishEditId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vakansiya</label>
+          <input type="text" id="ishEditVakansiya">
+        </div>
+        <div class="form-group">
+          <label>FIO</label>
+          <input type="text" id="ishEditFio">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tug'ilgan sana</label>
+          <input type="text" id="ishEditTugilgan" placeholder="01.01.1990">
+        </div>
+        <div class="form-group">
+          <label>Telefon</label>
+          <input type="text" id="ishEditTelefon">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Bo'y (sm)</label>
+          <input type="number" id="ishEditBoy">
+        </div>
+        <div class="form-group">
+          <label>Vazn (kg)</label>
+          <input type="number" id="ishEditVazn">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Manzil</label>
+        <input type="text" id="ishEditManzil">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Oilaviy holat</label>
+          <select id="ishEditOila">
+            <option value="">Tanlang</option>
+            <option value="Замужем">Замужем</option>
+            <option value="Не в браке">Не в браке</option>
+            <option value="Разведена">Разведена</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Bolalar</label>
+          <select id="ishEditBolalar">
+            <option value="">Tanlang</option>
+            <option value="Есть">Есть</option>
+            <option value="Нету">Нету</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tillar</label>
+        <input type="text" id="ishEditTillar" placeholder="Китайский, Русский, Узбекский">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ma'lumot</label>
+          <select id="ishEditMalumot">
+            <option value="">Tanlang</option>
+            <option value="Средняя школа / Лицей">Средняя школа / Лицей</option>
+            <option value="Высшее (Бакалавриат)">Высшее (Бакалавриат)</option>
+            <option value="Магистратура">Магистратура</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Grafik</label>
+          <select id="ishEditGrafik">
+            <option value="">Tanlang</option>
+            <option value="С проживанием">С проживанием</option>
+            <option value="Без проживания">Без проживания</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Sudimlik</label>
+          <select id="ishEditSudimlik">
+            <option value="">Tanlang</option>
+            <option value="Есть">Есть</option>
+            <option value="Нету">Нету</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Haydovchilik guvohnomasi</label>
+          <select id="ishEditHaydovchilik">
+            <option value="">Tanlang</option>
+            <option value="Есть">Есть</option>
+            <option value="Нету">Нету</option>
+            <option value="Пока учусь, скоро будет">Пока учусь, скоро будет</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telegram username</label>
+          <input type="text" id="ishEditTgUsername" placeholder="@username">
+        </div>
+        <div class="form-group">
+          <label>Telegram 2 (ixtiyoriy)</label>
+          <input type="text" id="ishEditTgUsername2" placeholder="@username2">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('ishchiEditModal')">Bekor qilish</button>
+      <button class="btn-save" onclick="saveIshchiEdit()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1068,6 +1190,7 @@ async function loadIshchiAnketalar(page) {
           <td>
             <div style="display:flex;gap:4px">
               <button class="act-btn act-view" title="Ko'rish" onclick="showIshchiDetail(${r.id})"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+              <button class="act-btn act-edit" title="Tahrirlash" onclick="openIshchiEdit(${r.id})"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
               <button class="act-btn act-del" title="O'chirish" onclick="deleteIshchi(${r.id})"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
             </div>
           </td>
@@ -1120,10 +1243,69 @@ async function showIshchiDetail(id) {
             <div class="detail-row"><span class="detail-label">Haydovchilik guvohnomasi</span><span class="detail-value">${r.haydovchilik || '-'}</span></div>
             <div class="detail-row"><span class="detail-label">Telefon</span><span class="detail-value"><a href="tel:${r.telefon}" style="color:var(--primary);text-decoration:none;font-weight:600">${r.telefon}</a></span></div>
             <div class="detail-row"><span class="detail-label">Telegram</span><span class="detail-value">${r.tg_username ? `<a href="https://t.me/${r.tg_username}" target="_blank" style="color:var(--primary);text-decoration:none;font-weight:600">@${r.tg_username}</a>` : '-'} ${r.tg_user_id ? `(ID: <a href="tg://user?id=${r.tg_user_id}" style="color:var(--primary);text-decoration:none">${r.tg_user_id}</a>)` : ''}</span></div>
+            <div class="detail-row"><span class="detail-label">Telegram 2</span><span class="detail-value">${r.tg_username2 ? `<a href="https://t.me/${r.tg_username2}" target="_blank" style="color:var(--primary);text-decoration:none;font-weight:600">@${r.tg_username2}</a>` : '-'}</span></div>
           </div>
+        </div>
+        <div style="margin-top:16px">
+          <button class="btn-add" onclick="openIshchiEdit(${r.id})">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            Tahrirlash
+          </button>
         </div>
       </div>
     `;
+  } catch (e) { toast(e.message, false); }
+}
+
+async function openIshchiEdit(id) {
+  try {
+    const r = await api('GET', `/api/ishchi-anketalar/${id}`);
+    document.getElementById('ishEditId').value = r.id;
+    document.getElementById('ishEditVakansiya').value = r.vakansiya || '';
+    document.getElementById('ishEditFio').value = r.fio || '';
+    document.getElementById('ishEditTugilgan').value = r.tugilgan_sana || '';
+    document.getElementById('ishEditTelefon').value = r.telefon || '';
+    document.getElementById('ishEditBoy').value = r.boy_sm || 0;
+    document.getElementById('ishEditVazn').value = r.vazn_kg || 0;
+    document.getElementById('ishEditManzil').value = r.manzil || '';
+    document.getElementById('ishEditOila').value = r.oilaviy_holat || '';
+    document.getElementById('ishEditBolalar').value = r.bolalar || '';
+    document.getElementById('ishEditTillar').value = r.tillar || '';
+    document.getElementById('ishEditMalumot').value = r.malumot || '';
+    document.getElementById('ishEditGrafik').value = r.grafik || '';
+    document.getElementById('ishEditSudimlik').value = r.sudimlik || '';
+    document.getElementById('ishEditHaydovchilik').value = r.haydovchilik || '';
+    document.getElementById('ishEditTgUsername').value = r.tg_username || '';
+    document.getElementById('ishEditTgUsername2').value = r.tg_username2 || '';
+    openModal('ishchiEditModal');
+  } catch (e) { toast(e.message, false); }
+}
+
+async function saveIshchiEdit() {
+  const id = document.getElementById('ishEditId').value;
+  const payload = {
+    vakansiya: document.getElementById('ishEditVakansiya').value.trim(),
+    fio: document.getElementById('ishEditFio').value.trim(),
+    tugilgan_sana: document.getElementById('ishEditTugilgan').value.trim(),
+    telefon: document.getElementById('ishEditTelefon').value.trim(),
+    boy_sm: parseInt(document.getElementById('ishEditBoy').value) || 0,
+    vazn_kg: parseInt(document.getElementById('ishEditVazn').value) || 0,
+    manzil: document.getElementById('ishEditManzil').value.trim(),
+    oilaviy_holat: document.getElementById('ishEditOila').value,
+    bolalar: document.getElementById('ishEditBolalar').value,
+    tillar: document.getElementById('ishEditTillar').value.trim(),
+    malumot: document.getElementById('ishEditMalumot').value,
+    grafik: document.getElementById('ishEditGrafik').value,
+    sudimlik: document.getElementById('ishEditSudimlik').value,
+    haydovchilik: document.getElementById('ishEditHaydovchilik').value,
+    tg_username: document.getElementById('ishEditTgUsername').value.trim().replace('@',''),
+    tg_username2: document.getElementById('ishEditTgUsername2').value.trim().replace('@','')
+  };
+  try {
+    await api('PUT', `/api/ishchi-anketalar/${id}`, payload);
+    toast('Yangilandi!');
+    closeModal('ishchiEditModal');
+    loadIshchiAnketalar();
   } catch (e) { toast(e.message, false); }
 }
 
