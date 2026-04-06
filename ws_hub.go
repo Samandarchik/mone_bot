@@ -17,8 +17,9 @@ type WSEvent struct {
 
 // Client — bitta WebSocket ulanish
 type wsClient struct {
-	conn *websocket.Conn
-	send chan []byte
+	conn              *websocket.Conn
+	send              chan []byte
+	allowedCategories []string
 }
 
 // Hub — barcha WebSocket clientlarni boshqaradi
@@ -81,10 +82,17 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "token kerak", http.StatusUnauthorized)
 		return
 	}
-	_, err := dbGetUserByToken(token)
-	if err != nil {
+	user, err := dbGetUserByToken(token)
+	if err != nil || !user.IsActive {
 		http.Error(w, "noto'g'ri token", http.StatusUnauthorized)
 		return
+	}
+
+	// Foydalanuvchining ruxsat etilgan kategoriyalarini olish
+	var allowedCategories []string
+	cats := getUserCategories(user.ID)
+	for _, c := range cats {
+		allowedCategories = append(allowedCategories, c.Name)
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -94,14 +102,15 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &wsClient{
-		conn: conn,
-		send: make(chan []byte, 256),
+		conn:              conn,
+		send:              make(chan []byte, 256),
+		allowedCategories: allowedCategories,
 	}
 	hub.register(client)
 
-	// Ulanganida mavjud ma'lumotlarni yuborish
+	// Ulanganida mavjud ma'lumotlarni yuborish (foydalanuvchi kategoriyalari bilan filtrlangan)
 	go func() {
-		rezumeler, _, err := getRezumeler("", "", "", nil, 1, 100)
+		rezumeler, _, err := getRezumeler("", "", "", allowedCategories, 1, 100)
 		if err == nil {
 			data, _ := json.Marshal(WSEvent{Type: "init", Data: rezumeler})
 			client.send <- data
@@ -137,8 +146,34 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 // Broadcast helper funksiyalari
-func broadcastNewRezume(rezume interface{}) {
-	hub.broadcast(WSEvent{Type: "new_rezume", Data: rezume})
+func broadcastNewRezume(rezume *RezumeRow) {
+	event := WSEvent{Type: "new_rezume", Data: rezume}
+	data, err := json.Marshal(event)
+	if err != nil {
+		return
+	}
+	hub.mu.RLock()
+	defer hub.mu.RUnlock()
+	for c := range hub.clients {
+		// Agar client kategoriyalari bo'sh bo'lsa — hammasi ruxsat (super_admin)
+		if len(c.allowedCategories) > 0 {
+			allowed := false
+			for _, cat := range c.allowedCategories {
+				if cat == rezume.Lavozim {
+					allowed = true
+					break
+				}
+			}
+			if !allowed {
+				continue
+			}
+		}
+		select {
+		case c.send <- data:
+		default:
+			go hub.unregister(c)
+		}
+	}
 }
 
 func broadcastRezumeStatusUpdate(id int64, status, statusByName string) {
