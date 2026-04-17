@@ -66,7 +66,7 @@ func handleBotMessage(msg *TgMessage) {
 		userStates[chatID] = "waiting_phone"
 		stateMu.Unlock()
 
-		sendTgMessage(chatID, "Assalomu alaykum!\n\nIltimos, telefon raqamingizni yuboring.\nMisol: +998901234567\n\nЗдравствуйте!\n\nПожалуйста, отправьте ваш номер телефона.\nПример: +998901234567")
+		sendTgMessage(chatID, "Assalomu alaykum!\n\nIltimos, telefon raqamingizni yuboring.\nMisol: 998901234567")
 		return
 	}
 
@@ -83,7 +83,7 @@ func handleBotMessage(msg *TgMessage) {
 			phone = phone[1:]
 		}
 		if !strings.HasPrefix(phone, "998") || len(phone) != 12 {
-			sendTgMessage(chatID, "Telefon raqam noto'g'ri formatda.\nIltimos, to'g'ri raqam yuboring.\nMisol: +998901234567\n\nНеверный формат номера.\nПожалуйста, отправьте правильный номер.\nПример: +998901234567")
+			sendTgMessage(chatID, "Telefon raqam noto'g'ri formatda.\nIltimos, to'g'ri raqam yuboring.\nMisol: 998901234567")
 			return
 		}
 
@@ -93,7 +93,7 @@ func handleBotMessage(msg *TgMessage) {
 		}
 
 		link := fmt.Sprintf("%s/+%s/%d/%s", baseURL, phone, chatID, username)
-		sendTgMessage(chatID, fmt.Sprintf("Rahmat!\n\nAnketa to'ldirish uchun quyidagi havolani bosing:\n\nСпасибо!\n\nНажмите на ссылку ниже, чтобы заполнить анкету:\n\n%s", link))
+		sendTgMessage(chatID, fmt.Sprintf("Rahmat!\n\nAnketa to'ldirish uchun quyidagi havolani bosing:\n\n%s", link))
 
 		stateMu.Lock()
 		delete(userStates, chatID)

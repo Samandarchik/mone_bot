@@ -63,7 +63,7 @@ func handleIshchiBotMessage(msg *TgMessage) {
 		ishchiUserStates[chatID] = "waiting_phone"
 		stateMu.Unlock()
 
-		sendIshchiTgMessage(chatID, "Assalomu alaykum!\n\nIltimos, telefon raqamingizni yuboring.\nMisol: +998901234567\n\nЗдравствуйте!\n\nПожалуйста, отправьте ваш номер телефона.\nПример: +998901234567")
+		sendIshchiTgMessage(chatID, "Assalomu alaykum!\n\nIltimos, telefon raqamingizni yuboring.\nMisol: 998901234567")
 		return
 	}
 
@@ -80,7 +80,7 @@ func handleIshchiBotMessage(msg *TgMessage) {
 			phone = phone[1:]
 		}
 		if !strings.HasPrefix(phone, "998") || len(phone) != 12 {
-			sendIshchiTgMessage(chatID, "Telefon raqam noto'g'ri formatda.\nIltimos, to'g'ri raqam yuboring.\nMisol: +998901234567\n\nНеверный формат номера.\nПожалуйста, отправьте правильный номер.\nПример: +998901234567")
+			sendIshchiTgMessage(chatID, "Telefon raqam noto'g'ri formatda.\nIltimos, to'g'ri raqam yuboring.\nMisol: 998901234567")
 			return
 		}
 
@@ -90,7 +90,7 @@ func handleIshchiBotMessage(msg *TgMessage) {
 		}
 
 		link := fmt.Sprintf("%s/ishchi/+%s/%d/%s", baseURL, phone, chatID, username)
-		sendIshchiTgMessage(chatID, fmt.Sprintf("Rahmat!\n\nAnketa to'ldirish uchun quyidagi havolani bosing:\n\nСпасибо!\n\nНажмите на ссылку ниже, чтобы заполнить анкету:\n\n%s", link))
+		sendIshchiTgMessage(chatID, fmt.Sprintf("Rahmat!\n\nAnketa to'ldirish uchun quyidagi havolani bosing:\n\n%s", link))
 
 		stateMu.Lock()
 		delete(ishchiUserStates, chatID)

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uz">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -179,8 +179,8 @@ textarea{resize:vertical}
   <div class="header-inner">
     <div class="logo">MONE <span data-uz="Anketa" data-ru="Анкета">Anketa</span></div>
     <div class="lang-sw">
-      <button onclick="switchLang('uz')">UZ</button>
-      <button class="active" onclick="switchLang('ru')">RU</button>
+      <button class="active" onclick="switchLang('uz')">UZ</button>
+      <button onclick="switchLang('ru')">RU</button>
     </div>
   </div>
 </div>
@@ -396,7 +396,7 @@ textarea{resize:vertical}
 
 
 <script>
-let curLang='ru';
+let curLang='uz';
 
 // URL dan telefon, tg_user_id, username ni olish
 // Format: /+998XXXXXXXXX/tg_user_id/username
@@ -472,7 +472,6 @@ function updateLavozimLang(){
   });
 }
 loadCategories();
-switchLang('ru');
 
 const months=['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
 const monthsRu=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];

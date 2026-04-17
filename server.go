@@ -201,6 +201,7 @@ type InterviewRow struct {
 	Rating        int     `json:"rating"`
 	RatingText    string  `json:"rating_text"`
 	Comment       string  `json:"comment"`
+	VoiceUrl      string  `json:"voice_url"`
 	CreatedAt     string  `json:"created_at"`
 	// Rezume info
 	RezumeFIO     string `json:"rezume_fio"`

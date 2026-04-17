@@ -134,6 +134,9 @@ func initDB() {
 	// Migration: interviews jadvaliga branch_id qo'shish
 	db.Exec("ALTER TABLE interviews ADD COLUMN branch_id INTEGER NOT NULL DEFAULT 0")
 
+	// Migration: interviews jadvaliga voice_url qo'shish (ovozli izoh)
+	db.Exec("ALTER TABLE interviews ADD COLUMN voice_url TEXT NOT NULL DEFAULT ''")
+
 	// Migration: rezumeler jadvaliga status_by va status_by_name qo'shish
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN status_by INTEGER NOT NULL DEFAULT 0")
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN status_by_name TEXT NOT NULL DEFAULT ''")
@@ -155,6 +158,11 @@ func initDB() {
 		is_active INTEGER NOT NULL DEFAULT 1,
 		created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 	)`)
+
+	// Migration: eski statuslarni yangi status tizimiga o'tkazish
+	db.Exec("UPDATE rezumeler SET status = 'pending' WHERE status = 'yangi'")
+	db.Exec("UPDATE rezumeler SET status = 'interviewing' WHERE status = 'qabul'")
+	db.Exec("UPDATE rezumeler SET status = 'rejected' WHERE status = 'rad'")
 
 	seedDB()
 	log.Println("SQLite baza tayyor")
@@ -226,6 +234,10 @@ func getRezumeler(lavozim, status, search string, allowedCategories []string, pa
 	if status != "" {
 		where += " AND status = ?"
 		args = append(args, status)
+	} else {
+		// Default (Barchasi): rejected rezumelarni ko'rsatmaslik + 4 marta chaqirilganlar asosiy listdan chiqsin
+		where += " AND status != 'rejected'"
+		where += " AND id NOT IN (SELECT rezume_id FROM interviews GROUP BY rezume_id HAVING COUNT(*) >= 4)"
 	}
 	if search != "" {
 		where += " AND (familiya LIKE ? OR ism LIKE ? OR telefon LIKE ?)"
@@ -503,30 +515,9 @@ func dbUpdateCategory(id int64, name string, tgGroupID int64, isActive bool) err
 	if isActive {
 		ia = 1
 	}
-
-	var oldName string
-	if err := db.QueryRow("SELECT name FROM categories WHERE id = ?", id).Scan(&oldName); err != nil {
-		return err
-	}
-
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if _, err := tx.Exec("UPDATE categories SET name=?, tg_group_id=?, is_active=? WHERE id=?",
-		name, tgGroupID, ia, id); err != nil {
-		return err
-	}
-
-	if oldName != name {
-		if _, err := tx.Exec("UPDATE rezumeler SET lavozim=? WHERE lavozim=?", name, oldName); err != nil {
-			return err
-		}
-	}
-
-	return tx.Commit()
+	_, err := db.Exec("UPDATE categories SET name=?, tg_group_id=?, is_active=? WHERE id=?",
+		name, tgGroupID, ia, id)
+	return err
 }
 
 func dbDeleteCategory(id int64) error {
@@ -580,12 +571,30 @@ func ratingText(rating int) string {
 	case 1:
 		return "Zo'r"
 	case 2:
-		return "Qoniqarli"
+		return "Yaxshi"
 	case 3:
 		return "Qabul qilinmadi"
+	case 4:
+		return "Ishga qabul qilindi"
 	default:
 		return "Kutilmoqda"
 	}
+}
+
+// Rezume dublikatini tekshirish va eski dublikatni o'chirish
+func deleteDuplicateRezume(lavozim, tugilganSana, telefon string) {
+	if lavozim == "" || tugilganSana == "" || telefon == "" {
+		return
+	}
+	db.Exec("DELETE FROM rezumeler WHERE lavozim = ? AND tugilgan_sana = ? AND telefon = ?",
+		lavozim, tugilganSana, telefon)
+}
+
+// Rezume uchun rejected interviewlar sonini tekshirish
+func countRejectedInterviews(rezumeID int64) int {
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM interviews WHERE rezume_id = ? AND rating = 3", rezumeID).Scan(&count)
+	return count
 }
 
 func dbCreateInterview(rezumeID, invitedByID int64, date, time string, branchID int64) (int64, error) {
@@ -599,7 +608,7 @@ func dbCreateInterview(rezumeID, invitedByID int64, date, time string, branchID 
 	return result.LastInsertId()
 }
 
-func dbGetInterviews(rezumeID int64, rating int, page, limit int) ([]InterviewRow, int, error) {
+func dbGetInterviews(rezumeID int64, rating int, invitedByID int64, date string, page, limit int) ([]InterviewRow, int, error) {
 	where := "1=1"
 	args := []interface{}{}
 
@@ -610,6 +619,14 @@ func dbGetInterviews(rezumeID int64, rating int, page, limit int) ([]InterviewRo
 	if rating >= 0 {
 		where += " AND i.rating = ?"
 		args = append(args, rating)
+	}
+	if invitedByID > 0 {
+		where += " AND i.invited_by_id = ?"
+		args = append(args, invitedByID)
+	}
+	if date != "" {
+		where += " AND i.interview_date = ?"
+		args = append(args, date)
 	}
 
 	var total int
@@ -623,7 +640,7 @@ func dbGetInterviews(rezumeID int64, rating int, page, limit int) ([]InterviewRo
 		`SELECT i.id, i.rezume_id, i.invited_by_id, COALESCE(u.full_name, u.username),
 		 i.interview_date, i.interview_time, i.branch_id,
 		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
-		 i.rating, i.comment, i.created_at,
+		 i.rating, i.comment, COALESCE(i.voice_url, ''), i.created_at,
 		 COALESCE(r.familiya || ' ' || r.ism, ''), COALESCE(r.lavozim, ''), COALESCE(r.telefon, '')
 		 FROM interviews i
 		 LEFT JOIN users u ON u.id = i.invited_by_id
@@ -645,7 +662,7 @@ func dbGetInterviews(rezumeID int64, rating int, page, limit int) ([]InterviewRo
 			&row.ID, &row.RezumeID, &row.InvitedByID, &row.InvitedByName,
 			&row.InterviewDate, &row.InterviewTime, &row.BranchID,
 			&row.BranchName, &row.BranchLat, &row.BranchLng,
-			&row.Rating, &row.Comment, &row.CreatedAt,
+			&row.Rating, &row.Comment, &row.VoiceUrl, &row.CreatedAt,
 			&row.RezumeFIO, &row.RezumeLavozim, &row.RezumeTelefon,
 		)
 		if err != nil {
@@ -663,7 +680,7 @@ func dbGetInterviewByID(id int64) (*InterviewRow, error) {
 		`SELECT i.id, i.rezume_id, i.invited_by_id, COALESCE(u.full_name, u.username),
 		 i.interview_date, i.interview_time, i.branch_id,
 		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
-		 i.rating, i.comment, i.created_at,
+		 i.rating, i.comment, COALESCE(i.voice_url, ''), i.created_at,
 		 COALESCE(r.familiya || ' ' || r.ism, ''), COALESCE(r.lavozim, ''), COALESCE(r.telefon, '')
 		 FROM interviews i
 		 LEFT JOIN users u ON u.id = i.invited_by_id
@@ -673,7 +690,7 @@ func dbGetInterviewByID(id int64) (*InterviewRow, error) {
 		&row.ID, &row.RezumeID, &row.InvitedByID, &row.InvitedByName,
 		&row.InterviewDate, &row.InterviewTime, &row.BranchID,
 		&row.BranchName, &row.BranchLat, &row.BranchLng,
-		&row.Rating, &row.Comment, &row.CreatedAt,
+		&row.Rating, &row.Comment, &row.VoiceUrl, &row.CreatedAt,
 		&row.RezumeFIO, &row.RezumeLavozim, &row.RezumeTelefon,
 	)
 	if err != nil {
@@ -683,8 +700,8 @@ func dbGetInterviewByID(id int64) (*InterviewRow, error) {
 	return &row, nil
 }
 
-func dbUpdateInterview(id int64, rating int, comment string) error {
-	_, err := db.Exec("UPDATE interviews SET rating = ?, comment = ? WHERE id = ?", rating, comment, id)
+func dbUpdateInterview(id int64, rating int, comment, voiceUrl string) error {
+	_, err := db.Exec("UPDATE interviews SET rating = ?, comment = ?, voice_url = ? WHERE id = ?", rating, comment, voiceUrl, id)
 	return err
 }
 
@@ -773,7 +790,7 @@ func attachInterviews(rezumeler []RezumeRow) {
 		`SELECT i.id, i.rezume_id, i.invited_by_id, COALESCE(u.full_name, u.username, ''),
 		 i.interview_date, i.interview_time, i.branch_id,
 		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
-		 i.rating, i.comment, i.created_at
+		 i.rating, i.comment, COALESCE(i.voice_url, ''), i.created_at
 		 FROM interviews i
 		 LEFT JOIN users u ON u.id = i.invited_by_id
 		 LEFT JOIN branches b ON b.id = i.branch_id
@@ -789,7 +806,7 @@ func attachInterviews(rezumeler []RezumeRow) {
 		rows.Scan(&row.ID, &row.RezumeID, &row.InvitedByID, &row.InvitedByName,
 			&row.InterviewDate, &row.InterviewTime, &row.BranchID,
 			&row.BranchName, &row.BranchLat, &row.BranchLng,
-			&row.Rating, &row.Comment, &row.CreatedAt)
+			&row.Rating, &row.Comment, &row.VoiceUrl, &row.CreatedAt)
 		row.RatingText = ratingText(row.Rating)
 		imap[row.RezumeID] = append(imap[row.RezumeID], row)
 	}
@@ -958,30 +975,9 @@ func dbUpdateIshchiCategory(id int64, name string, tgGroupID int64, isActive boo
 	if isActive {
 		ia = 1
 	}
-
-	var oldName string
-	if err := db.QueryRow("SELECT name FROM ishchi_categories WHERE id = ?", id).Scan(&oldName); err != nil {
-		return err
-	}
-
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	if _, err := tx.Exec("UPDATE ishchi_categories SET name=?, tg_group_id=?, is_active=? WHERE id=?",
-		name, tgGroupID, ia, id); err != nil {
-		return err
-	}
-
-	if oldName != name {
-		if _, err := tx.Exec("UPDATE ishchi_anketalar SET vakansiya=? WHERE vakansiya=?", name, oldName); err != nil {
-			return err
-		}
-	}
-
-	return tx.Commit()
+	_, err := db.Exec("UPDATE ishchi_categories SET name=?, tg_group_id=?, is_active=? WHERE id=?",
+		name, tgGroupID, ia, id)
+	return err
 }
 
 func dbDeleteIshchiCategory(id int64) error {

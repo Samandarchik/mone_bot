@@ -81,6 +81,9 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Dublikat tekshiruv: tugilgan_sana + lavozim + telefon bir xil bo'lsa eski rezumeni o'chirish
+	deleteDuplicateRezume(anketa.Lavozim, anketa.TugilganSana, anketa.Telefon)
+
 	// Bazaga saqlash
 	id, err := saveRezume(&anketa, rasmURL)
 	if err != nil {
@@ -259,9 +262,9 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validStatuses := map[string]bool{"yangi": true, "qabul": true, "rad": true}
+	validStatuses := map[string]bool{"pending": true, "interviewing": true, "rejected": true, "accepted": true}
 	if !validStatuses[body.Status] {
-		jsonError(w, "Noto'g'ri status. Mumkin: yangi, qabul, rad", http.StatusBadRequest)
+		jsonError(w, "Noto'g'ri status. Mumkin: pending, interviewing, rejected, accepted", http.StatusBadRequest)
 		return
 	}
 
@@ -277,14 +280,21 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Qabul qilinsa — foydalanuvchiga auto-xabar
-	if body.Status == "qabul" {
+	// Accepted bo'lsa — foydalanuvchiga auto-xabar
+	if body.Status == "accepted" {
 		rezume, err := getRezumeByID(id)
 		if err == nil && rezume.TgUserID != 0 {
-			sendTgMessage(rezume.TgUserID, "Tabriklaymiz! Sizning rezumeyingiz qabul qilindi. Tez orada siz bilan bog'lanamiz.")
+			sendTgMessage(rezume.TgUserID, "Tabriklaymiz! Siz ishga qabul qilindingiz!")
 		}
 	}
-	// Rad qilinsa — xabar yuborilmaydi
+
+	// Rejected bo'lsa — foydalanuvchiga xabar
+	if body.Status == "rejected" {
+		rezume, err := getRezumeByID(id)
+		if err == nil && rezume.TgUserID != 0 {
+			sendTgMessage(rezume.TgUserID, "Afsuski, sizning arizangiz rad etildi.")
+		}
+	}
 
 	jsonResponse(w, map[string]string{"status": "updated"})
 	broadcastRezumeStatusUpdate(id, body.Status, adminName)
@@ -304,6 +314,29 @@ func saveImage(base64Data string, tgUserID int64) (string, error) {
 	filename := fmt.Sprintf("%d_%d.jpg", time.Now().UnixMilli(), tgUserID)
 	path := filepath.Join("uploads", filename)
 	if err := os.WriteFile(path, imgBytes, 0644); err != nil {
+		return "", err
+	}
+	return "/uploads/" + filename, nil
+}
+
+// saveVoice — base64 ovoz (shu jumladan "data:audio/...;base64,..." prefix bilan ham) ni faylga saqlaydi.
+func saveVoice(base64Data string, interviewID int64, ext string) (string, error) {
+	data := base64Data
+	if strings.Contains(data, ",") {
+		parts := strings.SplitN(data, ",", 2)
+		data = parts[1]
+	}
+	audioBytes, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return "", err
+	}
+	ext = strings.TrimPrefix(ext, ".")
+	if ext == "" {
+		ext = "m4a"
+	}
+	filename := fmt.Sprintf("voice_%d_%d.%s", interviewID, time.Now().UnixMilli(), ext)
+	path := filepath.Join("uploads", filename)
+	if err := os.WriteFile(path, audioBytes, 0644); err != nil {
 		return "", err
 	}
 	return "/uploads/" + filename, nil
