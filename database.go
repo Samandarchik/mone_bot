@@ -515,9 +515,30 @@ func dbUpdateCategory(id int64, name string, tgGroupID int64, isActive bool) err
 	if isActive {
 		ia = 1
 	}
-	_, err := db.Exec("UPDATE categories SET name=?, tg_group_id=?, is_active=? WHERE id=?",
-		name, tgGroupID, ia, id)
-	return err
+
+	var oldName string
+	if err := db.QueryRow("SELECT name FROM categories WHERE id = ?", id).Scan(&oldName); err != nil {
+		return err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec("UPDATE categories SET name=?, tg_group_id=?, is_active=? WHERE id=?",
+		name, tgGroupID, ia, id); err != nil {
+		return err
+	}
+
+	if oldName != name {
+		if _, err := tx.Exec("UPDATE rezumeler SET lavozim = ? WHERE lavozim = ?", name, oldName); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 func dbDeleteCategory(id int64) error {
