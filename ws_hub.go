@@ -232,6 +232,10 @@ func broadcastInterviewUpdated(interview *InterviewRow) {
 	hub.broadcast(WSEvent{Type: "interview_updated", Data: interview})
 }
 
+func broadcastInterviewDeleted(id, rezumeID int64) {
+	hub.broadcast(WSEvent{Type: "interview_deleted", Data: map[string]interface{}{"id": id, "rezume_id": rezumeID}})
+}
+
 // Ishchi anketalar broadcast
 func broadcastNewIshchi(ishchi interface{}) {
 	hub.broadcast(WSEvent{Type: "new_ishchi", Data: ishchi})

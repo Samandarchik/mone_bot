@@ -618,6 +618,13 @@ func countRejectedInterviews(rezumeID int64) int {
 	return count
 }
 
+// Rezumening qolgan faol intervyulari soni (o'chirilmaganlar)
+func countRemainingActiveInterviews(rezumeID int64) int {
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM interviews WHERE rezume_id = ?", rezumeID).Scan(&count)
+	return count
+}
+
 func dbCreateInterview(rezumeID, invitedByID int64, date, time string, branchID int64) (int64, error) {
 	result, err := db.Exec(
 		"INSERT INTO interviews (rezume_id, invited_by_id, interview_date, interview_time, branch_id) VALUES (?, ?, ?, ?, ?)",
@@ -662,7 +669,8 @@ func dbGetInterviews(rezumeID int64, rating int, invitedByID int64, date string,
 		 i.interview_date, i.interview_time, i.branch_id,
 		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
 		 i.rating, i.comment, COALESCE(i.voice_url, ''), i.created_at,
-		 COALESCE(r.familiya || ' ' || r.ism, ''), COALESCE(r.lavozim, ''), COALESCE(r.telefon, '')
+		 COALESCE(r.familiya || ' ' || r.ism, ''), COALESCE(r.lavozim, ''), COALESCE(r.telefon, ''),
+		 COALESCE(r.rasm_url, ''), COALESCE(r.tg_username, ''), COALESCE(r.tg_user_id, 0)
 		 FROM interviews i
 		 LEFT JOIN users u ON u.id = i.invited_by_id
 		 LEFT JOIN rezumeler r ON r.id = i.rezume_id
@@ -685,6 +693,7 @@ func dbGetInterviews(rezumeID int64, rating int, invitedByID int64, date string,
 			&row.BranchName, &row.BranchLat, &row.BranchLng,
 			&row.Rating, &row.Comment, &row.VoiceUrl, &row.CreatedAt,
 			&row.RezumeFIO, &row.RezumeLavozim, &row.RezumeTelefon,
+			&row.RezumeRasmUrl, &row.RezumeTgUsername, &row.RezumeTgUserID,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -702,7 +711,8 @@ func dbGetInterviewByID(id int64) (*InterviewRow, error) {
 		 i.interview_date, i.interview_time, i.branch_id,
 		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
 		 i.rating, i.comment, COALESCE(i.voice_url, ''), i.created_at,
-		 COALESCE(r.familiya || ' ' || r.ism, ''), COALESCE(r.lavozim, ''), COALESCE(r.telefon, '')
+		 COALESCE(r.familiya || ' ' || r.ism, ''), COALESCE(r.lavozim, ''), COALESCE(r.telefon, ''),
+		 COALESCE(r.rasm_url, ''), COALESCE(r.tg_username, ''), COALESCE(r.tg_user_id, 0)
 		 FROM interviews i
 		 LEFT JOIN users u ON u.id = i.invited_by_id
 		 LEFT JOIN rezumeler r ON r.id = i.rezume_id
@@ -713,6 +723,7 @@ func dbGetInterviewByID(id int64) (*InterviewRow, error) {
 		&row.BranchName, &row.BranchLat, &row.BranchLng,
 		&row.Rating, &row.Comment, &row.VoiceUrl, &row.CreatedAt,
 		&row.RezumeFIO, &row.RezumeLavozim, &row.RezumeTelefon,
+		&row.RezumeRasmUrl, &row.RezumeTgUsername, &row.RezumeTgUserID,
 	)
 	if err != nil {
 		return nil, err
@@ -723,6 +734,19 @@ func dbGetInterviewByID(id int64) (*InterviewRow, error) {
 
 func dbUpdateInterview(id int64, rating int, comment, voiceUrl string) error {
 	_, err := db.Exec("UPDATE interviews SET rating = ?, comment = ?, voice_url = ? WHERE id = ?", rating, comment, voiceUrl, id)
+	return err
+}
+
+func dbRescheduleInterview(id int64, date, time string, branchID int64) error {
+	_, err := db.Exec(
+		"UPDATE interviews SET interview_date = ?, interview_time = ?, branch_id = ? WHERE id = ?",
+		date, time, branchID, id,
+	)
+	return err
+}
+
+func dbDeleteInterview(id int64) error {
+	_, err := db.Exec("DELETE FROM interviews WHERE id = ?", id)
 	return err
 }
 

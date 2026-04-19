@@ -286,6 +286,83 @@ func handleUpdateInterview(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// POST /api/interviews/{id}/reschedule — intervyu vaqtini/sanasini o'zgartirish
+func handleRescheduleInterview(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
+		return
+	}
+
+	existing, err := dbGetInterviewByID(id)
+	if err != nil {
+		jsonError(w, "Interview topilmadi", http.StatusNotFound)
+		return
+	}
+
+	var body struct {
+		InterviewDate string `json:"interview_date"`
+		InterviewTime string `json:"interview_time"`
+		BranchID      int64  `json:"branch_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		jsonError(w, "JSON xato", http.StatusBadRequest)
+		return
+	}
+	if body.InterviewDate == "" || body.InterviewTime == "" {
+		jsonError(w, "Sana va vaqt kerak", http.StatusBadRequest)
+		return
+	}
+
+	branchID := body.BranchID
+	if branchID == 0 {
+		branchID = existing.BranchID
+	}
+
+	if err := dbRescheduleInterview(id, body.InterviewDate, body.InterviewTime, branchID); err != nil {
+		jsonError(w, "Yangilashda xato", http.StatusInternalServerError)
+		return
+	}
+
+	interview, _ := dbGetInterviewByID(id)
+	if interview != nil {
+		broadcastInterviewUpdated(interview)
+	}
+	jsonResponse(w, interview)
+}
+
+// DELETE /api/interviews/{id} — intervyuni o'chirish
+func handleDeleteInterview(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
+		return
+	}
+
+	existing, err := dbGetInterviewByID(id)
+	if err != nil {
+		jsonError(w, "Interview topilmadi", http.StatusNotFound)
+		return
+	}
+
+	if err := dbDeleteInterview(id); err != nil {
+		jsonError(w, "O'chirishda xato", http.StatusInternalServerError)
+		return
+	}
+
+	// WebSocket orqali xabar
+	broadcastInterviewDeleted(existing.ID, existing.RezumeID)
+
+	// Agar rezumening boshqa aktiv intervyulari bo'lmasa — statusni pending ga qaytarish
+	remaining := countRemainingActiveInterviews(existing.RezumeID)
+	if remaining == 0 {
+		updateRezumeStatus(existing.RezumeID, "pending")
+		broadcastRezumeStatusUpdate(existing.RezumeID, "pending", "")
+	}
+
+	jsonResponse(w, map[string]string{"status": "deleted"})
+}
+
 // POST /api/interviews/{id}/send-location — intervyu lokatsiyasini telegramga yuborish
 func handleSendInterviewLocation(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

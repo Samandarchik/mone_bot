@@ -812,7 +812,9 @@ function statusBadge(s) {
 }
 
 function ratingBadge(r, text) {
-  return `<span class="badge badge-rating${r}">${text || ['Kutilmoqda','Zo\'r','Qoniqarli','Qabul qilinmadi'][r] || ''}</span>`;
+  const emoji = ['⚪','🟢','🟡','🔴','✅'][r] || '⚪';
+  const label = text || ['Kutilmoqda','Zo\'r','Qoniqarli','Qabul qilinmadi','Ishga qabul'][r] || '';
+  return `<span class="badge badge-rating${r}" title="${label}" style="font-size:15px;padding:2px 8px">${emoji}</span>`;
 }
 
 function formatDate(d) {

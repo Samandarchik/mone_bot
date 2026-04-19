@@ -204,9 +204,12 @@ type InterviewRow struct {
 	VoiceUrl      string  `json:"voice_url"`
 	CreatedAt     string  `json:"created_at"`
 	// Rezume info
-	RezumeFIO     string `json:"rezume_fio"`
-	RezumeLavozim string `json:"rezume_lavozim"`
-	RezumeTelefon string `json:"rezume_telefon"`
+	RezumeFIO        string `json:"rezume_fio"`
+	RezumeLavozim    string `json:"rezume_lavozim"`
+	RezumeTelefon    string `json:"rezume_telefon"`
+	RezumeRasmUrl    string `json:"rezume_rasm_url"`
+	RezumeTgUsername string `json:"rezume_tg_username"`
+	RezumeTgUserID   int64  `json:"rezume_tg_user_id"`
 }
 
 // --- State ---
@@ -293,6 +296,8 @@ func main() {
 	mux.HandleFunc("GET /api/interviews", authRequired(handleGetInterviews))
 	mux.HandleFunc("GET /api/interviews/{id}", authRequired(handleGetInterview))
 	mux.HandleFunc("PATCH /api/interviews/{id}", authRequired(handleUpdateInterview))
+	mux.HandleFunc("POST /api/interviews/{id}/reschedule", authRequired(handleRescheduleInterview))
+	mux.HandleFunc("DELETE /api/interviews/{id}", authRequired(handleDeleteInterview))
 	mux.HandleFunc("POST /api/interviews/{id}/send-location", authRequired(handleSendInterviewLocation))
 
 	// User API (super_admin)
