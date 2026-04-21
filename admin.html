@@ -812,9 +812,10 @@ function statusBadge(s) {
 }
 
 function ratingBadge(r, text) {
-  const emoji = ['⚪','🟢','🟡','🔴','✅'][r] || '⚪';
+  const colors = ['#9ca3af','#16a34a','#eab308','#dc2626','#065f46'];
   const label = text || ['Kutilmoqda','Zo\'r','Qoniqarli','Qabul qilinmadi','Ishga qabul'][r] || '';
-  return `<span class="badge badge-rating${r}" title="${label}" style="font-size:15px;padding:2px 8px">${emoji}</span>`;
+  const color = colors[r] || '#9ca3af';
+  return `<span title="${label}" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 3px ${color}66;vertical-align:middle"></span>`;
 }
 
 function formatDate(d) {
