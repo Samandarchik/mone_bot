@@ -294,6 +294,7 @@ func main() {
 	// Interview API
 	mux.HandleFunc("POST /api/interviews", authRequired(handleCreateInterview))
 	mux.HandleFunc("GET /api/interviews", authRequired(handleGetInterviews))
+	mux.HandleFunc("GET /api/interviews/overdue", authRequired(handleGetOverdueInterviews))
 	mux.HandleFunc("GET /api/interviews/{id}", authRequired(handleGetInterview))
 	mux.HandleFunc("PATCH /api/interviews/{id}", authRequired(handleUpdateInterview))
 	mux.HandleFunc("POST /api/interviews/{id}/reschedule", authRequired(handleRescheduleInterview))

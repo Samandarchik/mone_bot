@@ -4,8 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
+	"time"
 )
+
+// parseInterviewDateTime — "24.04.2026" + "09:15" ni time.Time ga aylantiradi.
+func parseInterviewDateTime(date, t string) (time.Time, error) {
+	if date == "" || t == "" {
+		return time.Time{}, fmt.Errorf("bo'sh sana/vaqt")
+	}
+	return time.ParseInLocation("02.01.2006 15:04", date+" "+t, time.Local)
+}
 
 // Intervyu qoidalari:
 // - Har kuni admin maks 10 ta nomzodni chaqira oladi
@@ -199,6 +209,47 @@ func handleGetInterviews(w http.ResponseWriter, r *http.Request) {
 		"limit": limit,
 		"pages": pages,
 	})
+}
+
+// GET /api/interviews/overdue — o'tib ketgan, baholanmagan barcha intervyular.
+// (interview_date + interview_time) < hozirgi vaqt VA rating=0.
+// Non-super-admin uchun avtomatik ravishda faqat o'zi chaqirganlari.
+// Super admin hammasi.
+func handleGetOverdueInterviews(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromCtx(r)
+	invitedByID := int64(0)
+	if user.Role != "super_admin" {
+		invitedByID = user.ID
+	}
+
+	// Barcha baholanmagan intervyularni olamiz (rating=0)
+	interviews, _, err := dbGetInterviews(0, 0, invitedByID, "", 1, 1000)
+	if err != nil {
+		jsonError(w, "DB xato: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	now := time.Now()
+	overdue := make([]InterviewRow, 0, len(interviews))
+	for _, iv := range interviews {
+		dt, err := parseInterviewDateTime(iv.InterviewDate, iv.InterviewTime)
+		if err != nil {
+			continue
+		}
+		// datetime.now dan o'tgan bo'lsa — kechikkan
+		if dt.Before(now) {
+			overdue = append(overdue, iv)
+		}
+	}
+
+	// Eng ko'p kechikkani (eng eski vaqti) tepada
+	sort.Slice(overdue, func(i, j int) bool {
+		di, _ := parseInterviewDateTime(overdue[i].InterviewDate, overdue[i].InterviewTime)
+		dj, _ := parseInterviewDateTime(overdue[j].InterviewDate, overdue[j].InterviewTime)
+		return di.Before(dj)
+	})
+
+	jsonResponse(w, overdue)
 }
 
 // GET /api/interviews/{id}
