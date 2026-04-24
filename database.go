@@ -209,8 +209,8 @@ func saveRezume(a *Anketa, rasmURL string) (int64, error) {
 		(lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi,
 		 malumot, oilaviy_holat, tillar, telefon, qoshimcha, rasm_url,
-		 tg_user_id, tg_username, tg_username2)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 tg_user_id, tg_username, tg_username2, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
 		a.Lavozim, a.Familiya, a.Ism, a.Sharif, a.TugilganSana,
 		a.BoySm, a.VaznKg, a.YashashManzili, a.Moljal,
 		a.UmumiyTajriba, a.ChetElTajribasi, a.Malumot, a.OilaviyHolat,

@@ -686,6 +686,18 @@ async function submitForm(){
   for(const s of stateRequired){
     if(!state[s.key]) missing.push(curLang==='uz'?s.uz:s.ru);
   }
+  const langRequired=[
+    {key:'en',uz:'Ingliz tili',ru:'Английский'},
+    {key:'ru',uz:'Rus tili',ru:'Русский'},
+    {key:'tr',uz:'Turk tili',ru:'Турецкий'},
+    {key:'uz',uz:"O'zbek tili",ru:'Узбекский'}
+  ];
+  for(const l of langRequired){
+    if(!langs[l.key]) missing.push(curLang==='uz'?l.uz:l.ru);
+  }
+  for(const el of extraLangs){
+    if(!el.daraja) missing.push(curLang==='uz'?(el.til+' darajasi'):(el.til+' уровень'));
+  }
   if(!photoBase64) missing.push(curLang==='uz'?'Rasm':'Фото');
   if(missing.length>0){
     document.getElementById('msg-err').textContent=(curLang==='uz'?'Iltimos, to\'ldiring: ':'Пожалуйста, заполните: ')+missing.join(', ');

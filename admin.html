@@ -806,8 +806,20 @@ function toast(msg, ok = true) {
 }
 
 function statusBadge(s) {
-  const map = { yangi: 'badge-yangi', qabul: 'badge-qabul', rad: 'badge-rad' };
-  const labels = { yangi: 'Yangi', qabul: 'Qabul', rad: 'Rad' };
+  const map = {
+    yangi: 'badge-yangi', pending: 'badge-yangi',
+    qabul: 'badge-qabul', accepted: 'badge-qabul',
+    interviewing: 'badge-yangi', trial: 'badge-yangi',
+    reserve: 'badge-yangi',
+    rad: 'badge-rad', rejected: 'badge-rad', noshow: 'badge-rad'
+  };
+  const labels = {
+    yangi: 'Yangi', pending: 'Yangi',
+    qabul: 'Qabul', accepted: 'Qabul',
+    interviewing: 'Intervyuda', trial: 'Sinovda',
+    reserve: 'Rezervda',
+    rad: 'Rad', rejected: 'Rad', noshow: 'Kelmadi'
+  };
   return `<span class="badge ${map[s] || ''}">${labels[s] || s}</span>`;
 }
 
@@ -857,6 +869,7 @@ async function doLogin() {
 
 async function doLogout() {
   try { await api('POST', '/api/auth/logout'); } catch {}
+  stopRealtime();
   TOKEN = '';
   ME = null;
   localStorage.removeItem('hr_token');
@@ -897,10 +910,13 @@ async function showApp() {
 
   await Promise.all([loadCategories(), loadBranches()]);
   navigate('dashboard');
+  startRealtime();
 }
 
 // ===== NAVIGATION =====
+let currentPage = '';
 function navigate(page) {
+  currentPage = page;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const navItem = document.querySelector(`[data-page="${page}"]`);
@@ -954,9 +970,9 @@ async function loadDashboard() {
   try {
     const [rezAll, rezYangi, rezQabul, rezRad, interviews, ishchiAll] = await Promise.all([
       api('GET', '/api/rezumeler?limit=1'),
-      api('GET', '/api/rezumeler?status=yangi&limit=1'),
-      api('GET', '/api/rezumeler?status=qabul&limit=1'),
-      api('GET', '/api/rezumeler?status=rad&limit=1'),
+      api('GET', '/api/rezumeler?status=pending&limit=1'),
+      api('GET', '/api/rezumeler?status=accepted&limit=1'),
+      api('GET', '/api/rezumeler?status=rejected&limit=1'),
       api('GET', '/api/interviews?limit=1'),
       api('GET', '/api/ishchi-anketalar?limit=1'),
     ]);
@@ -1760,6 +1776,115 @@ document.getElementById('loginPass').addEventListener('keydown', e => { if (e.ke
 document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
 
 // ===== START =====
+// ===== REALTIME (WebSocket) =====
+// Strategiya: event kelsa — joriy sahifani qayta yuklaymiz (DOM patch qilmaymiz).
+// Shu bilan UI doimo serverdagi haqiqiy holatga mos keladi — filtrlar, pagination, auth — hammasi to'g'ri.
+let wsConn = null;
+let wsReconnectTimer = null;
+let wsReconnectDelay = 2000;
+let wsReloadTimer = null;
+let wsShouldRun = false;
+
+function startRealtime() {
+  wsShouldRun = true;
+  if (!TOKEN) return;
+  if (wsConn && (wsConn.readyState === WebSocket.OPEN || wsConn.readyState === WebSocket.CONNECTING)) return;
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = proto + '//' + location.host + '/ws/rezumeler?token=' + encodeURIComponent(TOKEN);
+  try {
+    wsConn = new WebSocket(url);
+  } catch (_) { scheduleReconnect(); return; }
+
+  wsConn.onopen = () => {
+    wsReconnectDelay = 2000;
+    // Ulanganda — missed event'larni tuzatish uchun joriy sahifani yangilaymiz
+    scheduleReload();
+  };
+  wsConn.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+    const t = msg && msg.type;
+    if (!t) return;
+    // init/ishchi_init — REST bilan ishlaganimiz uchun e'tibor bermaymiz
+    if (t === 'init' || t === 'ishchi_init') return;
+    // Qolgan barcha eventlar (new_rezume, status_update, delete,
+    // interview_created/updated/deleted, new_ishchi/ishchi_update/ishchi_delete) — reload
+    scheduleReload();
+  };
+  wsConn.onclose = () => { wsConn = null; if (wsShouldRun) scheduleReconnect(); };
+  wsConn.onerror = () => { try { wsConn && wsConn.close(); } catch {} };
+}
+
+function stopRealtime() {
+  wsShouldRun = false;
+  if (wsReconnectTimer) { clearTimeout(wsReconnectTimer); wsReconnectTimer = null; }
+  if (wsReloadTimer) { clearTimeout(wsReloadTimer); wsReloadTimer = null; }
+  if (wsConn) { try { wsConn.close(); } catch {} wsConn = null; }
+  wsReconnectDelay = 2000;
+}
+
+function scheduleReconnect() {
+  if (!wsShouldRun || !TOKEN) return;
+  if (wsReconnectTimer) return;
+  wsReconnectTimer = setTimeout(() => {
+    wsReconnectTimer = null;
+    startRealtime();
+    // Exponential backoff: 2s → 4s → 8s → 16s → 30s max
+    wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30000);
+  }, wsReconnectDelay);
+}
+
+function scheduleReload() {
+  // 300ms debounce — burst eventlarda bir marta yuklaymiz
+  if (wsReloadTimer) clearTimeout(wsReloadTimer);
+  wsReloadTimer = setTimeout(() => {
+    wsReloadTimer = null;
+    reloadCurrentPage();
+  }, 300);
+}
+
+async function reloadCurrentPage() {
+  try {
+    switch (currentPage) {
+      case 'dashboard': loadDashboard(); break;
+      case 'rezumeler': loadRezumeler(); break;
+      case 'interviews': loadInterviews(); break;
+      case 'ishchiAnketalar': loadIshchiAnketalar(); break;
+      // users/categories/branches — rezume eventlari ularga ta'sir qilmaydi
+    }
+    // Dashboard emasmiz — faqat sidebar badgelarini yangilaymiz
+    if (currentPage !== 'dashboard') updateSidebarBadges();
+  } catch (_) {}
+}
+
+async function updateSidebarBadges() {
+  try {
+    const [yangi, ishchi] = await Promise.all([
+      api('GET', '/api/rezumeler?status=pending&limit=1').catch(() => ({ total: 0 })),
+      api('GET', '/api/ishchi-anketalar?limit=1').catch(() => ({ total: 0 })),
+    ]);
+    const b1 = document.getElementById('badgeYangi');
+    if (b1) {
+      if (yangi.total > 0) { b1.textContent = yangi.total; b1.style.display = ''; }
+      else b1.style.display = 'none';
+    }
+    const b2 = document.getElementById('badgeIshchi');
+    if (b2) {
+      if (ishchi.total > 0) { b2.textContent = ishchi.total; b2.style.display = ''; }
+      else b2.style.display = 'none';
+    }
+  } catch (_) {}
+}
+
+// Tab fon'da bo'lib qayta faollasha — ehtimoliy o'chib qolgan ulanishni tiklaymiz
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && wsShouldRun) {
+    if (!wsConn || wsConn.readyState === WebSocket.CLOSED) {
+      startRealtime();
+    }
+  }
+});
+
 init();
 </script>
 </body>
