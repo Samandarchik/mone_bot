@@ -247,7 +247,14 @@ func handleDeleteRezume(w http.ResponseWriter, r *http.Request) {
 }
 
 // PATCH /api/rezumeler/{id}/status — qabul/rad qilish
+// Super admin o'zgartira olmaydi — faqat ko'radi.
 func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromCtx(r)
+	if user.Role == "super_admin" {
+		jsonError(w, "Super admin statusni o'zgartira olmaydi", http.StatusForbidden)
+		return
+	}
+
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
@@ -262,14 +269,16 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validStatuses := map[string]bool{"pending": true, "interviewing": true, "trial": true, "rejected": true, "accepted": true}
+	validStatuses := map[string]bool{
+		"pending": true, "interviewing": true, "trial": true,
+		"rejected": true, "accepted": true, "reserve": true, "noshow": true,
+	}
 	if !validStatuses[body.Status] {
-		jsonError(w, "Noto'g'ri status. Mumkin: pending, interviewing, trial, rejected, accepted", http.StatusBadRequest)
+		jsonError(w, "Noto'g'ri status. Mumkin: pending, interviewing, trial, rejected, accepted, reserve, noshow", http.StatusBadRequest)
 		return
 	}
 
 	// Admin ma'lumotlarini olish
-	user := getUserFromCtx(r)
 	adminName := user.FullName
 	if adminName == "" {
 		adminName = user.Username

@@ -157,9 +157,15 @@ func handleCreateInterview(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET /api/interviews?rezume_id=1&rating=0&date=01.01.2026&invited_by_id=1&page=1&limit=20
+// Oddiy admin faqat o'zi chaqirganni ko'radi. Super admin hammasi.
 func handleGetInterviews(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromCtx(r)
 	rezumeID, _ := strconv.ParseInt(r.URL.Query().Get("rezume_id"), 10, 64)
 	invitedByID, _ := strconv.ParseInt(r.URL.Query().Get("invited_by_id"), 10, 64)
+	// Non-super-admin uchun majburiy ravishda faqat o'zi chaqirganlar
+	if user.Role != "super_admin" {
+		invitedByID = user.ID
+	}
 	date := r.URL.Query().Get("date")
 	rating := -1 // -1 = barchasi
 	if r.URL.Query().Get("rating") != "" {
@@ -213,7 +219,15 @@ func handleGetInterview(w http.ResponseWriter, r *http.Request) {
 }
 
 // PATCH /api/interviews/{id} — intervyu natijasini qo'yish (rating + comment + voice)
+// Super admin status/rating o'zgartira olmaydi — faqat ko'radi.
+// Voice (ovozli izoh) har 5 rating uchun ham majburiy.
 func handleUpdateInterview(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromCtx(r)
+	if user.Role == "super_admin" {
+		jsonError(w, "Super admin statusni o'zgartira olmaydi", http.StatusForbidden)
+		return
+	}
+
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
@@ -231,30 +245,25 @@ func handleUpdateInterview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if body.Rating < 1 || body.Rating > 4 {
-		jsonError(w, "Rating 1-4 bo'lishi kerak. 1=Zo'r, 2=Yaxshi, 3=Qabul qilinmadi, 4=Ishga qabul qilindi", http.StatusBadRequest)
+	if body.Rating < 1 || body.Rating > 5 {
+		jsonError(w, "Rating 1-5 bo'lishi kerak. 1=Kelmadi, 2=Otkaz, 3=Sinov (2 kun), 4=Qabul, 5=Rezerv", http.StatusBadRequest)
 		return
 	}
 
-	// Eski yozuvni olib, mavjud voice_url ni saqlaymiz
-	existing, _ := dbGetInterviewByID(id)
-	voiceUrl := ""
-	if existing != nil {
-		voiceUrl = existing.VoiceUrl
+	// Ovozli izoh majburiy — barcha 5 rating uchun
+	if body.VoiceData == "" {
+		jsonError(w, "Ovozli izoh yuborilishi majburiy", http.StatusBadRequest)
+		return
 	}
 
-	// Agar yangi ovoz yuborilgan bo'lsa — saqlaymiz
-	if body.VoiceData != "" {
-		ext := body.VoiceExt
-		if ext == "" {
-			ext = "m4a"
-		}
-		savedUrl, err := saveVoice(body.VoiceData, id, ext)
-		if err != nil {
-			jsonError(w, "Ovozni saqlashda xato: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		voiceUrl = savedUrl
+	ext := body.VoiceExt
+	if ext == "" {
+		ext = "m4a"
+	}
+	voiceUrl, err := saveVoice(body.VoiceData, id, ext)
+	if err != nil {
+		jsonError(w, "Ovozni saqlashda xato: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if err := dbUpdateInterview(id, body.Rating, body.Comment, voiceUrl); err != nil {
@@ -269,19 +278,15 @@ func handleUpdateInterview(w http.ResponseWriter, r *http.Request) {
 	if interview != nil {
 		broadcastInterviewUpdated(interview)
 
-		// Rating=4 (Ishga qabul qilindi) — rezume statusini accepted ga o'tkazish
-		if body.Rating == 4 {
-			updateRezumeStatus(interview.RezumeID, "accepted")
-			broadcastRezumeStatusUpdate(interview.RezumeID, "accepted", "")
-		}
-
-		// Rating=3 (Qabul qilinmadi) — 2 ta rejected bo'lsa auto-rejected
-		if body.Rating == 3 {
-			rejectedCount := countRejectedInterviews(interview.RezumeID)
-			if rejectedCount >= 2 {
-				updateRezumeStatus(interview.RezumeID, "rejected")
-				broadcastRezumeStatusUpdate(interview.RezumeID, "rejected", "")
+		// Rating → rezume status transition (ratingToStatus map qilinadi)
+		newStatus := ratingToStatus(body.Rating)
+		if newStatus != "" {
+			adminName := user.FullName
+			if adminName == "" {
+				adminName = user.Username
 			}
+			updateRezumeStatusWithAdmin(interview.RezumeID, newStatus, user.ID, adminName)
+			broadcastRezumeStatusUpdate(interview.RezumeID, newStatus, adminName)
 		}
 	}
 }

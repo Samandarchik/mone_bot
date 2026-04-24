@@ -590,15 +590,36 @@ func dbDeleteSession(token string) error {
 func ratingText(rating int) string {
 	switch rating {
 	case 1:
-		return "Zo'r"
+		return "Приглашён, не явился"
 	case 2:
-		return "Yaxshi"
+		return "Отказ"
 	case 3:
-		return "Qabul qilinmadi"
+		return "Используется 2"
 	case 4:
-		return "Ishga qabul qilindi"
+		return "Принято"
+	case 5:
+		return "Резерв"
 	default:
 		return "Kutilmoqda"
+	}
+}
+
+// ratingToStatus — rating baholanganda rezume qanday statusga o'tishini aytadi.
+// rating=1 (kelmadi) → noshow; 2 → rejected; 3 → trial; 4 → accepted; 5 → reserve.
+func ratingToStatus(rating int) string {
+	switch rating {
+	case 1:
+		return "noshow"
+	case 2:
+		return "rejected"
+	case 3:
+		return "trial"
+	case 4:
+		return "accepted"
+	case 5:
+		return "reserve"
+	default:
+		return ""
 	}
 }
 
