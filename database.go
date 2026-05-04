@@ -141,6 +141,9 @@ func initDB() {
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN status_by INTEGER NOT NULL DEFAULT 0")
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN status_by_name TEXT NOT NULL DEFAULT ''")
 
+	// Migration: rezumeler jadvaliga status_voice_url qo'shish (rad qilishda majburiy ovozli izoh)
+	db.Exec("ALTER TABLE rezumeler ADD COLUMN status_voice_url TEXT NOT NULL DEFAULT ''")
+
 	// Migration: ishchi_anketalar jadvaliga boy_sm, vazn_kg, lang qo'shish
 	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN boy_sm INTEGER NOT NULL DEFAULT 0")
 	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN vazn_kg INTEGER NOT NULL DEFAULT 0")
@@ -266,7 +269,7 @@ func getRezumeler(lavozim, status, search string, allowedCategories []string, pa
 	query := fmt.Sprintf(
 		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
-		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, created_at
+		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), created_at
 		 FROM rezumeler WHERE %s ORDER BY id DESC LIMIT ? OFFSET ?`, where)
 	args = append(args, limit, offset)
 
@@ -284,7 +287,7 @@ func getRezumeler(lavozim, status, search string, allowedCategories []string, pa
 			&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 			&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 			&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
-			&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.CreatedAt,
+			&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.CreatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -304,12 +307,12 @@ func getRezumeByID(id int64) (*RezumeRow, error) {
 	err := db.QueryRow(
 		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
-		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, created_at
+		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), created_at
 		 FROM rezumeler WHERE id = ?`, id).Scan(
 		&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 		&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 		&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
-		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.CreatedAt,
+		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -328,6 +331,14 @@ func updateRezumeStatus(id int64, status string) error {
 
 func updateRezumeStatusWithAdmin(id int64, status string, adminID int64, adminName string) error {
 	_, err := db.Exec("UPDATE rezumeler SET status = ?, status_by = ?, status_by_name = ? WHERE id = ?", status, adminID, adminName, id)
+	return err
+}
+
+func updateRezumeStatusWithVoice(id int64, status string, adminID int64, adminName, voiceUrl string) error {
+	_, err := db.Exec(
+		"UPDATE rezumeler SET status = ?, status_by = ?, status_by_name = ?, status_voice_url = ? WHERE id = ?",
+		status, adminID, adminName, voiceUrl, id,
+	)
 	return err
 }
 

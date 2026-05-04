@@ -100,6 +100,7 @@ type RezumeRow struct {
 	Status          string         `json:"status"`
 	StatusBy        int64          `json:"status_by"`
 	StatusByName    string         `json:"status_by_name"`
+	StatusVoiceUrl  string         `json:"status_voice_url"`
 	CreatedAt       string         `json:"created_at"`
 	Interviews      []InterviewRow `json:"interviews"`
 }

@@ -262,7 +262,9 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		Status string `json:"status"`
+		Status    string `json:"status"`
+		VoiceData string `json:"voice_data"`
+		VoiceExt  string `json:"voice_ext"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
@@ -278,15 +280,43 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Rad qilishda ovozli izoh majburiy
+	if body.Status == "rejected" && body.VoiceData == "" {
+		jsonError(w, "Rad qilish uchun ovozli izoh majburiy", http.StatusBadRequest)
+		return
+	}
+
 	// Admin ma'lumotlarini olish
 	adminName := user.FullName
 	if adminName == "" {
 		adminName = user.Username
 	}
 
-	if err := updateRezumeStatusWithAdmin(id, body.Status, user.ID, adminName); err != nil {
-		jsonError(w, "Statusni yangilashda xato", http.StatusInternalServerError)
-		return
+	// Ovozli izoh saqlash (agar yuborilgan bo'lsa)
+	voiceUrl := ""
+	if body.VoiceData != "" {
+		ext := body.VoiceExt
+		if ext == "" {
+			ext = "m4a"
+		}
+		url, err := saveVoice(body.VoiceData, id, ext)
+		if err != nil {
+			jsonError(w, "Ovozni saqlashda xato: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		voiceUrl = url
+	}
+
+	if voiceUrl != "" {
+		if err := updateRezumeStatusWithVoice(id, body.Status, user.ID, adminName, voiceUrl); err != nil {
+			jsonError(w, "Statusni yangilashda xato", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if err := updateRezumeStatusWithAdmin(id, body.Status, user.ID, adminName); err != nil {
+			jsonError(w, "Statusni yangilashda xato", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// Accepted bo'lsa — foydalanuvchiga auto-xabar

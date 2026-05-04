@@ -18,18 +18,18 @@ func parseInterviewDateTime(date, t string) (time.Time, error) {
 }
 
 // Intervyu qoidalari:
-// - Har kuni admin maks 10 ta nomzodni chaqira oladi
-// - Slotlar 9:00 dan boshlab har 15 minut: 9:00, 9:15, ..., 11:15 (10 ta slot)
+// - Har kuni admin maks 49 ta nomzodni chaqira oladi
+// - Slotlar 9:00 dan boshlab har 15 minut: 9:00, 9:15, ..., 21:00 (49 ta slot)
 // - Har bir rezumeni maks 3 marta chaqirish mumkin
 const (
-	interviewMaxPerDay     = 10
+	interviewMaxPerDay     = 49
 	interviewMaxPerRezume  = 4
 	interviewStartHour     = 9
 	interviewSlotMinutes   = 15
 )
 
 // computeNextInterviewSlot — berilgan admin va sanaga bo'sh slotni topadi.
-// Agar barcha 10 slot band bo'lsa, xato qaytaradi.
+// Agar barcha 49 slot band bo'lsa, xato qaytaradi.
 func computeNextInterviewSlot(invitedByID int64, date string) (string, error) {
 	rows, err := db.Query(
 		"SELECT interview_time FROM interviews WHERE invited_by_id = ? AND interview_date = ?",
@@ -48,7 +48,7 @@ func computeNextInterviewSlot(invitedByID int64, date string) (string, error) {
 	rows.Close()
 
 	if len(used) >= interviewMaxPerDay {
-		return "", fmt.Errorf("bu kunga 10 tadan ortiq intervyu olib bo'lmaydi")
+		return "", fmt.Errorf("bu kunga 49 tadan ortiq intervyu olib bo'lmaydi")
 	}
 
 	for k := 0; k < interviewMaxPerDay; k++ {
@@ -58,7 +58,7 @@ func computeNextInterviewSlot(invitedByID int64, date string) (string, error) {
 			return candidate, nil
 		}
 	}
-	return "", fmt.Errorf("bu kunga 10 tadan ortiq intervyu olib bo'lmaydi")
+	return "", fmt.Errorf("bu kunga 49 tadan ortiq intervyu olib bo'lmaydi")
 }
 
 // POST /api/interviews — intervyuga chaqirish
