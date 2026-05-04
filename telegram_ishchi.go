@@ -115,6 +115,22 @@ func sendIshchiTgMessage(chatID int64, text string) {
 	resp.Body.Close()
 }
 
+func sendIshchiTgLocation(chatID int64, latitude, longitude float64) {
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendLocation", ishchiBotToken)
+	payload := map[string]interface{}{
+		"chat_id":   chatID,
+		"latitude":  latitude,
+		"longitude": longitude,
+	}
+	jsonData, _ := json.Marshal(payload)
+	resp, err := http.Post(url, "application/json", bytes.NewReader(jsonData))
+	if err != nil {
+		log.Printf("sendIshchiTgLocation xato: %v", err)
+		return
+	}
+	resp.Body.Close()
+}
+
 func sendIshchiPhotoToTelegram(chatID int64, base64Data, caption string) error {
 	parts := strings.SplitN(base64Data, ",", 2)
 	if len(parts) != 2 {

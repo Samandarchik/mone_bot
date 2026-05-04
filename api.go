@@ -160,6 +160,10 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 // GET /api/rezumeler — foydalanuvchi kategoriyalari bo'yicha filtrlangan
 func handleGetRezumeler(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromCtx(r)
+	if user.Role == "ishchi_admin" {
+		jsonError(w, "Ruxsat yo'q", http.StatusForbidden)
+		return
+	}
 
 	lavozim := r.URL.Query().Get("lavozim")
 	status := r.URL.Query().Get("status")

@@ -135,8 +135,9 @@ type UserRow struct {
 
 type UserResponse struct {
 	UserRow
-	Categories []Category `json:"categories"`
-	Branch     *Branch    `json:"branch"`
+	Categories       []Category `json:"categories"`
+	IshchiCategories []Category `json:"ishchi_categories"`
+	Branch           *Branch    `json:"branch"`
 }
 
 // --- Ishchi anketa types ---
@@ -164,28 +165,57 @@ type IshchiAnketa struct {
 }
 
 type IshchiRow struct {
-	ID           int64  `json:"id"`
-	Vakansiya    string `json:"vakansiya"`
-	FIO          string `json:"fio"`
-	TugilganSana string `json:"tugilgan_sana"`
-	BoySm        int    `json:"boy_sm"`
-	VaznKg       int    `json:"vazn_kg"`
-	Manzil       string `json:"manzil"`
-	Lang         string `json:"lang"`
-	OilaviyHolat string `json:"oilaviy_holat"`
-	Bolalar      string `json:"bolalar"`
-	Tillar       string `json:"tillar"`
-	Malumot      string `json:"malumot"`
-	Grafik       string `json:"grafik"`
-	Sudimlik     string `json:"sudimlik"`
-	Haydovchilik string `json:"haydovchilik"`
-	Telefon      string `json:"telefon"`
-	RasmUrl      string `json:"rasm_url"`
-	TgUserID     int64  `json:"tg_user_id"`
-	TgUsername   string `json:"tg_username"`
-	TgUsername2  string `json:"tg_username2"`
-	Status       string `json:"status"`
-	CreatedAt    string `json:"created_at"`
+	ID             int64                `json:"id"`
+	Vakansiya      string               `json:"vakansiya"`
+	FIO            string               `json:"fio"`
+	TugilganSana   string               `json:"tugilgan_sana"`
+	BoySm          int                  `json:"boy_sm"`
+	VaznKg         int                  `json:"vazn_kg"`
+	Manzil         string               `json:"manzil"`
+	Lang           string               `json:"lang"`
+	OilaviyHolat   string               `json:"oilaviy_holat"`
+	Bolalar        string               `json:"bolalar"`
+	Tillar         string               `json:"tillar"`
+	Malumot        string               `json:"malumot"`
+	Grafik         string               `json:"grafik"`
+	Sudimlik       string               `json:"sudimlik"`
+	Haydovchilik   string               `json:"haydovchilik"`
+	Telefon        string               `json:"telefon"`
+	RasmUrl        string               `json:"rasm_url"`
+	TgUserID       int64                `json:"tg_user_id"`
+	TgUsername     string               `json:"tg_username"`
+	TgUsername2    string               `json:"tg_username2"`
+	Status         string               `json:"status"`
+	StatusBy       int64                `json:"status_by"`
+	StatusByName   string               `json:"status_by_name"`
+	StatusVoiceUrl string               `json:"status_voice_url"`
+	CreatedAt      string               `json:"created_at"`
+	Interviews     []IshchiInterviewRow `json:"interviews"`
+}
+
+type IshchiInterviewRow struct {
+	ID            int64   `json:"id"`
+	IshchiID      int64   `json:"ishchi_id"`
+	InvitedByID   int64   `json:"invited_by_id"`
+	InvitedByName string  `json:"invited_by_name"`
+	InterviewDate string  `json:"interview_date"`
+	InterviewTime string  `json:"interview_time"`
+	BranchID      int64   `json:"branch_id"`
+	BranchName    string  `json:"branch_name"`
+	BranchLat     float64 `json:"branch_lat"`
+	BranchLng     float64 `json:"branch_lng"`
+	Rating        int     `json:"rating"`
+	RatingText    string  `json:"rating_text"`
+	Comment       string  `json:"comment"`
+	VoiceUrl      string  `json:"voice_url"`
+	CreatedAt     string  `json:"created_at"`
+	// Ishchi info
+	IshchiFIO        string `json:"ishchi_fio"`
+	IshchiVakansiya  string `json:"ishchi_vakansiya"`
+	IshchiTelefon    string `json:"ishchi_telefon"`
+	IshchiRasmUrl    string `json:"ishchi_rasm_url"`
+	IshchiTgUsername string `json:"ishchi_tg_username"`
+	IshchiTgUserID   int64  `json:"ishchi_tg_user_id"`
 }
 
 type InterviewRow struct {
@@ -291,6 +321,17 @@ func main() {
 	mux.HandleFunc("GET /api/ishchi-anketalar/{id}", authRequired(handleGetIshchiAnketa))
 	mux.HandleFunc("PUT /api/ishchi-anketalar/{id}", authRequired(handleUpdateIshchiAnketa))
 	mux.HandleFunc("DELETE /api/ishchi-anketalar/{id}", authRequired(handleDeleteIshchiAnketa))
+	mux.HandleFunc("PATCH /api/ishchi-anketalar/{id}/status", authRequired(handleUpdateIshchiStatus))
+
+	// Ishchi Interview API
+	mux.HandleFunc("POST /api/ishchi-interviews", authRequired(handleCreateIshchiInterview))
+	mux.HandleFunc("GET /api/ishchi-interviews", authRequired(handleGetIshchiInterviews))
+	mux.HandleFunc("GET /api/ishchi-interviews/overdue", authRequired(handleGetIshchiOverdueInterviews))
+	mux.HandleFunc("GET /api/ishchi-interviews/{id}", authRequired(handleGetIshchiInterview))
+	mux.HandleFunc("PATCH /api/ishchi-interviews/{id}", authRequired(handleUpdateIshchiInterview))
+	mux.HandleFunc("POST /api/ishchi-interviews/{id}/reschedule", authRequired(handleRescheduleIshchiInterview))
+	mux.HandleFunc("DELETE /api/ishchi-interviews/{id}", authRequired(handleDeleteIshchiInterview))
+	mux.HandleFunc("POST /api/ishchi-interviews/{id}/send-location", authRequired(handleSendIshchiInterviewLocation))
 
 	// Interview API
 	mux.HandleFunc("POST /api/interviews", authRequired(handleCreateInterview))

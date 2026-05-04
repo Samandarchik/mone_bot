@@ -101,13 +101,15 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	dbCreateSession(token, user.ID)
 
 	cats := getUserCategories(user.ID)
+	ishchiCats := getUserIshchiCategories(user.ID)
 	branch := getBranchPtr(user.BranchID)
 	jsonResponse(w, map[string]interface{}{
 		"token": token,
 		"user": UserResponse{
-			UserRow:    *user,
-			Categories: cats,
-			Branch:     branch,
+			UserRow:          *user,
+			Categories:       cats,
+			IshchiCategories: ishchiCats,
+			Branch:           branch,
 		},
 	})
 }

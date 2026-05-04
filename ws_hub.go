@@ -24,10 +24,12 @@ type WSEvent struct {
 
 // Client — bitta WebSocket ulanish
 type wsClient struct {
-	conn              *websocket.Conn
-	send              chan []byte
-	allowedCategories []string
-	isSuperAdmin      bool
+	conn                    *websocket.Conn
+	send                    chan []byte
+	allowedCategories       []string // rezume kategoriyalari (admin uchun)
+	allowedIshchiCategories []string // ishchi kategoriyalari (ishchi_admin uchun)
+	role                    string
+	isSuperAdmin            bool
 }
 
 // Hub — barcha WebSocket clientlarni boshqaradi
@@ -96,13 +98,19 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Super admin — hamma narsani ko'radi. Aks holda foydalanuvchi kategoriyalari bilan filtr.
+	// Super admin — hamma narsani ko'radi. admin → rezume kategoriyalari, ishchi_admin → ishchi kategoriyalari.
 	isSuperAdmin := user.Role == "super_admin"
 	var allowedCategories []string
-	if !isSuperAdmin {
+	var allowedIshchiCategories []string
+	if user.Role == "admin" {
 		cats := getUserCategories(user.ID)
 		for _, c := range cats {
 			allowedCategories = append(allowedCategories, c.Name)
+		}
+	} else if user.Role == "ishchi_admin" {
+		cats := getUserIshchiCategories(user.ID)
+		for _, c := range cats {
+			allowedIshchiCategories = append(allowedIshchiCategories, c.Name)
 		}
 	}
 
@@ -113,24 +121,33 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &wsClient{
-		conn:              conn,
-		send:              make(chan []byte, 256),
-		allowedCategories: allowedCategories,
-		isSuperAdmin:      isSuperAdmin,
+		conn:                    conn,
+		send:                    make(chan []byte, 256),
+		allowedCategories:       allowedCategories,
+		allowedIshchiCategories: allowedIshchiCategories,
+		role:                    user.Role,
+		isSuperAdmin:            isSuperAdmin,
 	}
 	hub.register(client)
 
 	// Ulanganida mavjud ma'lumotlarni yuborish (foydalanuvchi kategoriyalari bilan filtrlangan)
 	go func() {
-		rezumeler, _, err := getRezumeler("", "", "", allowedCategories, 1, 100)
-		if err == nil {
-			data, _ := json.Marshal(WSEvent{Type: "init", Data: rezumeler})
-			client.send <- data
+		// Rezume init: faqat super_admin yoki admin uchun
+		if user.Role != "ishchi_admin" {
+			rezumeler, _, err := getRezumeler("", "", "", allowedCategories, 1, 100)
+			if err == nil {
+				data, _ := json.Marshal(WSEvent{Type: "init", Data: rezumeler})
+				client.send <- data
+			}
 		}
-		ishchilar, _, err := getIshchiAnketalar("", "", "", 1, 100)
-		if err == nil {
-			data, _ := json.Marshal(WSEvent{Type: "ishchi_init", Data: ishchilar})
-			client.send <- data
+		// Ishchi init: faqat super_admin yoki ishchi_admin uchun
+		if user.Role != "admin" {
+			ishchilar, _, err := getIshchiAnketalar("", "", "", allowedIshchiCategories, 1, 100)
+			if err == nil {
+				attachIshchiInterviews(ishchilar)
+				data, _ := json.Marshal(WSEvent{Type: "ishchi_init", Data: ishchilar})
+				client.send <- data
+			}
 		}
 	}()
 
@@ -178,30 +195,19 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
-// Broadcast helper funksiyalari
-func broadcastNewRezume(rezume *RezumeRow) {
-	event := WSEvent{Type: "new_rezume", Data: rezume}
+// sendToClients — event-ni filtr funksiyasi orqali clientlarga yuboradi.
+// shouldSend(c) true qaytarsa, client xabar oladi.
+func sendToClients(event WSEvent, shouldSend func(c *wsClient) bool) {
 	data, err := json.Marshal(event)
 	if err != nil {
-		log.Printf("broadcastNewRezume marshal xato: %v", err)
+		log.Printf("WS marshal xato: %v", err)
 		return
 	}
 	hub.mu.RLock()
 	defer hub.mu.RUnlock()
-	log.Printf("broadcastNewRezume: id=%d lavozim=%q clients=%d", rezume.ID, rezume.Lavozim, len(hub.clients))
 	for c := range hub.clients {
-		// Super admin — hamma narsani ko'radi. Oddiy admin faqat o'z kategoriyasidagini.
-		if !c.isSuperAdmin {
-			allowed := false
-			for _, cat := range c.allowedCategories {
-				if cat == rezume.Lavozim {
-					allowed = true
-					break
-				}
-			}
-			if !allowed {
-				continue
-			}
+		if !shouldSend(c) {
+			continue
 		}
 		select {
 		case c.send <- data:
@@ -211,40 +217,109 @@ func broadcastNewRezume(rezume *RezumeRow) {
 	}
 }
 
+// Rezume broadcastlar — ishchi_admin ga yuborilmaydi
+func broadcastNewRezume(rezume *RezumeRow) {
+	sendToClients(WSEvent{Type: "new_rezume", Data: rezume}, func(c *wsClient) bool {
+		if c.role == "ishchi_admin" {
+			return false
+		}
+		if c.isSuperAdmin {
+			return true
+		}
+		for _, cat := range c.allowedCategories {
+			if cat == rezume.Lavozim {
+				return true
+			}
+		}
+		return false
+	})
+}
+
 func broadcastRezumeStatusUpdate(id int64, status, statusByName string) {
-	hub.broadcast(WSEvent{Type: "status_update", Data: map[string]interface{}{
-		"id":             id,
-		"status":         status,
-		"status_by_name": statusByName,
-	}})
+	sendToClients(WSEvent{Type: "status_update", Data: map[string]interface{}{
+		"id": id, "status": status, "status_by_name": statusByName,
+	}}, func(c *wsClient) bool { return c.role != "ishchi_admin" })
 }
 
 func broadcastRezumeDelete(id int64) {
-	hub.broadcast(WSEvent{Type: "delete", Data: map[string]interface{}{"id": id}})
+	sendToClients(WSEvent{Type: "delete", Data: map[string]interface{}{"id": id}},
+		func(c *wsClient) bool { return c.role != "ishchi_admin" })
 }
 
-// Interview broadcast helperlari — real-time intervyu yangilanishlari
+// Interview (rezume) broadcast — ishchi_admin uchun emas
 func broadcastInterviewCreated(interview *InterviewRow) {
-	hub.broadcast(WSEvent{Type: "interview_created", Data: interview})
+	sendToClients(WSEvent{Type: "interview_created", Data: interview},
+		func(c *wsClient) bool { return c.role != "ishchi_admin" })
 }
 
 func broadcastInterviewUpdated(interview *InterviewRow) {
-	hub.broadcast(WSEvent{Type: "interview_updated", Data: interview})
+	sendToClients(WSEvent{Type: "interview_updated", Data: interview},
+		func(c *wsClient) bool { return c.role != "ishchi_admin" })
 }
 
 func broadcastInterviewDeleted(id, rezumeID int64) {
-	hub.broadcast(WSEvent{Type: "interview_deleted", Data: map[string]interface{}{"id": id, "rezume_id": rezumeID}})
+	sendToClients(WSEvent{Type: "interview_deleted", Data: map[string]interface{}{"id": id, "rezume_id": rezumeID}},
+		func(c *wsClient) bool { return c.role != "ishchi_admin" })
 }
 
-// Ishchi anketalar broadcast
-func broadcastNewIshchi(ishchi interface{}) {
-	hub.broadcast(WSEvent{Type: "new_ishchi", Data: ishchi})
+// Ishchi broadcastlar — admin (rezume) ga yuborilmaydi
+func broadcastNewIshchi(ishchi *IshchiRow) {
+	sendToClients(WSEvent{Type: "new_ishchi", Data: ishchi}, func(c *wsClient) bool {
+		if c.role == "admin" {
+			return false
+		}
+		if c.isSuperAdmin {
+			return true
+		}
+		// ishchi_admin: kategoriya filtri
+		for _, cat := range c.allowedIshchiCategories {
+			if cat == ishchi.Vakansiya {
+				return true
+			}
+		}
+		return false
+	})
 }
 
-func broadcastIshchiUpdate(ishchi interface{}) {
-	hub.broadcast(WSEvent{Type: "ishchi_update", Data: ishchi})
+func broadcastIshchiUpdate(ishchi *IshchiRow) {
+	sendToClients(WSEvent{Type: "ishchi_update", Data: ishchi}, func(c *wsClient) bool {
+		if c.role == "admin" {
+			return false
+		}
+		if c.isSuperAdmin {
+			return true
+		}
+		for _, cat := range c.allowedIshchiCategories {
+			if cat == ishchi.Vakansiya {
+				return true
+			}
+		}
+		return false
+	})
 }
 
 func broadcastIshchiDelete(id int64) {
-	hub.broadcast(WSEvent{Type: "ishchi_delete", Data: map[string]interface{}{"id": id}})
+	sendToClients(WSEvent{Type: "ishchi_delete", Data: map[string]interface{}{"id": id}},
+		func(c *wsClient) bool { return c.role != "admin" })
+}
+
+func broadcastIshchiStatusUpdate(id int64, status, statusByName string) {
+	sendToClients(WSEvent{Type: "ishchi_status_update", Data: map[string]interface{}{
+		"id": id, "status": status, "status_by_name": statusByName,
+	}}, func(c *wsClient) bool { return c.role != "admin" })
+}
+
+func broadcastIshchiInterviewCreated(interview *IshchiInterviewRow) {
+	sendToClients(WSEvent{Type: "ishchi_interview_created", Data: interview},
+		func(c *wsClient) bool { return c.role != "admin" })
+}
+
+func broadcastIshchiInterviewUpdated(interview *IshchiInterviewRow) {
+	sendToClients(WSEvent{Type: "ishchi_interview_updated", Data: interview},
+		func(c *wsClient) bool { return c.role != "admin" })
+}
+
+func broadcastIshchiInterviewDeleted(id, ishchiID int64) {
+	sendToClients(WSEvent{Type: "ishchi_interview_deleted", Data: map[string]interface{}{"id": id, "ishchi_id": ishchiID}},
+		func(c *wsClient) bool { return c.role != "admin" })
 }

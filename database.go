@@ -162,10 +162,41 @@ func initDB() {
 		created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 	)`)
 
+	// user_ishchi_categories — ishchi_admin role uchun kategoriya filtri
+	db.Exec(`CREATE TABLE IF NOT EXISTS user_ishchi_categories (
+		user_id INTEGER NOT NULL,
+		category_id INTEGER NOT NULL,
+		PRIMARY KEY (user_id, category_id),
+		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+		FOREIGN KEY (category_id) REFERENCES ishchi_categories(id) ON DELETE CASCADE
+	)`)
+
+	// ishchi_interviews — rezume interviews bilan parallel
+	db.Exec(`CREATE TABLE IF NOT EXISTS ishchi_interviews (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		ishchi_id INTEGER NOT NULL,
+		invited_by_id INTEGER NOT NULL,
+		interview_date TEXT NOT NULL,
+		interview_time TEXT NOT NULL,
+		branch_id INTEGER NOT NULL DEFAULT 0,
+		rating INTEGER NOT NULL DEFAULT 0,
+		comment TEXT NOT NULL DEFAULT '',
+		voice_url TEXT NOT NULL DEFAULT '',
+		created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+		FOREIGN KEY (ishchi_id) REFERENCES ishchi_anketalar(id) ON DELETE CASCADE,
+		FOREIGN KEY (invited_by_id) REFERENCES users(id)
+	)`)
+
+	// Migration: ishchi_anketalar ga status_by, status_by_name, status_voice_url
+	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN status_by INTEGER NOT NULL DEFAULT 0")
+	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN status_by_name TEXT NOT NULL DEFAULT ''")
+	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN status_voice_url TEXT NOT NULL DEFAULT ''")
+
 	// Migration: eski statuslarni yangi status tizimiga o'tkazish
 	db.Exec("UPDATE rezumeler SET status = 'pending' WHERE status = 'yangi'")
 	db.Exec("UPDATE rezumeler SET status = 'interviewing' WHERE status = 'qabul'")
 	db.Exec("UPDATE rezumeler SET status = 'rejected' WHERE status = 'rad'")
+	db.Exec("UPDATE ishchi_anketalar SET status = 'pending' WHERE status = 'yangi' OR status = ''")
 
 	seedDB()
 	log.Println("SQLite baza tayyor")
@@ -390,8 +421,9 @@ func dbGetUsers() ([]UserResponse, error) {
 		u.CanInterview = ci == 1
 		u.IsActive = ia == 1
 		cats := getUserCategories(u.ID)
+		ishchiCats := getUserIshchiCategories(u.ID)
 		branch := getBranchPtr(u.BranchID)
-		users = append(users, UserResponse{UserRow: u, Categories: cats, Branch: branch})
+		users = append(users, UserResponse{UserRow: u, Categories: cats, IshchiCategories: ishchiCats, Branch: branch})
 	}
 	return users, nil
 }
@@ -408,8 +440,9 @@ func dbGetUserByID(id int64) (*UserResponse, error) {
 	u.CanInterview = ci == 1
 	u.IsActive = ia == 1
 	cats := getUserCategories(u.ID)
+	ishchiCats := getUserIshchiCategories(u.ID)
 	branch := getBranchPtr(u.BranchID)
-	return &UserResponse{UserRow: u, Categories: cats, Branch: branch}, nil
+	return &UserResponse{UserRow: u, Categories: cats, IshchiCategories: ishchiCats, Branch: branch}, nil
 }
 
 func dbGetUserByUsername(username string) (*UserRow, string, error) {
@@ -898,7 +931,7 @@ func attachInterviews(rezumeler []RezumeRow) {
 
 // ===================== ISHCHI ANKETA CRUD =====================
 
-func getIshchiAnketalar(vakansiya, status, search string, page, limit int) ([]IshchiRow, int, error) {
+func getIshchiAnketalar(vakansiya, status, search string, allowedCategories []string, page, limit int) ([]IshchiRow, int, error) {
 	where := "1=1"
 	args := []interface{}{}
 
@@ -909,11 +942,26 @@ func getIshchiAnketalar(vakansiya, status, search string, page, limit int) ([]Is
 	if status != "" {
 		where += " AND status = ?"
 		args = append(args, status)
+	} else {
+		// Default: rejected ishchilarni ko'rsatmaslik + 4 marta chaqirilganlar asosiy listdan chiqsin
+		where += " AND status != 'rejected'"
+		where += " AND id NOT IN (SELECT ishchi_id FROM ishchi_interviews GROUP BY ishchi_id HAVING COUNT(*) >= 4)"
 	}
 	if search != "" {
 		where += " AND (fio LIKE ? OR telefon LIKE ?)"
 		s := "%" + search + "%"
 		args = append(args, s, s)
+	}
+	if len(allowedCategories) > 0 {
+		ph := ""
+		for i, cat := range allowedCategories {
+			if i > 0 {
+				ph += ","
+			}
+			ph += "?"
+			args = append(args, cat)
+		}
+		where += " AND vakansiya IN (" + ph + ")"
 	}
 
 	var total int
@@ -926,7 +974,8 @@ func getIshchiAnketalar(vakansiya, status, search string, page, limit int) ([]Is
 	query := fmt.Sprintf(
 		`SELECT id, vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
-		 rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, created_at
+		 rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''),
+		 status, COALESCE(status_by,0), COALESCE(status_by_name,''), COALESCE(status_voice_url,''), created_at
 		 FROM ishchi_anketalar WHERE %s ORDER BY id DESC LIMIT ? OFFSET ?`, where)
 	args = append(args, limit, offset)
 
@@ -943,7 +992,8 @@ func getIshchiAnketalar(vakansiya, status, search string, page, limit int) ([]Is
 			&r.ID, &r.Vakansiya, &r.FIO, &r.TugilganSana, &r.BoySm, &r.VaznKg, &r.Manzil, &r.Lang,
 			&r.OilaviyHolat, &r.Bolalar, &r.Tillar, &r.Malumot,
 			&r.Grafik, &r.Sudimlik, &r.Haydovchilik, &r.Telefon,
-			&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.CreatedAt,
+			&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2,
+			&r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.CreatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -958,17 +1008,270 @@ func getIshchiAnketaByID(id int64) (*IshchiRow, error) {
 	err := db.QueryRow(
 		`SELECT id, vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
-		 rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, created_at
+		 rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''),
+		 status, COALESCE(status_by,0), COALESCE(status_by_name,''), COALESCE(status_voice_url,''), created_at
 		 FROM ishchi_anketalar WHERE id = ?`, id).Scan(
 		&r.ID, &r.Vakansiya, &r.FIO, &r.TugilganSana, &r.BoySm, &r.VaznKg, &r.Manzil, &r.Lang,
 		&r.OilaviyHolat, &r.Bolalar, &r.Tillar, &r.Malumot,
 		&r.Grafik, &r.Sudimlik, &r.Haydovchilik, &r.Telefon,
-		&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.CreatedAt,
+		&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2,
+		&r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 	return &r, nil
+}
+
+func updateIshchiStatus(id int64, status string) error {
+	_, err := db.Exec("UPDATE ishchi_anketalar SET status = ? WHERE id = ?", status, id)
+	return err
+}
+
+func updateIshchiStatusWithAdmin(id int64, status string, adminID int64, adminName string) error {
+	_, err := db.Exec("UPDATE ishchi_anketalar SET status = ?, status_by = ?, status_by_name = ? WHERE id = ?",
+		status, adminID, adminName, id)
+	return err
+}
+
+func updateIshchiStatusWithVoice(id int64, status string, adminID int64, adminName, voiceUrl string) error {
+	_, err := db.Exec(
+		"UPDATE ishchi_anketalar SET status = ?, status_by = ?, status_by_name = ?, status_voice_url = ? WHERE id = ?",
+		status, adminID, adminName, voiceUrl, id,
+	)
+	return err
+}
+
+// Ishchi dublikat
+func deleteDuplicateIshchi(vakansiya, tugilganSana, telefon string) {
+	if vakansiya == "" || tugilganSana == "" || telefon == "" {
+		return
+	}
+	db.Exec("DELETE FROM ishchi_anketalar WHERE vakansiya = ? AND tugilgan_sana = ? AND telefon = ?",
+		vakansiya, tugilganSana, telefon)
+}
+
+func countRejectedIshchiInterviews(ishchiID int64) int {
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM ishchi_interviews WHERE ishchi_id = ? AND rating = 3", ishchiID).Scan(&count)
+	return count
+}
+
+func countRemainingActiveIshchiInterviews(ishchiID int64) int {
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM ishchi_interviews WHERE ishchi_id = ?", ishchiID).Scan(&count)
+	return count
+}
+
+func dbCreateIshchiInterview(ishchiID, invitedByID int64, date, time string, branchID int64) (int64, error) {
+	result, err := db.Exec(
+		"INSERT INTO ishchi_interviews (ishchi_id, invited_by_id, interview_date, interview_time, branch_id) VALUES (?, ?, ?, ?, ?)",
+		ishchiID, invitedByID, date, time, branchID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func dbGetIshchiInterviews(ishchiID int64, rating int, invitedByID int64, date string, page, limit int) ([]IshchiInterviewRow, int, error) {
+	where := "1=1"
+	args := []interface{}{}
+
+	if ishchiID > 0 {
+		where += " AND i.ishchi_id = ?"
+		args = append(args, ishchiID)
+	}
+	if rating >= 0 {
+		where += " AND i.rating = ?"
+		args = append(args, rating)
+	}
+	if invitedByID > 0 {
+		where += " AND i.invited_by_id = ?"
+		args = append(args, invitedByID)
+	}
+	if date != "" {
+		where += " AND i.interview_date = ?"
+		args = append(args, date)
+	}
+
+	var total int
+	err := db.QueryRow("SELECT COUNT(*) FROM ishchi_interviews i WHERE "+where, args...).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	query := fmt.Sprintf(
+		`SELECT i.id, i.ishchi_id, i.invited_by_id, COALESCE(u.full_name, u.username),
+		 i.interview_date, i.interview_time, i.branch_id,
+		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
+		 i.rating, i.comment, COALESCE(i.voice_url, ''), i.created_at,
+		 COALESCE(a.fio, ''), COALESCE(a.vakansiya, ''), COALESCE(a.telefon, ''),
+		 COALESCE(a.rasm_url, ''), COALESCE(a.tg_username, ''), COALESCE(a.tg_user_id, 0)
+		 FROM ishchi_interviews i
+		 LEFT JOIN users u ON u.id = i.invited_by_id
+		 LEFT JOIN ishchi_anketalar a ON a.id = i.ishchi_id
+		 LEFT JOIN branches b ON b.id = i.branch_id
+		 WHERE %s ORDER BY i.id DESC LIMIT ? OFFSET ?`, where)
+	args = append(args, limit, offset)
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	results := []IshchiInterviewRow{}
+	for rows.Next() {
+		var row IshchiInterviewRow
+		err := rows.Scan(
+			&row.ID, &row.IshchiID, &row.InvitedByID, &row.InvitedByName,
+			&row.InterviewDate, &row.InterviewTime, &row.BranchID,
+			&row.BranchName, &row.BranchLat, &row.BranchLng,
+			&row.Rating, &row.Comment, &row.VoiceUrl, &row.CreatedAt,
+			&row.IshchiFIO, &row.IshchiVakansiya, &row.IshchiTelefon,
+			&row.IshchiRasmUrl, &row.IshchiTgUsername, &row.IshchiTgUserID,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		row.RatingText = ratingText(row.Rating)
+		results = append(results, row)
+	}
+	return results, total, nil
+}
+
+func dbGetIshchiInterviewByID(id int64) (*IshchiInterviewRow, error) {
+	var row IshchiInterviewRow
+	err := db.QueryRow(
+		`SELECT i.id, i.ishchi_id, i.invited_by_id, COALESCE(u.full_name, u.username),
+		 i.interview_date, i.interview_time, i.branch_id,
+		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
+		 i.rating, i.comment, COALESCE(i.voice_url, ''), i.created_at,
+		 COALESCE(a.fio, ''), COALESCE(a.vakansiya, ''), COALESCE(a.telefon, ''),
+		 COALESCE(a.rasm_url, ''), COALESCE(a.tg_username, ''), COALESCE(a.tg_user_id, 0)
+		 FROM ishchi_interviews i
+		 LEFT JOIN users u ON u.id = i.invited_by_id
+		 LEFT JOIN ishchi_anketalar a ON a.id = i.ishchi_id
+		 LEFT JOIN branches b ON b.id = i.branch_id
+		 WHERE i.id = ?`, id).Scan(
+		&row.ID, &row.IshchiID, &row.InvitedByID, &row.InvitedByName,
+		&row.InterviewDate, &row.InterviewTime, &row.BranchID,
+		&row.BranchName, &row.BranchLat, &row.BranchLng,
+		&row.Rating, &row.Comment, &row.VoiceUrl, &row.CreatedAt,
+		&row.IshchiFIO, &row.IshchiVakansiya, &row.IshchiTelefon,
+		&row.IshchiRasmUrl, &row.IshchiTgUsername, &row.IshchiTgUserID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	row.RatingText = ratingText(row.Rating)
+	return &row, nil
+}
+
+func dbUpdateIshchiInterview(id int64, rating int, comment, voiceUrl string) error {
+	_, err := db.Exec("UPDATE ishchi_interviews SET rating = ?, comment = ?, voice_url = ? WHERE id = ?",
+		rating, comment, voiceUrl, id)
+	return err
+}
+
+func dbRescheduleIshchiInterview(id int64, date, time string, branchID int64) error {
+	_, err := db.Exec(
+		"UPDATE ishchi_interviews SET interview_date = ?, interview_time = ?, branch_id = ? WHERE id = ?",
+		date, time, branchID, id,
+	)
+	return err
+}
+
+func dbDeleteIshchiInterview(id int64) error {
+	_, err := db.Exec("DELETE FROM ishchi_interviews WHERE id = ?", id)
+	return err
+}
+
+func attachIshchiInterviews(rows []IshchiRow) {
+	if len(rows) == 0 {
+		return
+	}
+	ph := ""
+	args := []interface{}{}
+	for i, r := range rows {
+		if i > 0 {
+			ph += ","
+		}
+		ph += "?"
+		args = append(args, r.ID)
+	}
+
+	q, err := db.Query(fmt.Sprintf(
+		`SELECT i.id, i.ishchi_id, i.invited_by_id, COALESCE(u.full_name, u.username, ''),
+		 i.interview_date, i.interview_time, i.branch_id,
+		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
+		 i.rating, i.comment, COALESCE(i.voice_url, ''), i.created_at
+		 FROM ishchi_interviews i
+		 LEFT JOIN users u ON u.id = i.invited_by_id
+		 LEFT JOIN branches b ON b.id = i.branch_id
+		 WHERE i.ishchi_id IN (%s) ORDER BY i.id DESC`, ph), args...)
+	if err != nil {
+		return
+	}
+	defer q.Close()
+
+	imap := map[int64][]IshchiInterviewRow{}
+	for q.Next() {
+		var row IshchiInterviewRow
+		q.Scan(&row.ID, &row.IshchiID, &row.InvitedByID, &row.InvitedByName,
+			&row.InterviewDate, &row.InterviewTime, &row.BranchID,
+			&row.BranchName, &row.BranchLat, &row.BranchLng,
+			&row.Rating, &row.Comment, &row.VoiceUrl, &row.CreatedAt)
+		row.RatingText = ratingText(row.Rating)
+		imap[row.IshchiID] = append(imap[row.IshchiID], row)
+	}
+
+	for i := range rows {
+		if interviews, ok := imap[rows[i].ID]; ok {
+			rows[i].Interviews = interviews
+		}
+	}
+}
+
+// User-Ishchi-Categories junction
+func dbSetUserIshchiCategories(userID int64, categoryIDs []int64) error {
+	db.Exec("DELETE FROM user_ishchi_categories WHERE user_id = ?", userID)
+	for _, catID := range categoryIDs {
+		db.Exec("INSERT INTO user_ishchi_categories (user_id, category_id) VALUES (?, ?)", userID, catID)
+	}
+	return nil
+}
+
+func getUserIshchiCategories(userID int64) []Category {
+	rows, err := db.Query(
+		`SELECT c.id, c.name, c.tg_group_id, c.is_active, c.created_at
+		 FROM ishchi_categories c JOIN user_ishchi_categories uc ON c.id = uc.category_id
+		 WHERE uc.user_id = ?`, userID)
+	if err != nil {
+		return []Category{}
+	}
+	defer rows.Close()
+
+	cats := []Category{}
+	for rows.Next() {
+		var c Category
+		var ia int
+		rows.Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+		c.IsActive = ia == 1
+		cats = append(cats, c)
+	}
+	return cats
+}
+
+func getUserIshchiCategoryNames(userID int64) []string {
+	cats := getUserIshchiCategories(userID)
+	names := make([]string, len(cats))
+	for i, c := range cats {
+		names[i] = c.Name
+	}
+	return names
 }
 
 func deleteIshchiAnketa(id int64) error {
@@ -980,8 +1283,8 @@ func saveIshchiAnketa(a *IshchiAnketa, rasmURL string) (int64, error) {
 	result, err := db.Exec(`INSERT INTO ishchi_anketalar
 		(vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
-		 rasm_url, tg_user_id, tg_username, tg_username2)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 rasm_url, tg_user_id, tg_username, tg_username2, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
 		a.Vakansiya, a.FIO, a.TugilganSana, a.BoySm, a.VaznKg, a.Manzil, a.Lang,
 		a.OilaviyHolat, a.Bolalar, a.Tillar, a.Malumot,
 		a.Grafik, a.Sudimlik, a.Haydovchilik, a.Telefon,
