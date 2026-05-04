@@ -30,6 +30,11 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 	// Dublikat tekshiruv
 	deleteDuplicateIshchi(anketa.Vakansiya, anketa.TugilganSana, anketa.Telefon)
 
+	// Vakansiya kategoriya sifatida ro'yxatdan o'tmagan bo'lsa — avtomatik qo'shish
+	if anketa.Vakansiya != "" {
+		db.Exec("INSERT OR IGNORE INTO ishchi_categories (name) VALUES (?)", anketa.Vakansiya)
+	}
+
 	// Bazaga saqlash
 	id, err := saveIshchiAnketa(&anketa, rasmURL)
 	if err != nil {

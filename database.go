@@ -198,6 +198,9 @@ func initDB() {
 	db.Exec("UPDATE rezumeler SET status = 'rejected' WHERE status = 'rad'")
 	db.Exec("UPDATE ishchi_anketalar SET status = 'pending' WHERE status = 'yangi' OR status = ''")
 
+	// Backfill: ishchi_anketalar dagi mavjud vakansiya-larni ishchi_categories ga qo'shish
+	db.Exec("INSERT OR IGNORE INTO ishchi_categories (name) SELECT DISTINCT vakansiya FROM ishchi_anketalar WHERE vakansiya != ''")
+
 	seedDB()
 	log.Println("SQLite baza tayyor")
 }
