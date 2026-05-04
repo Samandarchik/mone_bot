@@ -10,7 +10,6 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 )
-
 type contextKey string
 
 const userCtxKey contextKey = "user"
