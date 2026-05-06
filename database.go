@@ -219,6 +219,18 @@ func seedDB() {
 		db.Exec("INSERT OR IGNORE INTO categories (name, tg_group_id) VALUES (?, ?)", name, groupID)
 	}
 
+	// Ishchi kategoriyalarini seed qilish (ishchi.html dagi vakansiya tugmalari bilan mos)
+	ishchiPositions := []string{
+		"Педагог китайского языка с русским переводом",
+		"Педагог испанского языка с русским переводом",
+		"Педагог английского языка с русским переводом",
+		"Педагог арабского языка с русским переводом",
+		"Няня, русскоговорящая",
+	}
+	for _, name := range ishchiPositions {
+		db.Exec("INSERT OR IGNORE INTO ishchi_categories (name) VALUES (?)", name)
+	}
+
 	// Branchlarni seed qilish
 	branches := []string{"Gelion", "Fresco", "Sibirski", "Marxabo"}
 	for _, name := range branches {
