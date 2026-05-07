@@ -29,6 +29,28 @@ func handlePublicCategories(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, active)
 }
 
+// GET /api/public/rezume-by-phone?phone=+998770451117 — public, telefon bo'yicha rezume olish (tashqi integratsiya uchun)
+func handleGetRezumeByPhone(w http.ResponseWriter, r *http.Request) {
+	phone := strings.TrimSpace(r.URL.Query().Get("phone"))
+	if phone == "" {
+		phone = strings.TrimSpace(r.PathValue("phone"))
+	}
+	if phone == "" {
+		jsonError(w, "telefon raqami kiritilmagan (?phone=+998...)", http.StatusBadRequest)
+		return
+	}
+
+	rezume, err := getRezumeByPhone(phone)
+	if err != nil {
+		jsonError(w, "rezume topilmadi", http.StatusNotFound)
+		return
+	}
+
+	single := []RezumeRow{*rezume}
+	attachInterviews(single)
+	jsonResponse(w, single[0])
+}
+
 // POST /api/report-error — frontenddan xatolik xabari (admin TG ga yuboriladi)
 func handleReportError(w http.ResponseWriter, r *http.Request) {
 	var body struct {

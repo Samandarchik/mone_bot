@@ -304,6 +304,8 @@ func main() {
 	mux.HandleFunc("POST /ishchi-rezume", handleIshchiRezume)
 	mux.HandleFunc("POST /api/report-error", handleReportError)
 	mux.HandleFunc("GET /api/public/categories", handlePublicCategories)
+	mux.HandleFunc("GET /api/public/rezume-by-phone", handleGetRezumeByPhone)
+	mux.HandleFunc("GET /api/public/rezume-by-phone/{phone}", handleGetRezumeByPhone)
 
 	// Auth
 	mux.HandleFunc("POST /api/auth/login", handleLogin)

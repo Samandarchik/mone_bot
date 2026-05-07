@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -368,6 +369,50 @@ func getRezumeByID(id int64) (*RezumeRow, error) {
 		r.Tillar = []LangInfo{}
 	}
 	return &r, nil
+}
+
+// getRezumeByPhone — telefon raqami bo'yicha rezume qidiradi (eng so'nggi qaytariladi).
+// Telefon raqami normalize qilinadi: bo'sh joy/qavs/tire olib tashlanadi va oxirgi 9 raqami bo'yicha qidirish ham qo'llaniladi.
+func getRezumeByPhone(phone string) (*RezumeRow, error) {
+	normalized := normalizePhone(phone)
+	suffix := normalized
+	if len(suffix) > 9 {
+		suffix = suffix[len(suffix)-9:]
+	}
+
+	var r RezumeRow
+	var tillarStr string
+	err := db.QueryRow(
+		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
+		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
+		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), created_at
+		 FROM rezumeler
+		 WHERE replace(replace(replace(replace(replace(telefon,' ',''),'+',''),'-',''),'(',''),')','') = ?
+		    OR replace(replace(replace(replace(replace(telefon,' ',''),'+',''),'-',''),'(',''),')','') LIKE ?
+		 ORDER BY id DESC LIMIT 1`,
+		normalized, "%"+suffix).Scan(
+		&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
+		&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
+		&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
+		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal([]byte(tillarStr), &r.Tillar)
+	if r.Tillar == nil {
+		r.Tillar = []LangInfo{}
+	}
+	return &r, nil
+}
+
+// normalizePhone — telefon raqamidan bo'sh joy, +, -, (, ) belgilarini olib tashlaydi.
+func normalizePhone(phone string) string {
+	out := phone
+	for _, ch := range []string{" ", "+", "-", "(", ")"} {
+		out = strings.ReplaceAll(out, ch, "")
+	}
+	return out
 }
 
 func updateRezumeStatus(id int64, status string) error {
