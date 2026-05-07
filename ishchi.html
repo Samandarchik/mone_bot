@@ -153,13 +153,7 @@ textarea{resize:vertical}
 <!-- 1. Vakansiya -->
 <div class="card" style="animation-delay:.05s">
   <span class="lbl"><span class="step-num">1</span><span data-uz="Vakansiya" data-ru="Вакансия" data-en="Position">Вакансия</span></span>
-  <div class="bg" id="g-vakansiya">
-    <button class="btn" data-value="Педагог китайского языка с русским переводом" data-uz="Xitoy tili o'qituvchisi (rus tarjimali)" data-ru="Педагог китайского языка с русским переводом" data-en="Chinese teacher (with Russian)" onclick="sel(this,'vakansiya')">Педагог китайского языка с русским переводом</button>
-    <button class="btn" data-value="Педагог испанского языка с русским переводом" data-uz="Ispan tili o'qituvchisi (rus tarjimali)" data-ru="Педагог испанского языка с русским переводом" data-en="Spanish teacher (with Russian)" onclick="sel(this,'vakansiya')">Педагог испанского языка с русским переводом</button>
-    <button class="btn" data-value="Педагог английского языка с русским переводом" data-uz="Ingliz tili o'qituvchisi (rus tarjimali)" data-ru="Педагог английского языка с русским переводом" data-en="English teacher (with Russian)" onclick="sel(this,'vakansiya')">Педагог английского языка с русским переводом</button>
-    <button class="btn" data-value="Педагог арабского языка с русским переводом" data-uz="Arab tili o'qituvchisi (rus tarjimali)" data-ru="Педагог арабского языка с русским переводом" data-en="Arabic teacher (with Russian)" onclick="sel(this,'vakansiya')">Педагог арабского языка с русским переводом</button>
-    <button class="btn" data-value="Няня, русскоговорящая" data-uz="Enaga (ruscha gapiradigan)" data-ru="Няня, русскоговорящая" data-en="Nanny (Russian-speaking)" onclick="sel(this,'vakansiya')">Няня, русскоговорящая</button>
-  </div>
+  <div class="bg" id="g-vakansiya"></div>
 </div>
 
 <!-- 2. Familiya -->
@@ -410,6 +404,37 @@ function switchLang(lang){
     if(ph) el.placeholder=ph;
   });
 }
+
+let _vakansiyalar=[];
+function loadVakansiyalar(){
+  fetch('/api/public/ishchi-categories').then(r=>r.json()).then(cats=>{
+    _vakansiyalar=cats||[];
+    renderVakansiyaButtons();
+  }).catch(()=>{
+    document.getElementById('g-vakansiya').innerHTML='<span style="color:#ef4444;font-size:13px">Vakansiyalarni yuklashda xatolik</span>';
+  });
+}
+function renderVakansiyaButtons(){
+  const container=document.getElementById('g-vakansiya');
+  container.innerHTML='';
+  _vakansiyalar.forEach(cat=>{
+    const btn=document.createElement('button');
+    btn.className='btn';
+    btn.setAttribute('data-value',cat.name);
+    const parts=cat.name.split(' / ');
+    const ruName=parts[0]||cat.name;
+    const uzName=parts[1]||cat.name;
+    const enName=parts[2]||cat.name;
+    btn.setAttribute('data-uz',uzName);
+    btn.setAttribute('data-ru',ruName);
+    btn.setAttribute('data-en',enName);
+    btn.textContent=curLang==='ru'?ruName:curLang==='en'?enName:uzName;
+    btn.onclick=function(){sel(this,'vakansiya')};
+    if(state.vakansiya===cat.name) btn.classList.add('on');
+    container.appendChild(btn);
+  });
+}
+loadVakansiyalar();
 
 // Date picker
 const months=['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'];

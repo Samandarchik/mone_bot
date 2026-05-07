@@ -29,6 +29,22 @@ func handlePublicCategories(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, active)
 }
 
+// GET /api/public/ishchi-categories — public, faol ishchi kategoriyalari ro'yxati
+func handlePublicIshchiCategories(w http.ResponseWriter, r *http.Request) {
+	cats, err := dbGetIshchiCategories()
+	if err != nil {
+		jsonError(w, "DB xato", http.StatusInternalServerError)
+		return
+	}
+	active := []map[string]interface{}{}
+	for _, c := range cats {
+		if c.IsActive {
+			active = append(active, map[string]interface{}{"id": c.ID, "name": c.Name})
+		}
+	}
+	jsonResponse(w, active)
+}
+
 // GET /api/public/rezume-by-phone?phone=+998770451117 — public, telefon bo'yicha rezume olish (tashqi integratsiya uchun)
 func handleGetRezumeByPhone(w http.ResponseWriter, r *http.Request) {
 	phone := strings.TrimSpace(r.URL.Query().Get("phone"))

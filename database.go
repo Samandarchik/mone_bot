@@ -199,45 +199,11 @@ func initDB() {
 	db.Exec("UPDATE rezumeler SET status = 'rejected' WHERE status = 'rad'")
 	db.Exec("UPDATE ishchi_anketalar SET status = 'pending' WHERE status = 'yangi' OR status = ''")
 
-	// Backfill: ishchi_anketalar dagi mavjud vakansiya-larni ishchi_categories ga qo'shish
-	db.Exec("INSERT OR IGNORE INTO ishchi_categories (name) SELECT DISTINCT vakansiya FROM ishchi_anketalar WHERE vakansiya != ''")
-
 	seedDB()
 	log.Println("SQLite baza tayyor")
 }
 
 func seedDB() {
-	// Kategoriyalarni seed qilish
-	positions := map[string]int64{
-		"Горничная уборщица / Xonadon tozalovchi": -5014841679,
-		"Магазинщик / Do'konchi":                  -5170258928,
-		"Кухня Салатница / Kuxnya Salatnisa":      -5126056788,
-		"Официант / Ofitsiant":                    -5170258928,
-		"Повар / Oshpaz":                          -5126056788,
-		"Водитель / Haydovchi":                    -5132239156,
-	}
-	for name, groupID := range positions {
-		db.Exec("INSERT OR IGNORE INTO categories (name, tg_group_id) VALUES (?, ?)", name, groupID)
-	}
-
-	// Ishchi kategoriyalarini seed qilish (ishchi.html dagi vakansiya tugmalari bilan mos)
-	ishchiPositions := []string{
-		"Педагог китайского языка с русским переводом",
-		"Педагог испанского языка с русским переводом",
-		"Педагог английского языка с русским переводом",
-		"Педагог арабского языка с русским переводом",
-		"Няня, русскоговорящая",
-	}
-	for _, name := range ishchiPositions {
-		db.Exec("INSERT OR IGNORE INTO ishchi_categories (name) VALUES (?)", name)
-	}
-
-	// Branchlarni seed qilish
-	branches := []string{"Gelion", "Fresco", "Sibirski", "Marxabo"}
-	for _, name := range branches {
-		db.Exec("INSERT OR IGNORE INTO branches (name) VALUES (?)", name)
-	}
-
 	// Default super admin yaratish
 	var count int
 	db.QueryRow("SELECT COUNT(*) FROM users WHERE role = 'super_admin'").Scan(&count)
