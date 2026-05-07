@@ -366,11 +366,18 @@ textarea{resize:vertical}
 let curLang='ru';
 
 // URL dan telefon, tg_user_id, username ni olish
-// Format: /ishchi/+998XXXXXXXXX/tg_user_id/username
+// Format: /ishchi/+998XXXXXXXXX/tg_user_id/username[?src=manba]
 let urlTgUserID=0;
 let urlTgUsername='';
+let urlSource='';
 (function(){
   const pathParts=window.location.pathname.split('/').filter(Boolean);
+  // ?src= — reklama manbasi (Telegram /start parametri).
+  try{
+    const sp=new URLSearchParams(window.location.search);
+    const raw=(sp.get('src')||'').trim();
+    urlSource=raw.replace(/[^a-zA-Z0-9_-]/g,'').slice(0,64);
+  }catch(_){}
   // pathParts[0] = 'ishchi', pathParts[1] = '+998...', pathParts[2] = tg_user_id, pathParts[3] = username
   if(pathParts.length>=3){
     const phone=(pathParts[1]||'').replace('+','');
@@ -663,7 +670,8 @@ async function submitForm(){
     lang:curLang,
     tg_user_id:urlTgUserID,
     tg_username:urlTgUsername,
-    tg_username2:document.getElementById('tg-extra2').value.trim().replace('@','')
+    tg_username2:document.getElementById('tg-extra2').value.trim().replace('@',''),
+    source:urlSource
   };
 
   try{

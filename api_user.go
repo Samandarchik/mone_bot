@@ -17,6 +17,9 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		CategoryIDs       []int64 `json:"category_ids"`
 		IshchiCategoryIDs []int64 `json:"ishchi_category_ids"`
 		BranchID          int64   `json:"branch_id"`
+		RasmUrl           string  `json:"rasm_url"`
+		Telefon           string  `json:"telefon"`
+		RezumeID          int64   `json:"rezume_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
@@ -42,7 +45,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := dbCreateUser(body.Username, hash, body.FullName, body.Role, body.CanInterview, body.BranchID)
+	id, err := dbCreateUser(body.Username, hash, body.FullName, body.Role, body.CanInterview, body.BranchID, body.RasmUrl, body.Telefon, body.RezumeID)
 	if err != nil {
 		jsonError(w, "Foydalanuvchi yaratishda xato: "+err.Error(), http.StatusBadRequest)
 		return

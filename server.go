@@ -73,6 +73,7 @@ type Anketa struct {
 	TgUserID        int64      `json:"tg_user_id"`
 	TgUsername      string     `json:"tg_username"`
 	TgUsername2     string     `json:"tg_username2"`
+	Source          string     `json:"source"`
 }
 
 type RezumeRow struct {
@@ -101,6 +102,7 @@ type RezumeRow struct {
 	StatusBy        int64          `json:"status_by"`
 	StatusByName    string         `json:"status_by_name"`
 	StatusVoiceUrl  string         `json:"status_voice_url"`
+	Source          string         `json:"source"`
 	CreatedAt       string         `json:"created_at"`
 	Interviews      []InterviewRow `json:"interviews"`
 }
@@ -130,6 +132,9 @@ type UserRow struct {
 	CanInterview bool   `json:"can_interview"`
 	IsActive     bool   `json:"is_active"`
 	BranchID     int64  `json:"branch_id"`
+	RasmUrl      string `json:"rasm_url"`
+	Telefon      string `json:"telefon"`
+	RezumeID     int64  `json:"rezume_id"`
 	CreatedAt    string `json:"created_at"`
 }
 
@@ -162,6 +167,7 @@ type IshchiAnketa struct {
 	TgUserID     int64  `json:"tg_user_id"`
 	TgUsername   string `json:"tg_username"`
 	TgUsername2  string `json:"tg_username2"`
+	Source       string `json:"source"`
 }
 
 type IshchiRow struct {
@@ -189,6 +195,7 @@ type IshchiRow struct {
 	StatusBy       int64                `json:"status_by"`
 	StatusByName   string               `json:"status_by_name"`
 	StatusVoiceUrl string               `json:"status_voice_url"`
+	Source         string               `json:"source"`
 	CreatedAt      string               `json:"created_at"`
 	Interviews     []IshchiInterviewRow `json:"interviews"`
 }
@@ -248,6 +255,11 @@ type InterviewRow struct {
 var (
 	userStates = make(map[int64]string)
 	stateMu    sync.RWMutex
+
+	// userSources — chatID -> /start <source> qiymati (sanitized).
+	// Bot orqali kelgan foydalanuvchi qaysi reklama linkidan o'tganini eslab turadi.
+	userSources       = make(map[int64]string)
+	ishchiUserSources = make(map[int64]string)
 
 	schedule   = make(map[string]int)
 	scheduleMu sync.Mutex
@@ -345,6 +357,10 @@ func main() {
 	mux.HandleFunc("POST /api/interviews/{id}/reschedule", authRequired(handleRescheduleInterview))
 	mux.HandleFunc("DELETE /api/interviews/{id}", authRequired(handleDeleteInterview))
 	mux.HandleFunc("POST /api/interviews/{id}/send-location", authRequired(handleSendInterviewLocation))
+
+	// Stats API (super_admin) — reklama manbasi bo'yicha analitika
+	mux.HandleFunc("GET /api/stats/sources", superAdminRequired(handleStatsRezumeSources))
+	mux.HandleFunc("GET /api/stats/ishchi-sources", superAdminRequired(handleStatsIshchiSources))
 
 	// User API (super_admin)
 	mux.HandleFunc("POST /api/users", superAdminRequired(handleCreateUser))

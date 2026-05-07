@@ -61,9 +61,20 @@ func handleBotMessage(msg *TgMessage) {
 	chatID := msg.Chat.ID
 	text := strings.TrimSpace(msg.Text)
 
-	if text == "/start" {
+	// /start [deep-link parameter] — reklama manbasi (?start=uzaidev). Telegram qoidasi bo'yicha
+	// parametr [a-zA-Z0-9_-] bo'ladi, max 64 belgi. Bo'sh kelishi ham mumkin.
+	if text == "/start" || strings.HasPrefix(text, "/start ") {
+		source := ""
+		if len(text) > len("/start ") {
+			source = sanitizeSource(text[len("/start "):])
+		}
 		stateMu.Lock()
 		userStates[chatID] = "waiting_phone"
+		if source != "" {
+			userSources[chatID] = source
+		} else {
+			delete(userSources, chatID)
+		}
 		stateMu.Unlock()
 
 		sendTgMessage(chatID, "Assalomu alaykum!\n\nIltimos, telefon raqamingizni yuboring.\nMisol: 998901234567")
@@ -92,11 +103,19 @@ func handleBotMessage(msg *TgMessage) {
 			username = msg.From.Username
 		}
 
+		stateMu.RLock()
+		source := userSources[chatID]
+		stateMu.RUnlock()
+
 		link := fmt.Sprintf("%s/+%s/%d/%s", baseURL, phone, chatID, username)
+		if source != "" {
+			link += "?src=" + source
+		}
 		sendTgMessage(chatID, fmt.Sprintf("Rahmat!\n\nAnketa to'ldirish uchun quyidagi havolani bosing:\n\n%s", link))
 
 		stateMu.Lock()
 		delete(userStates, chatID)
+		delete(userSources, chatID)
 		stateMu.Unlock()
 	}
 }

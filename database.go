@@ -128,6 +128,11 @@ func initDB() {
 	// Migration: users jadvaliga branch_id qo'shish (agar yo'q bo'lsa)
 	db.Exec("ALTER TABLE users ADD COLUMN branch_id INTEGER NOT NULL DEFAULT 0")
 
+	// Migration: users jadvaliga rezume-dan kelgan rasm va telefon qo'shish
+	db.Exec("ALTER TABLE users ADD COLUMN rasm_url TEXT NOT NULL DEFAULT ''")
+	db.Exec("ALTER TABLE users ADD COLUMN telefon TEXT NOT NULL DEFAULT ''")
+	db.Exec("ALTER TABLE users ADD COLUMN rezume_id INTEGER NOT NULL DEFAULT 0")
+
 	// Migration: branches jadvaliga latitude/longitude qo'shish
 	db.Exec("ALTER TABLE branches ADD COLUMN latitude REAL NOT NULL DEFAULT 0")
 	db.Exec("ALTER TABLE branches ADD COLUMN longitude REAL NOT NULL DEFAULT 0")
@@ -153,6 +158,11 @@ func initDB() {
 	// Migration: tg_username2 qo'shish
 	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN tg_username2 TEXT NOT NULL DEFAULT ''")
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN tg_username2 TEXT NOT NULL DEFAULT ''")
+
+	// Migration: source — reklama manbasi (Telegram /start deep-link parametri)
+	// Misol: /start uzaidev yoki /start samarqandvakansiya. tg_username bilan adashmasligi uchun alohida ustun.
+	db.Exec("ALTER TABLE rezumeler ADD COLUMN source TEXT NOT NULL DEFAULT ''")
+	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN source TEXT NOT NULL DEFAULT ''")
 
 	// ishchi_categories jadvalini yaratish
 	db.Exec(`CREATE TABLE IF NOT EXISTS ishchi_categories (
@@ -225,13 +235,13 @@ func saveRezume(a *Anketa, rasmURL string) (int64, error) {
 		(lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi,
 		 malumot, oilaviy_holat, tillar, telefon, qoshimcha, rasm_url,
-		 tg_user_id, tg_username, tg_username2, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+		 tg_user_id, tg_username, tg_username2, source, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
 		a.Lavozim, a.Familiya, a.Ism, a.Sharif, a.TugilganSana,
 		a.BoySm, a.VaznKg, a.YashashManzili, a.Moljal,
 		a.UmumiyTajriba, a.ChetElTajribasi, a.Malumot, a.OilaviyHolat,
 		string(tillarJSON), a.Telefon, a.Qoshimcha, rasmURL,
-		a.TgUserID, a.TgUsername, a.TgUsername2,
+		a.TgUserID, a.TgUsername, a.TgUsername2, sanitizeSource(a.Source),
 	)
 	if err != nil {
 		return 0, err
@@ -282,7 +292,7 @@ func getRezumeler(lavozim, status, search string, allowedCategories []string, pa
 	query := fmt.Sprintf(
 		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
-		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), created_at
+		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM rezumeler WHERE %s ORDER BY id DESC LIMIT ? OFFSET ?`, where)
 	args = append(args, limit, offset)
 
@@ -300,7 +310,7 @@ func getRezumeler(lavozim, status, search string, allowedCategories []string, pa
 			&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 			&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 			&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
-			&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.CreatedAt,
+			&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -320,12 +330,12 @@ func getRezumeByID(id int64) (*RezumeRow, error) {
 	err := db.QueryRow(
 		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
-		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), created_at
+		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM rezumeler WHERE id = ?`, id).Scan(
 		&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 		&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 		&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
-		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.CreatedAt,
+		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -351,7 +361,7 @@ func getRezumeByPhone(phone string) (*RezumeRow, error) {
 	err := db.QueryRow(
 		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
-		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), created_at
+		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM rezumeler
 		 WHERE replace(replace(replace(replace(replace(telefon,' ',''),'+',''),'-',''),'(',''),')','') = ?
 		    OR replace(replace(replace(replace(replace(telefon,' ',''),'+',''),'-',''),'(',''),')','') LIKE ?
@@ -360,7 +370,7 @@ func getRezumeByPhone(phone string) (*RezumeRow, error) {
 		&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 		&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 		&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
-		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.CreatedAt,
+		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -370,6 +380,24 @@ func getRezumeByPhone(phone string) (*RezumeRow, error) {
 		r.Tillar = []LangInfo{}
 	}
 	return &r, nil
+}
+
+// sanitizeSource — Telegram /start deep-link parametrini tozalaydi.
+// Faqat [a-zA-Z0-9_-] belgilarini qoldiradi, max 64 belgi (Telegram cheklovi).
+// Bo'sh string qaytarsa — manba ko'rsatilmagan deb hisoblanadi.
+func sanitizeSource(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	out := make([]byte, 0, len(s))
+	for i := 0; i < len(s) && len(out) < 64; i++ {
+		c := s[i]
+		if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-' {
+			out = append(out, c)
+		}
+	}
+	return string(out)
 }
 
 // normalizePhone — telefon raqamidan bo'sh joy, +, -, (, ) belgilarini olib tashlaydi.
@@ -406,14 +434,14 @@ func deleteRezume(id int64) error {
 
 // ===================== USER CRUD =====================
 
-func dbCreateUser(username, passwordHash, fullName, role string, canInterview bool, branchID int64) (int64, error) {
+func dbCreateUser(username, passwordHash, fullName, role string, canInterview bool, branchID int64, rasmUrl, telefon string, rezumeID int64) (int64, error) {
 	ci := 0
 	if canInterview {
 		ci = 1
 	}
 	result, err := db.Exec(
-		"INSERT INTO users (username, password_hash, full_name, role, can_interview, branch_id) VALUES (?, ?, ?, ?, ?, ?)",
-		username, passwordHash, fullName, role, ci, branchID,
+		"INSERT INTO users (username, password_hash, full_name, role, can_interview, branch_id, rasm_url, telefon, rezume_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		username, passwordHash, fullName, role, ci, branchID, rasmUrl, telefon, rezumeID,
 	)
 	if err != nil {
 		return 0, err
@@ -431,7 +459,7 @@ func dbSetUserCategories(userID int64, categoryIDs []int64) error {
 
 func dbGetUsers() ([]UserResponse, error) {
 	rows, err := db.Query(
-		"SELECT id, username, full_name, role, can_interview, is_active, branch_id, created_at FROM users ORDER BY id")
+		"SELECT id, username, full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -441,7 +469,7 @@ func dbGetUsers() ([]UserResponse, error) {
 	for rows.Next() {
 		var u UserRow
 		var ci, ia int
-		if err := rows.Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt); err != nil {
 			return nil, err
 		}
 		u.CanInterview = ci == 1
@@ -458,8 +486,8 @@ func dbGetUserByID(id int64) (*UserResponse, error) {
 	var u UserRow
 	var ci, ia int
 	err := db.QueryRow(
-		"SELECT id, username, full_name, role, can_interview, is_active, branch_id, created_at FROM users WHERE id = ?", id).
-		Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.CreatedAt)
+		"SELECT id, username, full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE id = ?", id).
+		Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -476,8 +504,8 @@ func dbGetUserByUsername(username string) (*UserRow, string, error) {
 	var passwordHash string
 	var ci, ia int
 	err := db.QueryRow(
-		"SELECT id, username, password_hash, full_name, role, can_interview, is_active, branch_id, created_at FROM users WHERE username = ?",
-		username).Scan(&u.ID, &u.Username, &passwordHash, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.CreatedAt)
+		"SELECT id, username, password_hash, full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE username = ?",
+		username).Scan(&u.ID, &u.Username, &passwordHash, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
 	if err != nil {
 		return nil, "", err
 	}
@@ -639,9 +667,9 @@ func dbGetUserByToken(token string) (*UserRow, error) {
 	var u UserRow
 	var ci, ia int
 	err := db.QueryRow(
-		`SELECT u.id, u.username, u.full_name, u.role, u.can_interview, u.is_active, u.branch_id, u.created_at
+		`SELECT u.id, u.username, u.full_name, u.role, u.can_interview, u.is_active, u.branch_id, COALESCE(u.rasm_url,''), COALESCE(u.telefon,''), COALESCE(u.rezume_id,0), u.created_at
 		 FROM users u JOIN sessions s ON u.id = s.user_id WHERE s.token = ?`, token).
-		Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.CreatedAt)
+		Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -1001,7 +1029,7 @@ func getIshchiAnketalar(vakansiya, status, search string, allowedCategories []st
 		`SELECT id, vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
 		 rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''),
-		 status, COALESCE(status_by,0), COALESCE(status_by_name,''), COALESCE(status_voice_url,''), created_at
+		 status, COALESCE(status_by,0), COALESCE(status_by_name,''), COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM ishchi_anketalar WHERE %s ORDER BY id DESC LIMIT ? OFFSET ?`, where)
 	args = append(args, limit, offset)
 
@@ -1035,13 +1063,13 @@ func getIshchiAnketaByID(id int64) (*IshchiRow, error) {
 		`SELECT id, vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
 		 rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''),
-		 status, COALESCE(status_by,0), COALESCE(status_by_name,''), COALESCE(status_voice_url,''), created_at
+		 status, COALESCE(status_by,0), COALESCE(status_by_name,''), COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM ishchi_anketalar WHERE id = ?`, id).Scan(
 		&r.ID, &r.Vakansiya, &r.FIO, &r.TugilganSana, &r.BoySm, &r.VaznKg, &r.Manzil, &r.Lang,
 		&r.OilaviyHolat, &r.Bolalar, &r.Tillar, &r.Malumot,
 		&r.Grafik, &r.Sudimlik, &r.Haydovchilik, &r.Telefon,
 		&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2,
-		&r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.CreatedAt,
+		&r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -1309,12 +1337,12 @@ func saveIshchiAnketa(a *IshchiAnketa, rasmURL string) (int64, error) {
 	result, err := db.Exec(`INSERT INTO ishchi_anketalar
 		(vakansiya, fio, tugilgan_sana, boy_sm, vazn_kg, manzil, lang, oilaviy_holat, bolalar,
 		 tillar, malumot, grafik, sudimlik, haydovchilik, telefon,
-		 rasm_url, tg_user_id, tg_username, tg_username2, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+		 rasm_url, tg_user_id, tg_username, tg_username2, source, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
 		a.Vakansiya, a.FIO, a.TugilganSana, a.BoySm, a.VaznKg, a.Manzil, a.Lang,
 		a.OilaviyHolat, a.Bolalar, a.Tillar, a.Malumot,
 		a.Grafik, a.Sudimlik, a.Haydovchilik, a.Telefon,
-		rasmURL, a.TgUserID, a.TgUsername, a.TgUsername2,
+		rasmURL, a.TgUserID, a.TgUsername, a.TgUsername2, sanitizeSource(a.Source),
 	)
 	if err != nil {
 		return 0, err

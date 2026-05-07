@@ -288,6 +288,10 @@ tr:hover td{background:rgba(54,153,255,.02)}
         <svg viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
         Filiallar
       </div>
+      <div class="nav-item" data-page="sources" onclick="navigate('sources')">
+        <svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
+        Manbalar
+      </div>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user">
@@ -354,7 +358,7 @@ tr:hover td{background:rgba(54,153,255,.02)}
           </div>
           <div class="tbl-overflow">
             <table>
-              <thead><tr><th>#</th><th>Rasm</th><th>FIO</th><th>Lavozim</th><th>Telefon</th><th>Status</th><th>Sana</th><th>Amallar</th></tr></thead>
+              <thead><tr><th>#</th><th>Rasm</th><th>FIO</th><th>Lavozim</th><th>Telefon</th><th>Manba</th><th>Status</th><th>Sana</th><th>Amallar</th></tr></thead>
               <tbody id="rezBody"></tbody>
             </table>
           </div>
@@ -382,7 +386,7 @@ tr:hover td{background:rgba(54,153,255,.02)}
           </div>
           <div class="tbl-overflow">
             <table>
-              <thead><tr><th>#</th><th>Rasm</th><th>FIO</th><th>Vakansiya</th><th>Telefon</th><th>Sana</th><th>Amallar</th></tr></thead>
+              <thead><tr><th>#</th><th>Rasm</th><th>FIO</th><th>Vakansiya</th><th>Telefon</th><th>Manba</th><th>Sana</th><th>Amallar</th></tr></thead>
               <tbody id="ishBody"></tbody>
             </table>
           </div>
@@ -480,6 +484,28 @@ tr:hover td{background:rgba(54,153,255,.02)}
           </div>
         </div>
       </div>
+
+      <!-- ===== SOURCES (Manbalar) ===== -->
+      <div class="page" id="pageSources">
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="btn-add" id="srcTabRezume" onclick="loadSourceStats('rezume')" style="background:var(--primary)">Rezume manbalari</button>
+          <button class="btn-add" id="srcTabIshchi" onclick="loadSourceStats('ishchi')" style="background:var(--bg);color:var(--text);border:1px solid var(--border)">Ishchi manbalari</button>
+        </div>
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#0369a1">
+          <strong>Deep-link:</strong> <code>https://t.me/mone_hr_bot?start=&lt;manba&gt;</code> — bu havola orqali kelgan har bir foydalanuvchi <code>&lt;manba&gt;</code> nomi bilan ro'yxatga olinadi. Misol: <code>?start=samarqandvakansiya</code>. Faqat <code>a-z A-Z 0-9 _ -</code>, max 64 belgi.
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <h3 id="srcTableTitle">Rezume manbalari</h3>
+          </div>
+          <div class="tbl-overflow">
+            <table>
+              <thead><tr><th>Manba</th><th>Jami</th><th>Pending</th><th>Intervyu</th><th>Trial</th><th>Qabul</th><th>Rad</th><th>Reserve</th><th>Noshow</th></tr></thead>
+              <tbody id="srcBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -495,10 +521,36 @@ tr:hover td{background:rgba(54,153,255,.02)}
     </div>
     <div class="modal-body">
       <input type="hidden" id="userId">
+      <input type="hidden" id="userRasmUrl">
+      <input type="hidden" id="userTelefon">
+      <input type="hidden" id="userRezumeId">
+
+      <!-- Phone search (faqat yangi foydalanuvchi uchun) -->
+      <div id="userSearchBlock" style="margin-bottom:18px;padding:14px;background:var(--bg);border-radius:12px;border:1px solid var(--border)">
+        <label style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:8px;display:block">Avval rezume telefon raqami bo'yicha topiladi</label>
+        <div style="display:flex;gap:8px">
+          <input type="tel" id="userSearchPhone" placeholder="+998904611101" style="flex:1;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none">
+          <button type="button" class="btn-save" id="userSearchBtn" onclick="searchUserByPhone()" style="white-space:nowrap">Qidirish</button>
+        </div>
+        <div id="userSearchHint" style="font-size:12px;color:var(--text2);margin-top:8px">Misol: <code>+998904611101</code> — rezume topilsa rasmi va FIO avtomatik to'ldiriladi.</div>
+      </div>
+
+      <!-- Auto-filled rezume preview (yashirin, qidiruvdan keyin ko'rsatiladi) -->
+      <div id="userRezumePreview" style="display:none;margin-bottom:18px;padding:14px;background:#f0f9ff;border-radius:12px;border:1px solid #bae6fd">
+        <div style="display:flex;gap:14px;align-items:center">
+          <img id="userRezumePhoto" src="" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+          <div style="flex:1;min-width:0">
+            <div id="userRezumeName" style="font-weight:700;font-size:15px;color:#0369a1;margin-bottom:4px"></div>
+            <div id="userRezumeLavozim" style="font-size:13px;color:var(--text2);margin-bottom:2px"></div>
+            <div id="userRezumePhone" style="font-size:12px;color:var(--text2)"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="form-group">
-          <label>Username</label>
-          <input type="text" id="userUsername" placeholder="username">
+          <label>Username (login)</label>
+          <input type="text" id="userUsername" placeholder="login" readonly style="background:#f9fafb;cursor:not-allowed">
         </div>
         <div class="form-group">
           <label>Parol</label>
@@ -515,6 +567,7 @@ tr:hover td{background:rgba(54,153,255,.02)}
           <select id="userRole">
             <option value="admin">Admin</option>
             <option value="super_admin">Super Admin</option>
+            <option value="ishchi_admin">Ishchi Admin</option>
           </select>
         </div>
       </div>
@@ -543,7 +596,7 @@ tr:hover td{background:rgba(54,153,255,.02)}
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('userModal')">Bekor qilish</button>
-      <button class="btn-save" onclick="saveUser()">Saqlash</button>
+      <button class="btn-save" id="userSaveBtn" onclick="saveUser()" disabled style="opacity:.5;cursor:not-allowed">Saqlash</button>
     </div>
   </div>
 </div>
@@ -904,7 +957,7 @@ async function showApp() {
   document.getElementById('sidebarAvatar').textContent = (ME.full_name || ME.username).charAt(0).toUpperCase();
 
   // Hide management items for non-super_admin
-  document.querySelectorAll('[data-page="users"],[data-page="categories"],[data-page="branches"]').forEach(el => {
+  document.querySelectorAll('[data-page="users"],[data-page="categories"],[data-page="branches"],[data-page="sources"]').forEach(el => {
     el.style.display = ME.role === 'super_admin' ? '' : 'none';
   });
 
@@ -926,14 +979,14 @@ function navigate(page) {
   const titles = {
     dashboard: 'Dashboard', rezumeler: 'Rezumeler', rezumeDetail: 'Rezume tafsilotlari',
     ishchiAnketalar: 'Ishchi anketalar', ishchiDetail: 'Ishchi anketa tafsilotlari',
-    interviews: 'Intervyular', users: 'Foydalanuvchilar', categories: 'Kategoriyalar', branches: 'Filiallar'
+    interviews: 'Intervyular', users: 'Foydalanuvchilar', categories: 'Kategoriyalar', branches: 'Filiallar', sources: 'Manbalar'
   };
   document.getElementById('pageTitle').textContent = titles[page] || page;
 
   const pageMap = {
     dashboard: 'pageDashboard', rezumeler: 'pageRezumeler', rezumeDetail: 'pageRezumeDetail',
     ishchiAnketalar: 'pageIshchiAnketalar', ishchiDetail: 'pageIshchiDetail',
-    interviews: 'pageInterviews', users: 'pageUsers', categories: 'pageCategories', branches: 'pageBranches'
+    interviews: 'pageInterviews', users: 'pageUsers', categories: 'pageCategories', branches: 'pageBranches', sources: 'pageSources'
   };
   const el = document.getElementById(pageMap[page]);
   if (el) el.classList.add('active');
@@ -946,7 +999,45 @@ function navigate(page) {
     case 'categories': loadCategoriesTable(); break;
     case 'ishchiAnketalar': loadIshchiAnketalar(); break;
     case 'branches': loadBranchesTable(); break;
+    case 'sources': loadSourceStats('rezume'); break;
   }
+}
+
+// ===== SOURCES =====
+async function loadSourceStats(kind) {
+  const tabRez = document.getElementById('srcTabRezume');
+  const tabIsh = document.getElementById('srcTabIshchi');
+  if (kind === 'ishchi') {
+    tabIsh.style.background = 'var(--primary)'; tabIsh.style.color = '#fff'; tabIsh.style.border = 'none';
+    tabRez.style.background = 'var(--bg)'; tabRez.style.color = 'var(--text)'; tabRez.style.border = '1px solid var(--border)';
+    document.getElementById('srcTableTitle').textContent = 'Ishchi manbalari';
+  } else {
+    tabRez.style.background = 'var(--primary)'; tabRez.style.color = '#fff'; tabRez.style.border = 'none';
+    tabIsh.style.background = 'var(--bg)'; tabIsh.style.color = 'var(--text)'; tabIsh.style.border = '1px solid var(--border)';
+    document.getElementById('srcTableTitle').textContent = 'Rezume manbalari';
+  }
+  const path = kind === 'ishchi' ? '/api/stats/ishchi-sources' : '/api/stats/sources';
+  try {
+    const stats = await api('GET', path);
+    const tbody = document.getElementById('srcBody');
+    if (!stats || stats.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">Hozircha manba ma\'lumotlari yo\'q</td></tr>';
+      return;
+    }
+    tbody.innerHTML = stats.map(s => `
+      <tr>
+        <td><strong>${s.source ? s.source : '<em style="color:var(--text2)">— ko\'rsatilmagan —</em>'}</strong></td>
+        <td><strong>${s.total}</strong></td>
+        <td>${s.pending || 0}</td>
+        <td>${s.interviewing || 0}</td>
+        <td>${s.trial || 0}</td>
+        <td>${s.accepted || 0}</td>
+        <td>${s.rejected || 0}</td>
+        <td>${s.reserve || 0}</td>
+        <td>${s.noshow || 0}</td>
+      </tr>
+    `).join('');
+  } catch (e) { toast(e.message, false); }
 }
 
 // ===== SIDEBAR MOBILE =====
@@ -1057,6 +1148,7 @@ async function loadRezumeler(page) {
           <td><strong>${r.familiya} ${r.ism}</strong></td>
           <td style="font-size:12px">${r.lavozim}</td>
           <td>${r.telefon}</td>
+          <td style="font-size:12px">${r.source ? `<span class="badge badge-admin">${r.source}</span>` : '<span style="color:var(--text2)">—</span>'}</td>
           <td>${statusBadge(r.status)}</td>
           <td>${formatDate(r.created_at)}</td>
           <td>
@@ -1073,7 +1165,7 @@ async function loadRezumeler(page) {
         </tr>
       `).join('');
     } else {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text2)">Rezume topilmadi</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text2)">Rezume topilmadi</td></tr>';
     }
     renderPagination('rezPagination', data.page, data.pages, data.total, loadRezumeler);
   } catch (e) { toast(e.message, false); }
@@ -1219,6 +1311,7 @@ async function loadIshchiAnketalar(page) {
           <td><strong>${r.fio}</strong></td>
           <td style="font-size:12px">${r.vakansiya}</td>
           <td>${r.telefon}</td>
+          <td style="font-size:12px">${r.source ? `<span class="badge badge-admin">${r.source}</span>` : '<span style="color:var(--text2)">—</span>'}</td>
           <td>${formatDate(r.created_at)}</td>
           <td>
             <div style="display:flex;gap:4px">
@@ -1230,7 +1323,7 @@ async function loadIshchiAnketalar(page) {
         </tr>
       `).join('');
     } else {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text2)">Ishchi anketa topilmadi</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text2)">Ishchi anketa topilmadi</td></tr>';
     }
     renderPagination('ishPagination', data.page, data.pages, data.total, loadIshchiAnketalar);
   } catch (e) { toast(e.message, false); }
@@ -1443,11 +1536,15 @@ async function loadUsers() {
   try {
     const users = await api('GET', '/api/users');
     const tbody = document.getElementById('usrBody');
-    tbody.innerHTML = users.map(u => `
+    tbody.innerHTML = users.map(u => {
+      const photo = u.rasm_url
+        ? `<img src="${u.rasm_url.startsWith('http') ? u.rasm_url : (API + u.rasm_url)}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">`
+        : `<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#e5e7eb;color:#6b7280;font-weight:700;font-size:13px;vertical-align:middle;margin-right:8px">${(u.full_name || u.username || '?').charAt(0).toUpperCase()}</span>`;
+      return `
       <tr>
         <td>${u.id}</td>
         <td><strong>${u.username}</strong></td>
-        <td>${u.full_name}</td>
+        <td>${photo}${u.full_name}</td>
         <td><span class="badge ${u.role === 'super_admin' ? 'badge-super' : 'badge-admin'}">${u.role}</span></td>
         <td>${u.branch ? u.branch.name : '-'}</td>
         <td>${u.can_interview ? '<span class="badge badge-qabul">Ha</span>' : '<span class="badge badge-rating0">Yo\'q</span>'}</td>
@@ -1460,21 +1557,34 @@ async function loadUsers() {
           </div>
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
   } catch (e) { toast(e.message, false); }
 }
 
 function openUserModal() {
   document.getElementById('userModalTitle').textContent = 'Yangi foydalanuvchi';
   document.getElementById('userId').value = '';
+  document.getElementById('userRasmUrl').value = '';
+  document.getElementById('userTelefon').value = '';
+  document.getElementById('userRezumeId').value = '';
   document.getElementById('userUsername').value = '';
   document.getElementById('userUsername').disabled = false;
+  document.getElementById('userUsername').readOnly = true;
   document.getElementById('userPassword').value = '';
   document.getElementById('userFullname').value = '';
   document.getElementById('userRole').value = 'admin';
   document.getElementById('userCanInterview').classList.remove('on');
   document.getElementById('userIsActive').classList.add('on');
   document.getElementById('userActiveGroup').style.display = 'none';
+
+  // Search block ko'rsatiladi, preview yashiriladi
+  document.getElementById('userSearchBlock').style.display = '';
+  document.getElementById('userSearchPhone').value = '';
+  document.getElementById('userRezumePreview').style.display = 'none';
+
+  // Saqlash tugmasi rezume topilmaguncha o'chirilgan
+  setUserSaveEnabled(false);
 
   // Branch select
   const brSel = document.getElementById('userBranch');
@@ -1492,17 +1602,89 @@ function openUserModal() {
   openModal('userModal');
 }
 
+function setUserSaveEnabled(enabled) {
+  const btn = document.getElementById('userSaveBtn');
+  btn.disabled = !enabled;
+  btn.style.opacity = enabled ? '1' : '.5';
+  btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+}
+
+async function searchUserByPhone() {
+  const raw = document.getElementById('userSearchPhone').value.trim();
+  if (!raw) { toast('Telefon raqami kiriting', false); return; }
+  // Faqat raqamlarni qoldirish: +, bo'sh joy, -, (, ) olib tashlanadi
+  const normalized = raw.replace(/[^\d]/g, '');
+  if (normalized.length < 9) { toast('Telefon raqami juda qisqa', false); return; }
+
+  const btn = document.getElementById('userSearchBtn');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Qidirilmoqda...';
+
+  try {
+    const r = await api('GET', '/api/public/rezume-by-phone/' + normalized);
+    // Rezume topildi — formani to'ldirish
+    const fio = [r.familiya, r.ism, r.sharif].filter(Boolean).join(' ').trim();
+    document.getElementById('userFullname').value = fio;
+    document.getElementById('userUsername').value = normalized;
+    document.getElementById('userRasmUrl').value = r.rasm_url || '';
+    document.getElementById('userTelefon').value = r.telefon || raw;
+    document.getElementById('userRezumeId').value = r.id || 0;
+
+    // Preview ko'rsatish
+    const photoEl = document.getElementById('userRezumePhoto');
+    if (r.rasm_url) {
+      photoEl.src = r.rasm_url.startsWith('http') ? r.rasm_url : (API + r.rasm_url);
+      photoEl.style.display = '';
+    } else {
+      photoEl.style.display = 'none';
+    }
+    document.getElementById('userRezumeName').textContent = fio || '—';
+    document.getElementById('userRezumeLavozim').textContent = r.lavozim || '';
+    document.getElementById('userRezumePhone').textContent = r.telefon || raw;
+    document.getElementById('userRezumePreview').style.display = '';
+
+    setUserSaveEnabled(true);
+    toast('Rezume topildi');
+  } catch (e) {
+    toast('Rezume topilmadi: ' + e.message, false);
+    setUserSaveEnabled(false);
+    document.getElementById('userRezumePreview').style.display = 'none';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
 async function editUser(id) {
   try {
     const u = await api('GET', `/api/users/${id}`);
     document.getElementById('userModalTitle').textContent = 'Foydalanuvchini tahrirlash';
     document.getElementById('userId').value = u.id;
+    document.getElementById('userRasmUrl').value = u.rasm_url || '';
+    document.getElementById('userTelefon').value = u.telefon || '';
+    document.getElementById('userRezumeId').value = u.rezume_id || 0;
     document.getElementById('userUsername').value = u.username;
     document.getElementById('userUsername').disabled = true;
     document.getElementById('userPassword').value = '';
     document.getElementById('userFullname').value = u.full_name;
     document.getElementById('userRole').value = u.role;
     document.getElementById('userActiveGroup').style.display = '';
+
+    // Tahrirlashda qidiruv blokini yashirish, lekin agar foto bor bo'lsa preview ko'rsatish
+    document.getElementById('userSearchBlock').style.display = 'none';
+    if (u.rasm_url) {
+      const photoEl = document.getElementById('userRezumePhoto');
+      photoEl.src = u.rasm_url.startsWith('http') ? u.rasm_url : (API + u.rasm_url);
+      photoEl.style.display = '';
+      document.getElementById('userRezumeName').textContent = u.full_name || '—';
+      document.getElementById('userRezumeLavozim').textContent = '';
+      document.getElementById('userRezumePhone').textContent = u.telefon || '';
+      document.getElementById('userRezumePreview').style.display = '';
+    } else {
+      document.getElementById('userRezumePreview').style.display = 'none';
+    }
+    setUserSaveEnabled(true);
 
     const ciToggle = document.getElementById('userCanInterview');
     u.can_interview ? ciToggle.classList.add('on') : ciToggle.classList.remove('on');
@@ -1552,6 +1734,8 @@ async function saveUser() {
     // Create
     const username = document.getElementById('userUsername').value.trim();
     const password = document.getElementById('userPassword').value;
+    const rezumeId = parseInt(document.getElementById('userRezumeId').value) || 0;
+    if (!rezumeId) { toast('Avval telefon raqami orqali rezumeni qidiring', false); return; }
     if (!username || !password) { toast('Username va parol kerak', false); return; }
     const body = {
       username,
@@ -1561,6 +1745,9 @@ async function saveUser() {
       can_interview: document.getElementById('userCanInterview').classList.contains('on'),
       category_ids: catIds,
       branch_id: parseInt(document.getElementById('userBranch').value),
+      rasm_url: document.getElementById('userRasmUrl').value,
+      telefon: document.getElementById('userTelefon').value,
+      rezume_id: rezumeId,
     };
     try {
       await api('POST', '/api/users', body);

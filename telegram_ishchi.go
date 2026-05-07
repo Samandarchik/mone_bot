@@ -58,9 +58,19 @@ func handleIshchiBotMessage(msg *TgMessage) {
 	chatID := msg.Chat.ID
 	text := strings.TrimSpace(msg.Text)
 
-	if text == "/start" {
+	// /start [source] — reklama manbasi (?start=samarqandvakansiya).
+	if text == "/start" || strings.HasPrefix(text, "/start ") {
+		source := ""
+		if len(text) > len("/start ") {
+			source = sanitizeSource(text[len("/start "):])
+		}
 		stateMu.Lock()
 		ishchiUserStates[chatID] = "waiting_phone"
+		if source != "" {
+			ishchiUserSources[chatID] = source
+		} else {
+			delete(ishchiUserSources, chatID)
+		}
 		stateMu.Unlock()
 
 		sendIshchiTgMessage(chatID, "Assalomu alaykum!\n\nIltimos, telefon raqamingizni yuboring.\nMisol: 998901234567")
@@ -89,11 +99,19 @@ func handleIshchiBotMessage(msg *TgMessage) {
 			username = msg.From.Username
 		}
 
+		stateMu.RLock()
+		source := ishchiUserSources[chatID]
+		stateMu.RUnlock()
+
 		link := fmt.Sprintf("%s/ishchi/+%s/%d/%s", baseURL, phone, chatID, username)
+		if source != "" {
+			link += "?src=" + source
+		}
 		sendIshchiTgMessage(chatID, fmt.Sprintf("Rahmat!\n\nAnketa to'ldirish uchun quyidagi havolani bosing:\n\n%s", link))
 
 		stateMu.Lock()
 		delete(ishchiUserStates, chatID)
+		delete(ishchiUserSources, chatID)
 		stateMu.Unlock()
 	}
 }

@@ -399,11 +399,18 @@ textarea{resize:vertical}
 let curLang='uz';
 
 // URL dan telefon, tg_user_id, username ni olish
-// Format: /+998XXXXXXXXX/tg_user_id/username
+// Format: /+998XXXXXXXXX/tg_user_id/username[?src=manba]
 let urlTgUserID=0;
 let urlTgUsername='';
+let urlSource='';
 (function(){
   const pathParts=window.location.pathname.split('/').filter(Boolean);
+  // ?src= — reklama manbasi (Telegram /start parametri orqali keladi). Faqat [a-zA-Z0-9_-], max 64.
+  try{
+    const sp=new URLSearchParams(window.location.search);
+    const raw=(sp.get('src')||'').trim();
+    urlSource=raw.replace(/[^a-zA-Z0-9_-]/g,'').slice(0,64);
+  }catch(_){}
   if(pathParts.length>=2){
     const phone=pathParts[0].replace('+','');
     urlTgUserID=parseInt(pathParts[1])||0;
@@ -744,7 +751,8 @@ async function submitForm(){
     rasm:photoBase64,
     tg_user_id:urlTgUserID,
     tg_username:urlTgUsername,
-    tg_username2:document.getElementById('tg-extra2').value.trim().replace('@','')
+    tg_username2:document.getElementById('tg-extra2').value.trim().replace('@',''),
+    source:urlSource
   };
 
   try{
