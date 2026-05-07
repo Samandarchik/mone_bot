@@ -649,7 +649,7 @@ func dbDeleteSession(token string) error {
 func ratingText(rating int) string {
 	switch rating {
 	case 1:
-		return "Приглашён, не явился"
+		return "Приглашён, Не пришёл на собеседование"
 	case 2:
 		return "Отказ"
 	case 3:
