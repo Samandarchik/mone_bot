@@ -447,7 +447,7 @@ tr:hover td{background:rgba(54,153,255,.02)}
           </div>
           <div class="tbl-overflow">
             <table>
-              <thead><tr><th>#</th><th>Username</th><th>Ism</th><th>Role</th><th>Filial</th><th>Intervyu</th><th>Kategoriyalar</th><th>Holat</th><th>Amallar</th></tr></thead>
+              <thead><tr><th>#</th><th>Username</th><th>Ism</th><th>Role</th><th>Filial</th><th>Kategoriyalar</th><th>Holat</th><th>Amallar</th></tr></thead>
               <tbody id="usrBody"></tbody>
             </table>
           </div>
@@ -582,17 +582,9 @@ tr:hover td{background:rgba(54,153,255,.02)}
           </select>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Filial</label>
-          <select id="userBranch"><option value="0">-- Tanlanmagan --</option></select>
-        </div>
-        <div class="form-group">
-          <label>Intervyu huquqi</label>
-          <div style="padding-top:8px">
-            <div class="toggle" id="userCanInterview" onclick="this.classList.toggle('on')"></div>
-          </div>
-        </div>
+      <div class="form-group">
+        <label>Filial</label>
+        <select id="userBranch"><option value="0">Hammasi</option></select>
       </div>
       <div class="form-group">
         <label>Kategoriyalar</label>
@@ -1606,7 +1598,6 @@ async function loadUsers() {
         <td>${photo}${u.full_name}</td>
         <td><span class="badge ${u.role === 'super_admin' ? 'badge-super' : 'badge-admin'}">${u.role}</span></td>
         <td>${u.branch ? u.branch.name : '-'}</td>
-        <td>${u.can_interview ? '<span class="badge badge-qabul">Ha</span>' : '<span class="badge badge-rating0">Yo\'q</span>'}</td>
         <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.categories && u.categories.length > 0 ? u.categories.map(c => c.name).join(', ') : '-'}</td>
         <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Faol' : 'Bloklangan'}</span></td>
         <td>
@@ -1633,7 +1624,6 @@ function openUserModal() {
   document.getElementById('userPassword').value = '';
   document.getElementById('userFullname').value = '';
   document.getElementById('userRole').value = 'admin';
-  document.getElementById('userCanInterview').classList.remove('on');
   document.getElementById('userIsActive').classList.add('on');
   document.getElementById('userActiveGroup').style.display = 'none';
 
@@ -1647,7 +1637,7 @@ function openUserModal() {
 
   // Branch select
   const brSel = document.getElementById('userBranch');
-  brSel.innerHTML = '<option value="0">-- Tanlanmagan --</option>';
+  brSel.innerHTML = '<option value="0">Hammasi</option>';
   allBranches.forEach(b => { brSel.innerHTML += `<option value="${b.id}">${b.name}</option>`; });
 
   // Categories
@@ -1745,13 +1735,11 @@ async function editUser(id) {
     }
     setUserSaveEnabled(true);
 
-    const ciToggle = document.getElementById('userCanInterview');
-    u.can_interview ? ciToggle.classList.add('on') : ciToggle.classList.remove('on');
     const iaToggle = document.getElementById('userIsActive');
     u.is_active ? iaToggle.classList.add('on') : iaToggle.classList.remove('on');
 
     const brSel = document.getElementById('userBranch');
-    brSel.innerHTML = '<option value="0">-- Tanlanmagan --</option>';
+    brSel.innerHTML = '<option value="0">Hammasi</option>';
     allBranches.forEach(b => { brSel.innerHTML += `<option value="${b.id}" ${b.id === u.branch_id ? 'selected' : ''}>${b.name}</option>`; });
 
     const userCatIds = (u.categories || []).map(c => c.id);
@@ -1776,7 +1764,7 @@ async function saveUser() {
     const body = {
       full_name: document.getElementById('userFullname').value,
       role: document.getElementById('userRole').value,
-      can_interview: document.getElementById('userCanInterview').classList.contains('on'),
+      can_interview: true,
       is_active: document.getElementById('userIsActive').classList.contains('on'),
       category_ids: catIds,
       branch_id: parseInt(document.getElementById('userBranch').value),
@@ -1801,7 +1789,7 @@ async function saveUser() {
       password,
       full_name: document.getElementById('userFullname').value,
       role: document.getElementById('userRole').value,
-      can_interview: document.getElementById('userCanInterview').classList.contains('on'),
+      can_interview: true,
       category_ids: catIds,
       branch_id: parseInt(document.getElementById('userBranch').value),
       rasm_url: document.getElementById('userRasmUrl').value,

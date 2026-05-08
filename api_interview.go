@@ -64,10 +64,6 @@ func computeNextInterviewSlot(invitedByID int64, date string) (string, error) {
 // POST /api/interviews — intervyuga chaqirish
 func handleCreateInterview(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromCtx(r)
-	if !user.CanInterview && user.Role != "super_admin" {
-		jsonError(w, "Intervyuga chaqirish huquqingiz yo'q", http.StatusForbidden)
-		return
-	}
 
 	var body struct {
 		RezumeID      int64  `json:"rezume_id"`

@@ -187,11 +187,10 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, map[string]interface{}{"status": "ok", "id": id})
 	log.Printf("Anketa yuborildi: %s (tg_user: %d)", fio, anketa.TgUserID)
 
-	// WebSocket orqali yangi rezumeni broadcast qilish + kategoriya guruhiga yuborish
+	// WebSocket orqali yangi rezumeni broadcast qilish
 	if id > 0 {
 		if rez, err := getRezumeByID(id); err == nil {
 			broadcastNewRezume(rez)
-			go notifyRezumeCategoryGroup(rez, anketa.Rasm)
 		}
 	}
 }
@@ -448,43 +447,3 @@ func notifyAdmin(title, errMsg, fio, telefon string, tgUserID int64, tgUsername 
 	go sendTgMessage(adminTgID, msg)
 }
 
-// notifyRezumeCategoryGroup — yangi rezume kelganida lavozimga mos kategoriyaning Telegram guruhiga yuboradi.
-// rasmBase64 — handler ichidagi originaldagi anketa.Rasm. Bo'sh bo'lsa faqat matn yuboriladi.
-// Goroutine sifatida chaqiriladi, shu sababli xatoliklar log qilinadi va return qilinmaydi.
-func notifyRezumeCategoryGroup(r *RezumeRow, rasmBase64 string) {
-	if r == nil || r.Lavozim == "" {
-		return
-	}
-	cat, err := getCategoryByName(r.Lavozim)
-	if err != nil || cat == nil || cat.TgGroupID == 0 || !cat.IsActive {
-		return
-	}
-
-	fio := strings.TrimSpace(r.Familiya + " " + r.Ism + " " + r.Sharif)
-
-	caption := fmt.Sprintf(
-		"🆕 Yangi rezume #%d\n\n"+
-			"👤 FIO: %s\n"+
-			"💼 Lavozim: %s\n"+
-			"📅 Tug'ilgan: %s\n"+
-			"📍 Manzil: %s\n"+
-			"📱 Telefon: %s\n"+
-			"👨‍🎓 Tajriba: %s",
-		r.ID, fio, r.Lavozim, r.TugilganSana, r.YashashManzili, r.Telefon, r.UmumiyTajriba,
-	)
-	if r.TgUsername != "" {
-		caption += "\n🔗 TG: @" + r.TgUsername
-	}
-	if r.Source != "" {
-		caption += "\n📎 Manba: " + r.Source
-	}
-
-	if rasmBase64 != "" && strings.Contains(rasmBase64, ",") {
-		if err := sendPhotoToTelegram(cat.TgGroupID, rasmBase64, caption, nil); err != nil {
-			log.Printf("kategoriya guruhiga rasm yuborishda xato (cat=%s, group=%d): %v", cat.Name, cat.TgGroupID, err)
-			sendTgMessage(cat.TgGroupID, caption)
-		}
-	} else {
-		sendTgMessage(cat.TgGroupID, caption)
-	}
-}

@@ -48,10 +48,6 @@ func handleCreateIshchiInterview(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "Ruxsat yo'q", http.StatusForbidden)
 		return
 	}
-	if !user.CanInterview && user.Role != "super_admin" {
-		jsonError(w, "Intervyuga chaqirish huquqingiz yo'q", http.StatusForbidden)
-		return
-	}
 
 	var body struct {
 		IshchiID      int64  `json:"ishchi_id"`
