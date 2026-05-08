@@ -78,11 +78,50 @@ func handleIshchiRezume(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, map[string]interface{}{"status": "ok", "id": id})
 	log.Printf("Ishchi anketa yuborildi: %s (tg_user: %d)", anketa.FIO, anketa.TgUserID)
 
-	// WS broadcast
+	// WS broadcast + ishchi kategoriya guruhiga yuborish
 	if id > 0 {
 		if row, err := getIshchiAnketaByID(id); err == nil {
 			broadcastNewIshchi(row)
+			go notifyIshchiCategoryGroup(row, anketa.Rasm)
 		}
+	}
+}
+
+// notifyIshchiCategoryGroup — yangi ishchi anketa kelganida vakansiyaga mos ishchi kategoriyasi
+// guruhiga yuboradi. Ishchi bot orqali yuboriladi (ishchiBotToken).
+func notifyIshchiCategoryGroup(r *IshchiRow, rasmBase64 string) {
+	if r == nil || r.Vakansiya == "" {
+		return
+	}
+	cat, err := dbGetIshchiCategoryByName(r.Vakansiya)
+	if err != nil || cat == nil || cat.TgGroupID == 0 || !cat.IsActive {
+		return
+	}
+
+	caption := fmt.Sprintf(
+		"🆕 Yangi ishchi anketa #%d\n\n"+
+			"👤 FIO: %s\n"+
+			"💼 Vakansiya: %s\n"+
+			"📅 Tug'ilgan: %s\n"+
+			"📍 Manzil: %s\n"+
+			"📱 Telefon: %s\n"+
+			"👨‍🎓 Ma'lumot: %s",
+		r.ID, r.FIO, r.Vakansiya, r.TugilganSana, r.Manzil, r.Telefon, r.Malumot,
+	)
+	if r.TgUsername != "" {
+		caption += "\n🔗 TG: @" + r.TgUsername
+	}
+	if r.Source != "" {
+		caption += "\n📎 Manba: " + r.Source
+	}
+
+	if rasmBase64 != "" && strings.Contains(rasmBase64, ",") {
+		if err := sendIshchiPhotoToTelegram(cat.TgGroupID, rasmBase64, caption); err != nil {
+			log.Printf("ishchi kategoriya guruhiga rasm yuborishda xato (cat=%s, group=%d): %v", cat.Name, cat.TgGroupID, err)
+			sendIshchiTgMessage(cat.TgGroupID, caption)
+		}
+	} else {
+		sendIshchiTgMessage(cat.TgGroupID, caption)
 	}
 }
 

@@ -233,6 +233,13 @@ tr:hover td{background:rgba(54,153,255,.02)}
     <h1>MONE HR</h1>
     <p>Admin paneliga kirish</p>
     <div class="login-err" id="loginErr"></div>
+
+    <!-- Saqlangan akkauntlar ro'yxati -->
+    <div id="savedAccounts" style="display:none;margin-bottom:14px">
+      <div style="font-size:12px;color:#6b7280;font-weight:600;margin-bottom:6px">Saqlangan akkauntlar:</div>
+      <div id="savedAccountsList" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+
     <div class="field">
       <label>Username</label>
       <input type="text" id="loginUser" placeholder="admin" autocomplete="username">
@@ -241,6 +248,10 @@ tr:hover td{background:rgba(54,153,255,.02)}
       <label>Parol</label>
       <input type="password" id="loginPass" placeholder="Parolingiz" autocomplete="current-password">
     </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6b7280;margin:8px 0 14px;cursor:pointer">
+      <input type="checkbox" id="rememberMe" checked style="width:16px;height:16px;cursor:pointer">
+      <span>Akkauntni saqlash (keyingi kirishda avtomatik to'ldiriladi)</span>
+    </label>
     <button class="login-btn" id="loginBtn" onclick="doLogin()">Kirish</button>
   </div>
 </div>
@@ -900,9 +911,49 @@ function openModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
 // ===== AUTH =====
+// Saqlangan akkauntlar localStorage'da, faqat ushbu qurilma/brauzerda saqlanadi.
+function getSavedAccounts() {
+  try { return JSON.parse(localStorage.getItem('hr_accounts') || '[]'); }
+  catch { return []; }
+}
+function saveAccount(username, password) {
+  const list = getSavedAccounts().filter(a => a.username !== username);
+  list.unshift({ username, password });
+  if (list.length > 10) list.length = 10;
+  localStorage.setItem('hr_accounts', JSON.stringify(list));
+}
+function removeAccount(username) {
+  const list = getSavedAccounts().filter(a => a.username !== username);
+  localStorage.setItem('hr_accounts', JSON.stringify(list));
+  renderSavedAccounts();
+}
+function renderSavedAccounts() {
+  const list = getSavedAccounts();
+  const wrap = document.getElementById('savedAccounts');
+  const listEl = document.getElementById('savedAccountsList');
+  if (!list.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  listEl.innerHTML = list.map(a => `
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fafafa;cursor:pointer;transition:all .15s" onclick="pickAccount('${a.username.replace(/'/g, "\\'")}')" onmouseover="this.style.background='#f0f9ff';this.style.borderColor='#3699ff'" onmouseout="this.style.background='#fafafa';this.style.borderColor='#e5e7eb'">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3699ff,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">${a.username.charAt(0).toUpperCase()}</div>
+      <div style="flex:1;font-weight:600;font-size:14px;color:#1a1a2e">${a.username}</div>
+      <button type="button" onclick="event.stopPropagation();removeAccount('${a.username.replace(/'/g, "\\'")}')" style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px 8px;font-size:18px;line-height:1" title="O'chirish">×</button>
+    </div>
+  `).join('');
+}
+function pickAccount(username) {
+  const acc = getSavedAccounts().find(a => a.username === username);
+  if (!acc) return;
+  document.getElementById('loginUser').value = acc.username;
+  document.getElementById('loginPass').value = acc.password;
+  document.getElementById('rememberMe').checked = true;
+  doLogin();
+}
+
 async function doLogin() {
   const username = document.getElementById('loginUser').value.trim();
   const password = document.getElementById('loginPass').value;
+  const remember = document.getElementById('rememberMe').checked;
   const errEl = document.getElementById('loginErr');
   if (!username || !password) { errEl.textContent = 'Username va parol kiriting'; errEl.style.display = 'block'; return; }
   try {
@@ -911,6 +962,9 @@ async function doLogin() {
     TOKEN = data.token;
     ME = data.user;
     localStorage.setItem('hr_token', TOKEN);
+    if (remember) {
+      saveAccount(username, password);
+    }
     showApp();
   } catch (e) {
     errEl.textContent = e.message;
@@ -928,6 +982,9 @@ async function doLogout() {
   localStorage.removeItem('hr_token');
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  renderSavedAccounts();
 }
 
 async function checkAuth() {
@@ -946,6 +1003,8 @@ async function checkAuth() {
 async function init() {
   if (await checkAuth()) {
     showApp();
+  } else {
+    renderSavedAccounts();
   }
 }
 

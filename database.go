@@ -1047,7 +1047,7 @@ func getIshchiAnketalar(vakansiya, status, search string, allowedCategories []st
 			&r.OilaviyHolat, &r.Bolalar, &r.Tillar, &r.Malumot,
 			&r.Grafik, &r.Sudimlik, &r.Haydovchilik, &r.Telefon,
 			&r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2,
-			&r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.CreatedAt,
+			&r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -1396,6 +1396,18 @@ func dbGetIshchiCategoryByID(id int64) (*Category, error) {
 	var c Category
 	var ia int
 	err := db.QueryRow("SELECT id, name, tg_group_id, is_active, created_at FROM ishchi_categories WHERE id = ?", id).
+		Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	c.IsActive = ia == 1
+	return &c, nil
+}
+
+func dbGetIshchiCategoryByName(name string) (*Category, error) {
+	var c Category
+	var ia int
+	err := db.QueryRow("SELECT id, name, tg_group_id, is_active, created_at FROM ishchi_categories WHERE name = ?", name).
 		Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
 	if err != nil {
 		return nil, err
