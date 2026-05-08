@@ -107,7 +107,16 @@ func handleIshchiBotMessage(msg *TgMessage) {
 		if source != "" {
 			link += "?src=" + source
 		}
-		sendIshchiTgMessage(chatID, fmt.Sprintf("Rahmat!\n\nAnketa to'ldirish uchun quyidagi havolani bosing:\n\n%s", link))
+
+		keyboard := map[string]interface{}{
+			"inline_keyboard": [][]map[string]string{
+				{{"text": "📝 Anketani to'ldirish", "url": link}},
+			},
+		}
+		if err := sendIshchiMessageWithKeyboard(chatID, "Rahmat!\n\nQuyidagi tugma orqali anketani to'ldiring 👇", keyboard); err != nil {
+			log.Printf("ishchi inline tugma yuborishda xato: %v", err)
+			sendIshchiTgMessage(chatID, fmt.Sprintf("Rahmat!\n\nAnketa to'ldirish uchun quyidagi havolani bosing:\n\n%s", link))
+		}
 
 		stateMu.Lock()
 		delete(ishchiUserStates, chatID)
@@ -131,6 +140,28 @@ func sendIshchiTgMessage(chatID int64, text string) {
 		return
 	}
 	resp.Body.Close()
+}
+
+// sendIshchiMessageWithKeyboard — ishchi bot uchun inline tugma bilan xabar yuborish.
+func sendIshchiMessageWithKeyboard(chatID int64, text string, replyMarkup map[string]interface{}) error {
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", ishchiBotToken)
+	payload := map[string]interface{}{
+		"chat_id": chatID,
+		"text":    text,
+	}
+	if replyMarkup != nil {
+		payload["reply_markup"] = replyMarkup
+	}
+	jsonData, _ := json.Marshal(payload)
+	resp, err := http.Post(url, "application/json", bytes.NewReader(jsonData))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("telegram xato %d", resp.StatusCode)
+	}
+	return nil
 }
 
 func sendIshchiTgLocation(chatID int64, latitude, longitude float64) {
