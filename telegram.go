@@ -112,7 +112,7 @@ func handleBotMessage(msg *TgMessage) {
 			link += "?src=" + source
 		}
 
-		text := fmt.Sprintf("Rahmat!\n\nAnketa to'ldirish uchun quyidagi havolani bosing:\n\n%s", link)
+		text := "Rahmat!\n\nAnketa to'ldirish uchun quyidagi tugmani bosing:"
 		keyboard := map[string]interface{}{
 			"inline_keyboard": [][]map[string]string{
 				{{"text": "Ariza berish", "url": link}},
@@ -120,7 +120,7 @@ func handleBotMessage(msg *TgMessage) {
 		}
 		if err := sendMessageToTelegramWithKeyboard(chatID, text, keyboard); err != nil {
 			log.Printf("inline tugma yuborishda xato: %v", err)
-			sendTgMessage(chatID, text)
+			sendTgMessage(chatID, text+"\n\n"+link)
 		}
 
 		stateMu.Lock()

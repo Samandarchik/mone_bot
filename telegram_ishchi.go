@@ -108,7 +108,7 @@ func handleIshchiBotMessage(msg *TgMessage) {
 			link += "?src=" + source
 		}
 
-		text := fmt.Sprintf("Rahmat!\n\nAnketa to'ldirish uchun quyidagi havolani bosing:\n\n%s", link)
+		text := "Rahmat!\n\nAnketa to'ldirish uchun quyidagi tugmani bosing:"
 		keyboard := map[string]interface{}{
 			"inline_keyboard": [][]map[string]string{
 				{{"text": "Ariza berish", "url": link}},
@@ -116,7 +116,7 @@ func handleIshchiBotMessage(msg *TgMessage) {
 		}
 		if err := sendIshchiMessageWithKeyboard(chatID, text, keyboard); err != nil {
 			log.Printf("ishchi inline tugma yuborishda xato: %v", err)
-			sendIshchiTgMessage(chatID, text)
+			sendIshchiTgMessage(chatID, text+"\n\n"+link)
 		}
 
 		stateMu.Lock()
