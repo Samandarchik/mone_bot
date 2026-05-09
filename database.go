@@ -249,7 +249,7 @@ func saveRezume(a *Anketa, rasmURL string) (int64, error) {
 	return result.LastInsertId()
 }
 
-func getRezumeler(lavozim, status, search string, allowedCategories []string, page, limit int) ([]RezumeRow, int, error) {
+func getRezumeler(lavozim, status, search, source string, allowedCategories []string, page, limit int) ([]RezumeRow, int, error) {
 	where := "1=1"
 	args := []interface{}{}
 
@@ -257,11 +257,16 @@ func getRezumeler(lavozim, status, search string, allowedCategories []string, pa
 		where += " AND lavozim = ?"
 		args = append(args, lavozim)
 	}
+	if source != "" {
+		where += " AND source = ?"
+		args = append(args, source)
+	}
 	if status != "" {
 		where += " AND status = ?"
 		args = append(args, status)
-	} else {
-		// Default (Barchasi): rejected rezumelarni ko'rsatmaslik + 4 marta chaqirilganlar asosiy listdan chiqsin
+	} else if source == "" {
+		// Default (Barchasi): rejected rezumelarni ko'rsatmaslik + 4 marta chaqirilganlar asosiy listdan chiqsin.
+		// Manba bo'yicha filter berilganda esa hammasi (status filtersiz) ko'rinishi kerak.
 		where += " AND status != 'rejected'"
 		where += " AND id NOT IN (SELECT rezume_id FROM interviews GROUP BY rezume_id HAVING COUNT(*) >= 4)"
 	}
@@ -999,7 +1004,7 @@ func attachInterviews(rezumeler []RezumeRow) {
 
 // ===================== ISHCHI ANKETA CRUD =====================
 
-func getIshchiAnketalar(vakansiya, status, search string, allowedCategories []string, page, limit int) ([]IshchiRow, int, error) {
+func getIshchiAnketalar(vakansiya, status, search, source string, allowedCategories []string, page, limit int) ([]IshchiRow, int, error) {
 	where := "1=1"
 	args := []interface{}{}
 
@@ -1007,11 +1012,16 @@ func getIshchiAnketalar(vakansiya, status, search string, allowedCategories []st
 		where += " AND vakansiya = ?"
 		args = append(args, vakansiya)
 	}
+	if source != "" {
+		where += " AND source = ?"
+		args = append(args, source)
+	}
 	if status != "" {
 		where += " AND status = ?"
 		args = append(args, status)
-	} else {
-		// Default: rejected ishchilarni ko'rsatmaslik + 4 marta chaqirilganlar asosiy listdan chiqsin
+	} else if source == "" {
+		// Default: rejected ishchilarni ko'rsatmaslik + 4 marta chaqirilganlar asosiy listdan chiqsin.
+		// Manba bo'yicha filter berilganda esa hammasi (status filtersiz) ko'rinishi kerak.
 		where += " AND status != 'rejected'"
 		where += " AND id NOT IN (SELECT ishchi_id FROM ishchi_interviews GROUP BY ishchi_id HAVING COUNT(*) >= 4)"
 	}

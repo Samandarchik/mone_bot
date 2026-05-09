@@ -93,6 +93,7 @@ func handleGetIshchiAnketalar(w http.ResponseWriter, r *http.Request) {
 	vakansiya := r.URL.Query().Get("vakansiya")
 	status := r.URL.Query().Get("status")
 	search := r.URL.Query().Get("search")
+	source := sanitizeSource(r.URL.Query().Get("source"))
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 
@@ -122,7 +123,7 @@ func handleGetIshchiAnketalar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	anketalar, total, err := getIshchiAnketalar(vakansiya, status, search, allowedCategories, page, limit)
+	anketalar, total, err := getIshchiAnketalar(vakansiya, status, search, source, allowedCategories, page, limit)
 	if err != nil {
 		jsonError(w, "DB xato: "+err.Error(), http.StatusInternalServerError)
 		return

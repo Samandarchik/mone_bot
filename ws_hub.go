@@ -134,7 +134,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		// Rezume init: faqat super_admin yoki admin uchun
 		if user.Role != "ishchi_admin" {
-			rezumeler, _, err := getRezumeler("", "", "", allowedCategories, 1, 100)
+			rezumeler, _, err := getRezumeler("", "", "", "", allowedCategories, 1, 100)
 			if err == nil {
 				data, _ := json.Marshal(WSEvent{Type: "init", Data: rezumeler})
 				client.send <- data
@@ -142,7 +142,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 		// Ishchi init: faqat super_admin yoki ishchi_admin uchun
 		if user.Role != "admin" {
-			ishchilar, _, err := getIshchiAnketalar("", "", "", allowedIshchiCategories, 1, 100)
+			ishchilar, _, err := getIshchiAnketalar("", "", "", "", allowedIshchiCategories, 1, 100)
 			if err == nil {
 				attachIshchiInterviews(ishchilar)
 				data, _ := json.Marshal(WSEvent{Type: "ishchi_init", Data: ishchilar})
