@@ -179,6 +179,60 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, resp)
 }
 
+// POST /api/users/{id}/link-rezume — foydalanuvchini telefon raqami orqali
+// rezume bilan permanent bog'laydi. Bu user avval rezume yo'q paytda yaratilgan
+// bo'lsa va keyinroq o'sha telefon bilan rezume kelgan bo'lsa, uni o'chirib
+// qayta yaratmasdan bog'lash uchun ishlatiladi (intervyu va boshqa tarixlar
+// saqlanib qoladi).
+//
+// Body ixtiyoriy: {"phone": "+998..."}. Bo'sh bo'lsa user.telefon yoki
+// user.username asos qilib olinadi.
+func handleLinkUserRezume(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
+		return
+	}
+
+	user, err := dbGetUserByID(id)
+	if err != nil {
+		jsonError(w, "Foydalanuvchi topilmadi", http.StatusNotFound)
+		return
+	}
+
+	var body struct {
+		Phone string `json:"phone"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body)
+
+	phone := body.Phone
+	if phone == "" {
+		phone = user.Telefon
+	}
+	if phone == "" {
+		phone = user.Username
+	}
+	phone = normalizePhone(phone)
+	if phone == "" {
+		jsonError(w, "Telefon raqami yo'q", http.StatusBadRequest)
+		return
+	}
+
+	rezume, err := getRezumeByPhone(phone)
+	if err != nil || rezume == nil {
+		jsonError(w, "Bu telefon bo'yicha rezume topilmadi", http.StatusNotFound)
+		return
+	}
+
+	if err := dbLinkUserToRezume(id, rezume.ID, rezume.RasmUrl, rezume.Telefon); err != nil {
+		jsonError(w, "Bog'lashda xato", http.StatusInternalServerError)
+		return
+	}
+
+	resp, _ := dbGetUserByID(id)
+	jsonResponse(w, resp)
+}
+
 // DELETE /api/users/{id} — foydalanuvchini o'chirish (super_admin)
 func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

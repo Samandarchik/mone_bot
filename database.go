@@ -528,6 +528,20 @@ func dbUpdateUser(id int64, fullName, role string, canInterview, isActive bool, 
 	return err
 }
 
+// dbLinkUserToRezume — foydalanuvchi yozuviga rezume ID, rasm va telefonni
+// permanent bog'laydi. rasm_url va telefon faqat avval bo'sh bo'lsa
+// yangilanadi, shu sababli noto'g'ri qayta yozish bo'lmaydi.
+func dbLinkUserToRezume(userID, rezumeID int64, rasmUrl, telefon string) error {
+	_, err := db.Exec(
+		`UPDATE users
+		 SET rezume_id = ?,
+		     rasm_url = CASE WHEN COALESCE(rasm_url,'') = '' THEN ? ELSE rasm_url END,
+		     telefon  = CASE WHEN COALESCE(telefon,'')  = '' THEN ? ELSE telefon  END
+		 WHERE id = ?`,
+		rezumeID, rasmUrl, telefon, userID)
+	return err
+}
+
 func dbUpdateUserPassword(id int64, passwordHash string) error {
 	_, err := db.Exec("UPDATE users SET password_hash = ? WHERE id = ?", passwordHash, id)
 	return err

@@ -367,6 +367,7 @@ func main() {
 	mux.HandleFunc("GET /api/users", superAdminRequired(handleGetUsers))
 	mux.HandleFunc("GET /api/users/{id}", superAdminRequired(handleGetUserAPI))
 	mux.HandleFunc("PATCH /api/users/{id}", superAdminRequired(handleUpdateUser))
+	mux.HandleFunc("POST /api/users/{id}/link-rezume", superAdminRequired(handleLinkUserRezume))
 	mux.HandleFunc("DELETE /api/users/{id}", superAdminRequired(handleDeleteUser))
 
 	// Branch API
