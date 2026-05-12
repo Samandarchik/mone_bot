@@ -9,8 +9,7 @@ import (
 // POST /api/ishchi-categories — yangi ishchi kategoriya yaratish (super_admin)
 func handleCreateIshchiCategory(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Name      string `json:"name"`
-		TgGroupID int64  `json:"tg_group_id"`
+		Name string `json:"name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
@@ -21,7 +20,7 @@ func handleCreateIshchiCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := dbCreateIshchiCategory(body.Name, body.TgGroupID)
+	id, err := dbCreateIshchiCategory(body.Name)
 	if err != nil {
 		jsonError(w, "Kategoriya yaratishda xato: "+err.Error(), http.StatusBadRequest)
 		return
@@ -56,9 +55,8 @@ func handleUpdateIshchiCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		Name      *string `json:"name"`
-		TgGroupID *int64  `json:"tg_group_id"`
-		IsActive  *bool   `json:"is_active"`
+		Name     *string `json:"name"`
+		IsActive *bool   `json:"is_active"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
@@ -66,20 +64,16 @@ func handleUpdateIshchiCategory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := existing.Name
-	tgGroupID := existing.TgGroupID
 	isActive := existing.IsActive
 
 	if body.Name != nil {
 		name = *body.Name
 	}
-	if body.TgGroupID != nil {
-		tgGroupID = *body.TgGroupID
-	}
 	if body.IsActive != nil {
 		isActive = *body.IsActive
 	}
 
-	if err := dbUpdateIshchiCategory(id, name, tgGroupID, isActive); err != nil {
+	if err := dbUpdateIshchiCategory(id, name, isActive); err != nil {
 		jsonError(w, "Yangilashda xato: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

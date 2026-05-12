@@ -560,7 +560,7 @@ func dbDeleteUser(id int64) error {
 
 func getUserCategories(userID int64) []Category {
 	rows, err := db.Query(
-		`SELECT c.id, c.name, c.tg_group_id, c.is_active, c.created_at
+		`SELECT c.id, c.name, c.is_active, c.created_at
 		 FROM categories c JOIN user_categories uc ON c.id = uc.category_id
 		 WHERE uc.user_id = ?`, userID)
 	if err != nil {
@@ -572,7 +572,7 @@ func getUserCategories(userID int64) []Category {
 	for rows.Next() {
 		var c Category
 		var ia int
-		rows.Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+		rows.Scan(&c.ID, &c.Name, &ia, &c.CreatedAt)
 		c.IsActive = ia == 1
 		cats = append(cats, c)
 	}
@@ -590,8 +590,8 @@ func getUserCategoryNames(userID int64) []string {
 
 // ===================== CATEGORY CRUD =====================
 
-func dbCreateCategory(name string, tgGroupID int64) (int64, error) {
-	result, err := db.Exec("INSERT INTO categories (name, tg_group_id) VALUES (?, ?)", name, tgGroupID)
+func dbCreateCategory(name string) (int64, error) {
+	result, err := db.Exec("INSERT INTO categories (name) VALUES (?)", name)
 	if err != nil {
 		return 0, err
 	}
@@ -599,7 +599,7 @@ func dbCreateCategory(name string, tgGroupID int64) (int64, error) {
 }
 
 func dbGetCategories() ([]Category, error) {
-	rows, err := db.Query("SELECT id, name, tg_group_id, is_active, created_at FROM categories ORDER BY id")
+	rows, err := db.Query("SELECT id, name, is_active, created_at FROM categories ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -609,7 +609,7 @@ func dbGetCategories() ([]Category, error) {
 	for rows.Next() {
 		var c Category
 		var ia int
-		rows.Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+		rows.Scan(&c.ID, &c.Name, &ia, &c.CreatedAt)
 		c.IsActive = ia == 1
 		cats = append(cats, c)
 	}
@@ -619,8 +619,8 @@ func dbGetCategories() ([]Category, error) {
 func dbGetCategoryByID(id int64) (*Category, error) {
 	var c Category
 	var ia int
-	err := db.QueryRow("SELECT id, name, tg_group_id, is_active, created_at FROM categories WHERE id = ?", id).
-		Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+	err := db.QueryRow("SELECT id, name, is_active, created_at FROM categories WHERE id = ?", id).
+		Scan(&c.ID, &c.Name, &ia, &c.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -628,7 +628,7 @@ func dbGetCategoryByID(id int64) (*Category, error) {
 	return &c, nil
 }
 
-func dbUpdateCategory(id int64, name string, tgGroupID int64, isActive bool) error {
+func dbUpdateCategory(id int64, name string, isActive bool) error {
 	ia := 0
 	if isActive {
 		ia = 1
@@ -645,8 +645,8 @@ func dbUpdateCategory(id int64, name string, tgGroupID int64, isActive bool) err
 	}
 	defer tx.Rollback()
 
-	if _, err := tx.Exec("UPDATE categories SET name=?, tg_group_id=?, is_active=? WHERE id=?",
-		name, tgGroupID, ia, id); err != nil {
+	if _, err := tx.Exec("UPDATE categories SET name=?, is_active=? WHERE id=?",
+		name, ia, id); err != nil {
 		return err
 	}
 
@@ -667,8 +667,8 @@ func dbDeleteCategory(id int64) error {
 func getCategoryByName(name string) (*Category, error) {
 	var c Category
 	var ia int
-	err := db.QueryRow("SELECT id, name, tg_group_id, is_active, created_at FROM categories WHERE name = ?", name).
-		Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+	err := db.QueryRow("SELECT id, name, is_active, created_at FROM categories WHERE name = ?", name).
+		Scan(&c.ID, &c.Name, &ia, &c.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -1325,7 +1325,7 @@ func dbSetUserIshchiCategories(userID int64, categoryIDs []int64) error {
 
 func getUserIshchiCategories(userID int64) []Category {
 	rows, err := db.Query(
-		`SELECT c.id, c.name, c.tg_group_id, c.is_active, c.created_at
+		`SELECT c.id, c.name, c.is_active, c.created_at
 		 FROM ishchi_categories c JOIN user_ishchi_categories uc ON c.id = uc.category_id
 		 WHERE uc.user_id = ?`, userID)
 	if err != nil {
@@ -1337,7 +1337,7 @@ func getUserIshchiCategories(userID int64) []Category {
 	for rows.Next() {
 		var c Category
 		var ia int
-		rows.Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+		rows.Scan(&c.ID, &c.Name, &ia, &c.CreatedAt)
 		c.IsActive = ia == 1
 		cats = append(cats, c)
 	}
@@ -1391,8 +1391,8 @@ func updateIshchiAnketa(id int64, a *IshchiAnketa) error {
 
 // ===================== ISHCHI CATEGORY CRUD =====================
 
-func dbCreateIshchiCategory(name string, tgGroupID int64) (int64, error) {
-	result, err := db.Exec("INSERT INTO ishchi_categories (name, tg_group_id) VALUES (?, ?)", name, tgGroupID)
+func dbCreateIshchiCategory(name string) (int64, error) {
+	result, err := db.Exec("INSERT INTO ishchi_categories (name) VALUES (?)", name)
 	if err != nil {
 		return 0, err
 	}
@@ -1400,7 +1400,7 @@ func dbCreateIshchiCategory(name string, tgGroupID int64) (int64, error) {
 }
 
 func dbGetIshchiCategories() ([]Category, error) {
-	rows, err := db.Query("SELECT id, name, tg_group_id, is_active, created_at FROM ishchi_categories ORDER BY id")
+	rows, err := db.Query("SELECT id, name, is_active, created_at FROM ishchi_categories ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -1410,7 +1410,7 @@ func dbGetIshchiCategories() ([]Category, error) {
 	for rows.Next() {
 		var c Category
 		var ia int
-		rows.Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+		rows.Scan(&c.ID, &c.Name, &ia, &c.CreatedAt)
 		c.IsActive = ia == 1
 		cats = append(cats, c)
 	}
@@ -1420,8 +1420,8 @@ func dbGetIshchiCategories() ([]Category, error) {
 func dbGetIshchiCategoryByID(id int64) (*Category, error) {
 	var c Category
 	var ia int
-	err := db.QueryRow("SELECT id, name, tg_group_id, is_active, created_at FROM ishchi_categories WHERE id = ?", id).
-		Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+	err := db.QueryRow("SELECT id, name, is_active, created_at FROM ishchi_categories WHERE id = ?", id).
+		Scan(&c.ID, &c.Name, &ia, &c.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -1432,8 +1432,8 @@ func dbGetIshchiCategoryByID(id int64) (*Category, error) {
 func dbGetIshchiCategoryByName(name string) (*Category, error) {
 	var c Category
 	var ia int
-	err := db.QueryRow("SELECT id, name, tg_group_id, is_active, created_at FROM ishchi_categories WHERE name = ?", name).
-		Scan(&c.ID, &c.Name, &c.TgGroupID, &ia, &c.CreatedAt)
+	err := db.QueryRow("SELECT id, name, is_active, created_at FROM ishchi_categories WHERE name = ?", name).
+		Scan(&c.ID, &c.Name, &ia, &c.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -1441,13 +1441,13 @@ func dbGetIshchiCategoryByName(name string) (*Category, error) {
 	return &c, nil
 }
 
-func dbUpdateIshchiCategory(id int64, name string, tgGroupID int64, isActive bool) error {
+func dbUpdateIshchiCategory(id int64, name string, isActive bool) error {
 	ia := 0
 	if isActive {
 		ia = 1
 	}
-	_, err := db.Exec("UPDATE ishchi_categories SET name=?, tg_group_id=?, is_active=? WHERE id=?",
-		name, tgGroupID, ia, id)
+	_, err := db.Exec("UPDATE ishchi_categories SET name=?, is_active=? WHERE id=?",
+		name, ia, id)
 	return err
 }
 

@@ -110,7 +110,6 @@ type RezumeRow struct {
 type Category struct {
 	ID        int64  `json:"id"`
 	Name      string `json:"name"`
-	TgGroupID int64  `json:"tg_group_id"`
 	IsActive  bool   `json:"is_active"`
 	CreatedAt string `json:"created_at"`
 }
