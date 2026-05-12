@@ -120,6 +120,7 @@ type Branch struct {
 	Name      string  `json:"name"`
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
+	Address   string  `json:"address"`
 	IsActive  bool    `json:"is_active"`
 	CreatedAt string  `json:"created_at"`
 }

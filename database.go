@@ -136,6 +136,7 @@ func initDB() {
 	// Migration: branches jadvaliga latitude/longitude qo'shish
 	db.Exec("ALTER TABLE branches ADD COLUMN latitude REAL NOT NULL DEFAULT 0")
 	db.Exec("ALTER TABLE branches ADD COLUMN longitude REAL NOT NULL DEFAULT 0")
+	db.Exec("ALTER TABLE branches ADD COLUMN address TEXT NOT NULL DEFAULT ''")
 
 	// Migration: interviews jadvaliga branch_id qo'shish
 	db.Exec("ALTER TABLE interviews ADD COLUMN branch_id INTEGER NOT NULL DEFAULT 0")
@@ -901,8 +902,8 @@ func getBranchPtr(branchID int64) *Branch {
 	return b
 }
 
-func dbCreateBranch(name string, latitude, longitude float64) (int64, error) {
-	result, err := db.Exec("INSERT INTO branches (name, latitude, longitude) VALUES (?, ?, ?)", name, latitude, longitude)
+func dbCreateBranch(name string, latitude, longitude float64, address string) (int64, error) {
+	result, err := db.Exec("INSERT INTO branches (name, latitude, longitude, address) VALUES (?, ?, ?, ?)", name, latitude, longitude, address)
 	if err != nil {
 		return 0, err
 	}
@@ -910,7 +911,7 @@ func dbCreateBranch(name string, latitude, longitude float64) (int64, error) {
 }
 
 func dbGetBranches() ([]Branch, error) {
-	rows, err := db.Query("SELECT id, name, latitude, longitude, is_active, created_at FROM branches ORDER BY id")
+	rows, err := db.Query("SELECT id, name, latitude, longitude, address, is_active, created_at FROM branches ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -920,7 +921,7 @@ func dbGetBranches() ([]Branch, error) {
 	for rows.Next() {
 		var b Branch
 		var ia int
-		rows.Scan(&b.ID, &b.Name, &b.Latitude, &b.Longitude, &ia, &b.CreatedAt)
+		rows.Scan(&b.ID, &b.Name, &b.Latitude, &b.Longitude, &b.Address, &ia, &b.CreatedAt)
 		b.IsActive = ia == 1
 		results = append(results, b)
 	}
@@ -930,8 +931,8 @@ func dbGetBranches() ([]Branch, error) {
 func dbGetBranchByID(id int64) (*Branch, error) {
 	var b Branch
 	var ia int
-	err := db.QueryRow("SELECT id, name, latitude, longitude, is_active, created_at FROM branches WHERE id = ?", id).
-		Scan(&b.ID, &b.Name, &b.Latitude, &b.Longitude, &ia, &b.CreatedAt)
+	err := db.QueryRow("SELECT id, name, latitude, longitude, address, is_active, created_at FROM branches WHERE id = ?", id).
+		Scan(&b.ID, &b.Name, &b.Latitude, &b.Longitude, &b.Address, &ia, &b.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -939,12 +940,12 @@ func dbGetBranchByID(id int64) (*Branch, error) {
 	return &b, nil
 }
 
-func dbUpdateBranch(id int64, name string, latitude, longitude float64, isActive bool) error {
+func dbUpdateBranch(id int64, name string, latitude, longitude float64, address string, isActive bool) error {
 	ia := 0
 	if isActive {
 		ia = 1
 	}
-	_, err := db.Exec("UPDATE branches SET name=?, latitude=?, longitude=?, is_active=? WHERE id=?", name, latitude, longitude, ia, id)
+	_, err := db.Exec("UPDATE branches SET name=?, latitude=?, longitude=?, address=?, is_active=? WHERE id=?", name, latitude, longitude, address, ia, id)
 	return err
 }
 
