@@ -264,7 +264,7 @@ textarea{resize:vertical}
 </div>
 
 <div class="card" style="animation-delay:.35s">
-  <span class="lbl"><span class="step-num">9</span><span data-uz="Umumiy tajriba" data-ru="Общий стаж">Umumiy tajriba</span></span>
+  <span class="lbl"><span class="step-num">9</span><span data-uz="Shu sohada qancha vaqt ishlagan" data-ru="Сколько времени работали в этой сфере">Shu sohada qancha vaqt ishlagan</span><span id="lavozim-hint" style="margin-left:6px;color:#667eea;font-weight:700"></span></span>
   <input type="text" id="tajriba" data-uz-ph="Masalan: 3 yil 6 oy" data-ru-ph="Например: 3 года 6 месяцев" placeholder="Masalan: 3 yil 6 oy">
 </div>
 
@@ -438,6 +438,7 @@ function switchLang(lang){
     if(ph) el.placeholder=ph;
   });
   updateLavozimLang();
+  updateLavozimHint();
 }
 
 let _categories=[];
@@ -656,7 +657,17 @@ function sel(btn,group){
   document.getElementById('g-'+group).querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   state[group]=btn.getAttribute('data-value')||btn.textContent.trim();
+  if(group==='lavozim')updateLavozimHint();
   updateProgress();
+}
+
+function updateLavozimHint(){
+  const el=document.getElementById('lavozim-hint');
+  if(!el)return;
+  if(!state.lavozim){el.textContent='';return;}
+  const parts=state.lavozim.split(' / ');
+  const name=curLang==='ru'?(parts[0]||state.lavozim):(parts[1]||state.lavozim);
+  el.textContent=' — '+name;
 }
 
 function setLang(btn,lang,val){
@@ -735,7 +746,7 @@ async function submitForm(){
     {id:'boy',uz:'Bo\'y',ru:'Рост'},
     {id:'vazn',uz:'Vazn',ru:'Вес'},
     {id:'moljal',uz:'Mo\'ljal',ru:'Ориентир'},
-    {id:'tajriba',uz:'Umumiy tajriba',ru:'Общий опыт'},
+    {id:'tajriba',uz:'Shu sohada qancha vaqt ishlagan',ru:'Стаж в этой сфере'},
     {id:'telefon',uz:'Telefon',ru:'Телефон'}
   ];
   const stateRequired=[
