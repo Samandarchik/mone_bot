@@ -219,33 +219,27 @@ textarea{resize:vertical}
   </div>
 </div>
 
-<!-- 8. Oblast -->
+<!-- 8. Viloyat -->
 <div class="card" style="animation-delay:.3s">
   <span class="lbl"><span class="step-num">8</span><span data-uz="Viloyat" data-ru="Область" data-en="Region">Область</span></span>
-  <input type="text" id="oblast" data-uz-ph="Viloyat nomi" data-ru-ph="Название области" data-en-ph="Region name" placeholder="Название области">
+  <div class="bg" id="g-viloyat"></div>
 </div>
 
-<!-- 9. Shahar -->
-<div class="card" style="animation-delay:.33s">
-  <span class="lbl"><span class="step-num">9</span><span data-uz="Shahar" data-ru="Город" data-en="City">Город</span></span>
-  <input type="text" id="shahar" data-uz-ph="Shahar nomi" data-ru-ph="Название города" data-en-ph="City name" placeholder="Название города">
+<!-- 9. Tuman / Shahar -->
+<div class="card" id="card-tuman" style="animation-delay:.33s;display:none">
+  <span class="lbl"><span class="step-num">9</span><span data-uz="Shahar / Tuman" data-ru="Город / Район" data-en="City / District">Город / Район</span></span>
+  <div class="bg" id="g-tuman"></div>
 </div>
 
-<!-- 10. Tuman -->
+<!-- 10. Moljal -->
 <div class="card" style="animation-delay:.36s">
-  <span class="lbl"><span class="step-num">10</span><span data-uz="Tuman" data-ru="Район" data-en="District">Район</span></span>
-  <input type="text" id="tuman" data-uz-ph="Tuman nomi" data-ru-ph="Название района" data-en-ph="District name" placeholder="Название района">
-</div>
-
-<!-- 11. Moljal -->
-<div class="card" style="animation-delay:.39s">
-  <span class="lbl"><span class="step-num">11</span><span data-uz="Mo'ljal" data-ru="Ориентир, если есть номер дома укажите" data-en="Landmark, specify house number if any">Ориентир, если есть номер дома укажите</span></span>
+  <span class="lbl"><span class="step-num">10</span><span data-uz="Mo'ljal" data-ru="Ориентир, если есть номер дома укажите" data-en="Landmark, specify house number if any">Ориентир, если есть номер дома укажите</span></span>
   <input type="text" id="moljal" data-uz-ph="Mo'ljal, uy raqami bo'lsa yozing" data-ru-ph="Ориентир, если есть номер дома укажите" data-en-ph="Landmark, specify house number if any" placeholder="Ориентир, если есть номер дома укажите">
 </div>
 
-<!-- 12. Oilaviy holat -->
-<div class="card" style="animation-delay:.42s">
-  <span class="lbl"><span class="step-num">12</span><span data-uz="Oilaviy holat" data-ru="Семейный статус" data-en="Marital status">Семейный статус</span></span>
+<!-- 11. Oilaviy holat -->
+<div class="card" style="animation-delay:.39s">
+  <span class="lbl"><span class="step-num">11</span><span data-uz="Oilaviy holat" data-ru="Семейный статус" data-en="Marital status">Семейный статус</span></span>
   <div class="bg" id="g-oila">
     <button class="btn" data-value="Замужем" data-uz="Turmushga chiqqan" data-ru="Замужем" data-en="Married" onclick="sel(this,'oila')">Замужем</button>
     <button class="btn" data-value="Не в браке" data-uz="Turmushga chiqmagan" data-ru="Не в браке" data-en="Single" onclick="sel(this,'oila')">Не в браке</button>
@@ -253,18 +247,18 @@ textarea{resize:vertical}
   </div>
 </div>
 
-<!-- 13. Bolalar -->
-<div class="card" style="animation-delay:.45s">
-  <span class="lbl"><span class="step-num">13</span><span data-uz="Bolalar" data-ru="Дети" data-en="Children">Дети</span></span>
+<!-- 12. Bolalar -->
+<div class="card" style="animation-delay:.42s">
+  <span class="lbl"><span class="step-num">12</span><span data-uz="Bolalar" data-ru="Дети" data-en="Children">Дети</span></span>
   <div class="bg" id="g-bolalar">
     <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" data-en="Yes" onclick="sel(this,'bolalar')">Есть</button>
     <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" data-en="No" onclick="sel(this,'bolalar')">Нету</button>
   </div>
 </div>
 
-<!-- 14. Tillar -->
-<div class="card" style="animation-delay:.48s">
-  <span class="lbl"><span class="step-num">14</span><span data-uz="Til bilimi" data-ru="Знания языка" data-en="Language skills">Знания языка</span></span>
+<!-- 13. Tillar -->
+<div class="card" style="animation-delay:.45s">
+  <span class="lbl"><span class="step-num">13</span><span data-uz="Til bilimi" data-ru="Знания языка" data-en="Language skills">Знания языка</span></span>
   <div class="bg" id="g-tillar">
     <button class="btn" data-value="Китайский" data-uz="Xitoy tili" data-ru="Китайский" data-en="Chinese" onclick="multiSel(this,'tillar')">Китайский</button>
     <button class="btn" data-value="Испанский" data-uz="Ispan tili" data-ru="Испанский" data-en="Spanish" onclick="multiSel(this,'tillar')">Испанский</button>
@@ -277,9 +271,9 @@ textarea{resize:vertical}
   </div>
 </div>
 
-<!-- 15. Malumot -->
-<div class="card" style="animation-delay:.51s">
-  <span class="lbl"><span class="step-num">15</span><span data-uz="Ma'lumoti" data-ru="Образования" data-en="Education">Образования</span></span>
+<!-- 14. Malumot -->
+<div class="card" style="animation-delay:.48s">
+  <span class="lbl"><span class="step-num">14</span><span data-uz="Ma'lumoti" data-ru="Образования" data-en="Education">Образования</span></span>
   <div class="bg" id="g-malumot">
     <button class="btn" data-value="Средняя школа / Лицей" data-uz="O'rta maktab / Litsey" data-ru="Средняя школа / Лицей" data-en="High school / Lyceum" onclick="sel(this,'malumot')">Средняя школа / Лицей</button>
     <button class="btn" data-value="Высшее (Бакалавриат)" data-uz="Oliy (Bakalavr)" data-ru="Высшее (Бакалавриат)" data-en="Bachelor degree" onclick="sel(this,'malumot')">Высшее (Бакалавриат)</button>
@@ -287,27 +281,27 @@ textarea{resize:vertical}
   </div>
 </div>
 
-<!-- 16. Grafik -->
-<div class="card" style="animation-delay:.54s">
-  <span class="lbl"><span class="step-num">16</span><span data-uz="Ish grafigi" data-ru="График" data-en="Work schedule">График</span></span>
+<!-- 15. Grafik -->
+<div class="card" style="animation-delay:.51s">
+  <span class="lbl"><span class="step-num">15</span><span data-uz="Ish grafigi" data-ru="График" data-en="Work schedule">График</span></span>
   <div class="bg" id="g-grafik">
     <button class="btn" data-value="С проживанием" data-uz="Yashab ishlash" data-ru="С проживанием" data-en="Live-in" onclick="sel(this,'grafik')">С проживанием</button>
     <button class="btn" data-value="Без проживания" data-uz="Yashab ishlamasdan" data-ru="Без проживания" data-en="Live-out" onclick="sel(this,'grafik')">Без проживания</button>
   </div>
 </div>
 
-<!-- 17. Sudimlik -->
-<div class="card" style="animation-delay:.57s">
-  <span class="lbl"><span class="step-num">17</span><span data-uz="Sudlanganlik" data-ru="Судимость" data-en="Criminal record">Судимость</span></span>
+<!-- 16. Sudimlik -->
+<div class="card" style="animation-delay:.54s">
+  <span class="lbl"><span class="step-num">16</span><span data-uz="Sudlanganlik" data-ru="Судимость" data-en="Criminal record">Судимость</span></span>
   <div class="bg" id="g-sudimlik">
     <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" data-en="Yes" onclick="sel(this,'sudimlik')">Есть</button>
     <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" data-en="No" onclick="sel(this,'sudimlik')">Нету</button>
   </div>
 </div>
 
-<!-- 18. Haydovchilik -->
-<div class="card" style="animation-delay:.6s">
-  <span class="lbl"><span class="step-num">18</span><span data-uz="Haydovchilik guvohnomasi" data-ru="Водительские удостоверения" data-en="Driving license">Водительские удостоверения</span></span>
+<!-- 17. Haydovchilik -->
+<div class="card" style="animation-delay:.57s">
+  <span class="lbl"><span class="step-num">17</span><span data-uz="Haydovchilik guvohnomasi" data-ru="Водительские удостоверения" data-en="Driving license">Водительские удостоверения</span></span>
   <div class="bg" id="g-haydovchilik">
     <button class="btn" data-value="Есть" data-uz="Bor" data-ru="Есть" data-en="Yes" onclick="sel(this,'haydovchilik')">Есть</button>
     <button class="btn" data-value="Нету" data-uz="Yo'q" data-ru="Нету" data-en="No" onclick="sel(this,'haydovchilik')">Нету</button>
@@ -315,18 +309,18 @@ textarea{resize:vertical}
   </div>
 </div>
 
-<!-- 19. Telefon -->
-<div class="card" style="animation-delay:.63s">
-  <span class="lbl"><span class="step-num">19</span><span data-uz="Telefon" data-ru="Телефон" data-en="Phone">Телефон</span></span>
+<!-- 18. Telefon -->
+<div class="card" style="animation-delay:.6s">
+  <span class="lbl"><span class="step-num">18</span><span data-uz="Telefon" data-ru="Телефон" data-en="Phone">Телефон</span></span>
   <div id="tel-wrap" style="display:flex;align-items:center;border:2px solid #e8e8ef;border-radius:12px;background:#fafaff;transition:all .2s;cursor:text" onclick="document.getElementById('telefon').focus()">
     <span style="padding:12px 4px 12px 16px;font-size:14px;color:#1a1a2e;white-space:nowrap">+998</span>
     <input type="tel" id="telefon" placeholder="901234567" maxlength="9" style="border:none;background:transparent;box-shadow:none;padding:12px 16px 12px 4px;outline:none" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onfocus="document.getElementById('tel-wrap').style.borderColor='#667eea';document.getElementById('tel-wrap').style.background='#fff';document.getElementById('tel-wrap').style.boxShadow='0 0 0 4px rgba(102,126,234,.12)'" onblur="document.getElementById('tel-wrap').style.borderColor='#e8e8ef';document.getElementById('tel-wrap').style.background='#fafaff';document.getElementById('tel-wrap').style.boxShadow='none'">
   </div>
 </div>
 
-<!-- 20. Telegram -->
-<div class="card" style="animation-delay:.66s" id="tg-card" style="display:none">
-  <span class="lbl"><span class="step-num">20</span><span data-uz="Telegram" data-ru="Telegram" data-en="Telegram">Telegram</span></span>
+<!-- 19. Telegram -->
+<div class="card" style="animation-delay:.63s" id="tg-card" style="display:none">
+  <span class="lbl"><span class="step-num">19</span><span data-uz="Telegram" data-ru="Telegram" data-en="Telegram">Telegram</span></span>
   <div id="tg-auto" style="display:none;margin-bottom:10px">
     <div style="display:flex;align-items:center;padding:12px 16px;border:2px solid #e8e8ef;border-radius:12px;background:#f0f0ff">
       <span style="color:#667eea;font-weight:600;font-size:14px" id="tg-auto-val"></span>
@@ -338,9 +332,9 @@ textarea{resize:vertical}
   </div>
 </div>
 
-<!-- 21. Rasm -->
-<div class="card" style="animation-delay:.69s">
-  <span class="lbl"><span class="step-num">21</span><span data-uz="Rasm yuklash" data-ru="Загрузить фото" data-en="Upload photo">Загрузить фото</span></span>
+<!-- 20. Rasm -->
+<div class="card" style="animation-delay:.66s">
+  <span class="lbl"><span class="step-num">20</span><span data-uz="Rasm yuklash" data-ru="Загрузить фото" data-en="Upload photo">Загрузить фото</span></span>
   <p style="font-size:13px;color:#64748b;margin-bottom:10px;font-weight:600" data-uz="Namuna — rasmingiz shunday bo'lishi kerak:" data-ru="Образец — ваше фото должно быть таким:" data-en="Example — your photo should look like this:">Образец — ваше фото должно быть таким:</p>
   <div class="photo-samples">
     <img src="https://moneapp.monebakeryuz.uz/static/1_resized.jpg" class="sample-img" style="width:140px;height:190px;object-fit:cover;border:3px solid #e8e8ef;border-radius:14px" onclick="showImg(this.src)">
@@ -522,11 +516,79 @@ function confirmDate(){
   updateProgress();
 }
 
-const state={vakansiya:'',oila:'',bolalar:'',tillar:[],malumot:'',grafik:'',sudimlik:'',haydovchilik:''};
+const state={vakansiya:'',oila:'',bolalar:'',tillar:[],malumot:'',grafik:'',sudimlik:'',haydovchilik:'',viloyat:'',tuman:''};
 let photoBase64=null;
 
+const UZ_REGIONS=[
+  {id:1,uz:"Qoraqalpog'iston Respublikasi",ru:"Республика Каракалпакстан",en:"Republic of Karakalpakstan",cities:["Nukus","Beruniy","Chimboy","Mo'ynoq","Xo'jayli","Taxiatosh","Qo'ng'irot","To'rtko'l","Shumanay"]},
+  {id:2,uz:"Andijon viloyati",ru:"Андижанская область",en:"Andijan Region",cities:["Andijon","Asaka","Xonobod","Shahrixon","Qo'rg'ontepa","Marhamat","Paytug'","Xo'jaobod"]},
+  {id:3,uz:"Buxoro viloyati",ru:"Бухарская область",en:"Bukhara Region",cities:["Buxoro","Kogon","G'ijduvon","Galaosiyo","Vobkent","Olot","G'azli","Romitan","Shofirkon","Qorako'l","Qorovulbozor"]},
+  {id:4,uz:"Farg'ona viloyati",ru:"Ферганская область",en:"Fergana Region",cities:["Farg'ona","Marg'ilon","Qo'qon","Quvasoy","Rishton","Beshariq","Yozyovon","Bog'dod","Toshloq","Oltiariq"]},
+  {id:5,uz:"Jizzax viloyati",ru:"Джизакская область",en:"Jizzakh Region",cities:["Jizzax","Do'stlik","G'allaorol","Paxtakor","Zomin","Zafarobod","Forish","Mirzacho'l"]},
+  {id:6,uz:"Xorazm viloyati",ru:"Хорезмская область",en:"Khorezm Region",cities:["Urganch","Xiva","Pitnak","Shovot","Yangiariq","Yangibozor","Bog'ot","Gurlan","Qo'shko'pir","Xonqa"]},
+  {id:7,uz:"Namangan viloyati",ru:"Наманганская область",en:"Namangan Region",cities:["Namangan","Chust","Chortoq","Pop","To'raqo'rg'on","Kosonsoy","Uchqo'rg'on","Mingbuloq","Uychi"]},
+  {id:8,uz:"Navoiy viloyati",ru:"Навоийская область",en:"Navoiy Region",cities:["Navoiy","Zarafshon","Uchquduq","Nurota","Konimex","Karmana","Tomdi","Xatirchi","Qiziltepa"]},
+  {id:9,uz:"Qashqadaryo viloyati",ru:"Кашкадарьинская область",en:"Kashkadarya Region",cities:["Qarshi","Shahrisabz","Kitob","G'uzor","Muborak","Yakkabog'","Koson","Chiroqchi","Beshkent","Dehqonobod"]},
+  {id:10,uz:"Samarqand viloyati",ru:"Самаркандская область",en:"Samarkand Region",cities:["Samarqand","Kattaqo'rg'on","Urgut","Bulung'ur","Ishtixon","Jomboy","Oqdaryo","Payariq","Past Darg'om","Toyloq"]},
+  {id:11,uz:"Sirdaryo viloyati",ru:"Сырдарьинская область",en:"Syrdarya Region",cities:["Guliston","Shirin","Yangiyer","Boyovut","Sayxunobod","Mirzaobod","Oqoltin","Sardoba","Xovos"]},
+  {id:12,uz:"Surxondaryo viloyati",ru:"Сурхандарьинская область",en:"Surkhandarya Region",cities:["Termiz","Denov","Sherobod","Sho'rchi","Boysun","Jarqo'rg'on","Qumqo'rg'on","Sariosiyo","Uzun","Angor","Oltinsoy"]},
+  {id:13,uz:"Toshkent viloyati",ru:"Ташкентская область",en:"Tashkent Region",cities:["Nurafshon","Olmaliq","Angren","Bekobod","Chirchiq","Yangiyo'l","Ohangaron","Parkent","Toshkent (tuman)","G'azalkent","Keles"]},
+  {id:14,uz:"Toshkent shahri",ru:"город Ташкент",en:"Tashkent City",cities:["Bektemir","Chilonzor","Mirobod","Mirzo Ulug'bek","Olmazor","Sergeli","Shayxontohur","Uchtepa","Yakkasaroy","Yangihayot","Yashnobod","Yunusobod"]}
+];
+
+function renderViloyatButtons(){
+  const c=document.getElementById('g-viloyat');
+  c.innerHTML='';
+  UZ_REGIONS.forEach(r=>{
+    const b=document.createElement('button');
+    b.className='btn';
+    b.setAttribute('data-value',r.uz);
+    b.setAttribute('data-uz',r.uz);
+    b.setAttribute('data-ru',r.ru);
+    b.setAttribute('data-en',r.en);
+    b.textContent=curLang==='ru'?r.ru:curLang==='en'?r.en:r.uz;
+    b.onclick=function(){selectViloyat(r.id,this)};
+    if(state.viloyat===r.uz) b.classList.add('on');
+    c.appendChild(b);
+  });
+}
+
+function selectViloyat(rid,btn){
+  document.getElementById('g-viloyat').querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const r=UZ_REGIONS.find(x=>x.id===rid);
+  state.viloyat=r.uz;
+  state.tuman='';
+  renderTumanButtons(r);
+  document.getElementById('card-tuman').style.display='';
+  updateProgress();
+}
+
+function renderTumanButtons(r){
+  const c=document.getElementById('g-tuman');
+  c.innerHTML='';
+  r.cities.forEach(name=>{
+    const b=document.createElement('button');
+    b.className='btn';
+    b.setAttribute('data-value',name);
+    b.textContent=name;
+    b.onclick=function(){selectTuman(name,this)};
+    if(state.tuman===name) b.classList.add('on');
+    c.appendChild(b);
+  });
+}
+
+function selectTuman(name,btn){
+  document.getElementById('g-tuman').querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  state.tuman=name;
+  updateProgress();
+}
+
+renderViloyatButtons();
+
 function updateProgress(){
-  let filled=0;const total=20;
+  let filled=0;const total=19;
   if(state.vakansiya)filled++;
   if(document.getElementById('familiya').value.trim())filled++;
   if(document.getElementById('ism').value.trim())filled++;
@@ -534,9 +596,8 @@ function updateProgress(){
   if(document.getElementById('boy').value)filled++;
   if(document.getElementById('vazn').value)filled++;
   if(document.getElementById('tugilgan').value)filled++;
-  if(document.getElementById('oblast').value.trim())filled++;
-  if(document.getElementById('shahar').value.trim())filled++;
-  if(document.getElementById('tuman').value.trim())filled++;
+  if(state.viloyat)filled++;
+  if(state.tuman)filled++;
   if(document.getElementById('moljal').value.trim())filled++;
   if(state.oila)filled++;
   if(state.bolalar)filled++;
@@ -606,14 +667,13 @@ async function submitForm(){
     {id:'ism',uz:'Ism',ru:'Имя',en:'First name'},
     {id:'sharif',uz:'Sharif',ru:'Отчество',en:'Middle name'},
     {id:'tugilgan',uz:'Tug\'ilgan sana',ru:'Дата рождения',en:'Date of birth'},
-    {id:'oblast',uz:'Viloyat',ru:'Область',en:'Region'},
-    {id:'shahar',uz:'Shahar',ru:'Город',en:'City'},
-    {id:'tuman',uz:'Tuman',ru:'Район',en:'District'},
     {id:'moljal',uz:'Mo\'ljal',ru:'Ориентир',en:'Landmark'},
     {id:'telefon',uz:'Telefon',ru:'Телефон',en:'Phone'}
   ];
   const stateRequired=[
     {key:'vakansiya',uz:'Vakansiya',ru:'Вакансия',en:'Position'},
+    {key:'viloyat',uz:'Viloyat',ru:'Область',en:'Region'},
+    {key:'tuman',uz:'Shahar / Tuman',ru:'Город / Район',en:'City / District'},
     {key:'oila',uz:'Oilaviy holat',ru:'Семейный статус',en:'Marital status'},
     {key:'bolalar',uz:'Bolalar',ru:'Дети',en:'Children'},
     {key:'malumot',uz:'Ma\'lumot',ru:'Образования',en:'Education'},
@@ -657,7 +717,7 @@ async function submitForm(){
     tugilgan_sana:document.getElementById('tugilgan').value,
     boy_sm:parseInt(document.getElementById('boy').value),
     vazn_kg:parseInt(document.getElementById('vazn').value),
-    manzil:document.getElementById('oblast').value.trim()+', '+document.getElementById('shahar').value.trim()+', '+document.getElementById('tuman').value.trim()+', '+document.getElementById('moljal').value.trim(),
+    manzil:state.viloyat+', '+state.tuman+', '+document.getElementById('moljal').value.trim(),
     oilaviy_holat:state.oila,
     bolalar:state.bolalar,
     tillar:state.tillar.join(', '),
