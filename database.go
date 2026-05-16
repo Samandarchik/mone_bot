@@ -660,7 +660,7 @@ func dbUpdateCategory(id int64, name string, isActive bool) error {
 }
 
 func dbDeleteCategory(id int64) error {
-	_, err := db.Exec("DELETE FROM categories WHERE id = ?", id)
+	_, err := db.Exec("UPDATE categories SET is_active = 0 WHERE id = ?", id)
 	return err
 }
 
