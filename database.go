@@ -467,7 +467,7 @@ func dbSetUserCategories(userID int64, categoryIDs []int64) error {
 
 func dbGetUsers() ([]UserResponse, error) {
 	rows, err := db.Query(
-		"SELECT id, username, full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users ORDER BY id")
+		"SELECT id, username, COALESCE(password,''), full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -477,7 +477,7 @@ func dbGetUsers() ([]UserResponse, error) {
 	for rows.Next() {
 		var u UserRow
 		var ci, ia int
-		if err := rows.Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt); err != nil {
 			return nil, err
 		}
 		u.CanInterview = ci == 1
@@ -494,8 +494,8 @@ func dbGetUserByID(id int64) (*UserResponse, error) {
 	var u UserRow
 	var ci, ia int
 	err := db.QueryRow(
-		"SELECT id, username, full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE id = ?", id).
-		Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
+		"SELECT id, username, COALESCE(password,''), full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE id = ?", id).
+		Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -511,8 +511,8 @@ func dbGetUserByPassword(password string) (*UserRow, error) {
 	var u UserRow
 	var ci, ia int
 	err := db.QueryRow(
-		"SELECT id, username, full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE password = ? LIMIT 1",
-		password).Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
+		"SELECT id, username, COALESCE(password,''), full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE password = ? LIMIT 1",
+		password).Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -688,9 +688,9 @@ func dbGetUserByToken(token string) (*UserRow, error) {
 	var u UserRow
 	var ci, ia int
 	err := db.QueryRow(
-		`SELECT u.id, u.username, u.full_name, u.role, u.can_interview, u.is_active, u.branch_id, COALESCE(u.rasm_url,''), COALESCE(u.telefon,''), COALESCE(u.rezume_id,0), u.created_at
+		`SELECT u.id, u.username, COALESCE(u.password,''), u.full_name, u.role, u.can_interview, u.is_active, u.branch_id, COALESCE(u.rasm_url,''), COALESCE(u.telefon,''), COALESCE(u.rezume_id,0), u.created_at
 		 FROM users u JOIN sessions s ON u.id = s.user_id WHERE s.token = ?`, token).
-		Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
+		Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}

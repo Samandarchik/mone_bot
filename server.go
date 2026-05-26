@@ -127,6 +127,7 @@ type Branch struct {
 type UserRow struct {
 	ID           int64  `json:"id"`
 	Username     string `json:"username"`
+	Password     string `json:"password"`
 	FullName     string `json:"full_name"`
 	Role         string `json:"role"`
 	CanInterview bool   `json:"can_interview"`
