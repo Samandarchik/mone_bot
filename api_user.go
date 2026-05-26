@@ -39,13 +39,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hash, err := hashPassword(body.Password)
-	if err != nil {
-		jsonError(w, "Parol xatolik", http.StatusInternalServerError)
-		return
-	}
-
-	id, err := dbCreateUser(body.Username, hash, body.FullName, body.Role, body.CanInterview, body.BranchID, body.RasmUrl, body.Telefon, body.RezumeID)
+	id, err := dbCreateUser(body.Username, body.Password, body.FullName, body.Role, body.CanInterview, body.BranchID, body.RasmUrl, body.Telefon, body.RezumeID)
 	if err != nil {
 		jsonError(w, "Foydalanuvchi yaratishda xato: "+err.Error(), http.StatusBadRequest)
 		return
@@ -154,8 +148,7 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if body.Password != nil && *body.Password != "" {
-		hash, _ := hashPassword(*body.Password)
-		dbUpdateUserPassword(id, hash)
+		dbUpdateUserPassword(id, *body.Password)
 	}
 
 	// Role o'zgartirilganda, eski rol kategoriyalarini tozalaymiz

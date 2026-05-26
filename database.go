@@ -210,6 +210,9 @@ func initDB() {
 	db.Exec("UPDATE rezumeler SET status = 'rejected' WHERE status = 'rad'")
 	db.Exec("UPDATE ishchi_anketalar SET status = 'pending' WHERE status = 'yangi' OR status = ''")
 
+	// Migration: password ustunini qo'shish (plain text)
+	db.Exec("ALTER TABLE users ADD COLUMN password TEXT NOT NULL DEFAULT ''")
+
 	seedDB()
 	log.Println("SQLite baza tayyor")
 }
@@ -219,12 +222,11 @@ func seedDB() {
 	var count int
 	db.QueryRow("SELECT COUNT(*) FROM users WHERE role = 'super_admin'").Scan(&count)
 	if count == 0 {
-		hash, _ := hashPassword("admin123")
 		db.Exec(
-			"INSERT INTO users (username, password_hash, full_name, role, can_interview) VALUES (?, ?, ?, ?, ?)",
-			"admin", hash, "Super Admin", "super_admin", 1,
+			"INSERT INTO users (username, password, full_name, role, can_interview) VALUES (?, ?, ?, ?, ?)",
+			"admin", "admin123", "Super Admin", "super_admin", 1,
 		)
-		log.Println("Default super admin yaratildi: admin / admin123")
+		log.Println("Default super admin yaratildi: parol admin123")
 	}
 }
 
@@ -440,14 +442,14 @@ func deleteRezume(id int64) error {
 
 // ===================== USER CRUD =====================
 
-func dbCreateUser(username, passwordHash, fullName, role string, canInterview bool, branchID int64, rasmUrl, telefon string, rezumeID int64) (int64, error) {
+func dbCreateUser(username, password, fullName, role string, canInterview bool, branchID int64, rasmUrl, telefon string, rezumeID int64) (int64, error) {
 	ci := 0
 	if canInterview {
 		ci = 1
 	}
 	result, err := db.Exec(
-		"INSERT INTO users (username, password_hash, full_name, role, can_interview, branch_id, rasm_url, telefon, rezume_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		username, passwordHash, fullName, role, ci, branchID, rasmUrl, telefon, rezumeID,
+		"INSERT INTO users (username, password, full_name, role, can_interview, branch_id, rasm_url, telefon, rezume_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		username, password, fullName, role, ci, branchID, rasmUrl, telefon, rezumeID,
 	)
 	if err != nil {
 		return 0, err
@@ -505,19 +507,18 @@ func dbGetUserByID(id int64) (*UserResponse, error) {
 	return &UserResponse{UserRow: u, Categories: cats, IshchiCategories: ishchiCats, Branch: branch}, nil
 }
 
-func dbGetUserByUsername(username string) (*UserRow, string, error) {
+func dbGetUserByPassword(password string) (*UserRow, error) {
 	var u UserRow
-	var passwordHash string
 	var ci, ia int
 	err := db.QueryRow(
-		"SELECT id, username, password_hash, full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE username = ?",
-		username).Scan(&u.ID, &u.Username, &passwordHash, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
+		"SELECT id, username, full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE password = ? LIMIT 1",
+		password).Scan(&u.ID, &u.Username, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	u.CanInterview = ci == 1
 	u.IsActive = ia == 1
-	return &u, passwordHash, nil
+	return &u, nil
 }
 
 func dbUpdateUser(id int64, fullName, role string, canInterview, isActive bool, branchID int64) error {
@@ -548,8 +549,8 @@ func dbLinkUserToRezume(userID, rezumeID int64, rasmUrl, telefon string) error {
 	return err
 }
 
-func dbUpdateUserPassword(id int64, passwordHash string) error {
-	_, err := db.Exec("UPDATE users SET password_hash = ? WHERE id = ?", passwordHash, id)
+func dbUpdateUserPassword(id int64, password string) error {
+	_, err := db.Exec("UPDATE users SET password = ? WHERE id = ?", password, id)
 	return err
 }
 

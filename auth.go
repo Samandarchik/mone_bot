@@ -60,29 +60,24 @@ func superAdminRequired(next http.HandlerFunc) http.HandlerFunc {
 // POST /api/auth/login
 func handleLogin(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
 		return
 	}
-	if body.Username == "" || body.Password == "" {
-		jsonError(w, "Username va password kerak", http.StatusBadRequest)
+	if body.Password == "" {
+		jsonError(w, "Parol kerak", http.StatusBadRequest)
 		return
 	}
 
-	user, passwordHash, err := dbGetUserByUsername(body.Username)
+	user, err := dbGetUserByPassword(body.Password)
 	if err != nil {
-		jsonError(w, "Login yoki parol xato", http.StatusUnauthorized)
+		jsonError(w, "Parol xato", http.StatusUnauthorized)
 		return
 	}
 	if !user.IsActive {
 		jsonError(w, "Foydalanuvchi bloklangan", http.StatusForbidden)
-		return
-	}
-	if !checkPassword(body.Password, passwordHash) {
-		jsonError(w, "Login yoki parol xato", http.StatusUnauthorized)
 		return
 	}
 
