@@ -904,14 +904,14 @@ function getSavedAccounts() {
   try { return JSON.parse(localStorage.getItem('hr_accounts') || '[]'); }
   catch { return []; }
 }
-function saveAccount(username, password) {
-  const list = getSavedAccounts().filter(a => a.username !== username);
-  list.unshift({ username, password });
+function saveAccount(password, fullName) {
+  const list = getSavedAccounts().filter(a => a.password !== password);
+  list.unshift({ password, full_name: fullName });
   if (list.length > 10) list.length = 10;
   localStorage.setItem('hr_accounts', JSON.stringify(list));
 }
-function removeAccount(username) {
-  const list = getSavedAccounts().filter(a => a.username !== username);
+function removeAccount(password) {
+  const list = getSavedAccounts().filter(a => a.password !== password);
   localStorage.setItem('hr_accounts', JSON.stringify(list));
   renderSavedAccounts();
 }
@@ -921,37 +921,35 @@ function renderSavedAccounts() {
   const listEl = document.getElementById('savedAccountsList');
   if (!list.length) { wrap.style.display = 'none'; return; }
   wrap.style.display = '';
-  listEl.innerHTML = list.map(a => `
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fafafa;cursor:pointer;transition:all .15s" onclick="pickAccount('${a.username.replace(/'/g, "\\'")}')" onmouseover="this.style.background='#f0f9ff';this.style.borderColor='#3699ff'" onmouseout="this.style.background='#fafafa';this.style.borderColor='#e5e7eb'">
-      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3699ff,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">${a.username.charAt(0).toUpperCase()}</div>
-      <div style="flex:1;font-weight:600;font-size:14px;color:#1a1a2e">${a.username}</div>
-      <button type="button" onclick="event.stopPropagation();removeAccount('${a.username.replace(/'/g, "\\'")}')" style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px 8px;font-size:18px;line-height:1" title="O'chirish">×</button>
+  listEl.innerHTML = list.map((a, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fafafa;cursor:pointer;transition:all .15s" onclick="pickAccount(${i})" onmouseover="this.style.background='#f0f9ff';this.style.borderColor='#3699ff'" onmouseout="this.style.background='#fafafa';this.style.borderColor='#e5e7eb'">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3699ff,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">${(a.full_name || '?').charAt(0).toUpperCase()}</div>
+      <div style="flex:1;font-weight:600;font-size:14px;color:#1a1a2e">${a.full_name || '••••••'}</div>
+      <button type="button" onclick="event.stopPropagation();removeAccount('${a.password.replace(/'/g, "\\'")}')" style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px 8px;font-size:18px;line-height:1" title="O'chirish">×</button>
     </div>
   `).join('');
 }
-function pickAccount(username) {
-  const acc = getSavedAccounts().find(a => a.username === username);
+function pickAccount(idx) {
+  const acc = getSavedAccounts()[idx];
   if (!acc) return;
-  document.getElementById('loginUser').value = acc.username;
   document.getElementById('loginPass').value = acc.password;
   document.getElementById('rememberMe').checked = true;
   doLogin();
 }
 
 async function doLogin() {
-  const username = document.getElementById('loginUser').value.trim();
   const password = document.getElementById('loginPass').value;
   const remember = document.getElementById('rememberMe').checked;
   const errEl = document.getElementById('loginErr');
-  if (!username || !password) { errEl.textContent = 'Username va parol kiriting'; errEl.style.display = 'block'; return; }
+  if (!password) { errEl.textContent = 'Parol kiriting'; errEl.style.display = 'block'; return; }
   try {
     document.getElementById('loginBtn').disabled = true;
-    const data = await api('POST', '/api/auth/login', { username, password });
+    const data = await api('POST', '/api/auth/login', { password });
     TOKEN = data.token;
     ME = data.user;
     localStorage.setItem('hr_token', TOKEN);
     if (remember) {
-      saveAccount(username, password);
+      saveAccount(password, ME.full_name || ME.username);
     }
     showApp();
   } catch (e) {
@@ -970,7 +968,6 @@ async function doLogout() {
   localStorage.removeItem('hr_token');
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginPage').style.display = 'flex';
-  document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   renderSavedAccounts();
 }
