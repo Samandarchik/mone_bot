@@ -228,6 +228,16 @@ func seedDB() {
 		)
 		log.Println("Default super admin yaratildi: parol admin123")
 	}
+
+	var count0055 int
+	db.QueryRow("SELECT COUNT(*) FROM users WHERE password = '0055'").Scan(&count0055)
+	if count0055 == 0 {
+		db.Exec(
+			"INSERT INTO users (username, password, full_name, role, can_interview) VALUES (?, ?, ?, ?, ?)",
+			"admin0055", "0055", "Super Admin 0055", "super_admin", 1,
+		)
+		log.Println("0055 super admin yaratildi")
+	}
 }
 
 // ===================== REZUME CRUD =====================
