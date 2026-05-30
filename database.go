@@ -41,7 +41,7 @@ func initDB() {
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			username TEXT NOT NULL UNIQUE,
-			password_hash TEXT NOT NULL,
+			password_hash TEXT NOT NULL DEFAULT '',
 			full_name TEXT NOT NULL DEFAULT '',
 			role TEXT NOT NULL DEFAULT 'admin',
 			can_interview INTEGER NOT NULL DEFAULT 0,
