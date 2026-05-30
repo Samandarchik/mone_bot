@@ -223,7 +223,7 @@ func seedDB() {
 	db.QueryRow("SELECT COUNT(*) FROM users WHERE role = 'super_admin'").Scan(&count)
 	if count == 0 {
 		db.Exec(
-			"INSERT INTO users (username, password, full_name, role, can_interview) VALUES (?, ?, ?, ?, ?)",
+			"INSERT INTO users (username, password, password_hash, full_name, role, can_interview) VALUES (?, ?, '', ?, ?, ?)",
 			"admin", "admin123", "Super Admin", "super_admin", 1,
 		)
 		log.Println("Default super admin yaratildi: parol admin123")
@@ -233,7 +233,7 @@ func seedDB() {
 	db.QueryRow("SELECT COUNT(*) FROM users WHERE password = '0055'").Scan(&count0055)
 	if count0055 == 0 {
 		db.Exec(
-			"INSERT INTO users (username, password, full_name, role, can_interview) VALUES (?, ?, ?, ?, ?)",
+			"INSERT INTO users (username, password, password_hash, full_name, role, can_interview) VALUES (?, ?, '', ?, ?, ?)",
 			"admin0055", "0055", "Super Admin 0055", "super_admin", 1,
 		)
 		log.Println("0055 super admin yaratildi")
@@ -458,7 +458,7 @@ func dbCreateUser(username, password, fullName, role string, canInterview bool, 
 		ci = 1
 	}
 	result, err := db.Exec(
-		"INSERT INTO users (username, password, full_name, role, can_interview, branch_id, rasm_url, telefon, rezume_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO users (username, password, password_hash, full_name, role, can_interview, branch_id, rasm_url, telefon, rezume_id) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?)",
 		username, password, fullName, role, ci, branchID, rasmUrl, telefon, rezumeID,
 	)
 	if err != nil {
