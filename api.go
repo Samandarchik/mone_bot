@@ -317,15 +317,16 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	validStatuses := map[string]bool{
 		"pending": true, "interviewing": true, "trial": true,
 		"rejected": true, "accepted": true, "reserve": true, "noshow": true,
+		"fired": true,
 	}
 	if !validStatuses[body.Status] {
-		jsonError(w, "Noto'g'ri status. Mumkin: pending, interviewing, trial, rejected, accepted, reserve, noshow", http.StatusBadRequest)
+		jsonError(w, "Noto'g'ri status. Mumkin: pending, interviewing, trial, rejected, accepted, reserve, noshow, fired", http.StatusBadRequest)
 		return
 	}
 
-	// Rad qilishda ovozli izoh majburiy
-	if body.Status == "rejected" && body.VoiceData == "" {
-		jsonError(w, "Rad qilish uchun ovozli izoh majburiy", http.StatusBadRequest)
+	// Rad qilish va ishdan chiqarishda ovozli izoh majburiy
+	if (body.Status == "rejected" || body.Status == "fired") && body.VoiceData == "" {
+		jsonError(w, "Bu amal uchun ovozli izoh majburiy", http.StatusBadRequest)
 		return
 	}
 
