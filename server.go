@@ -378,6 +378,8 @@ func main() {
 	// super_admin'dan boshqa barcha foydalanuvchilarga login ma'lumotlarini
 	// bittada Telegram orqali yuborish — faqat super_admin.
 	mux.HandleFunc("POST /api/users/send-all-credentials", superAdminRequired(handleSendAllCredentials))
+	// Bitta foydalanuvchiga login ma'lumotlarini Telegram orqali yuborish.
+	mux.HandleFunc("POST /api/users/{id}/send-credentials", superAdminRequired(handleSendCredentials))
 
 	// Branch API
 	mux.HandleFunc("POST /api/branches", superAdminRequired(handleCreateBranch))

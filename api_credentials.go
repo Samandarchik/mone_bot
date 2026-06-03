@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -95,6 +96,49 @@ func sendCredsTgMessage(chatID int64, text string) error {
 		return fmt.Errorf("Telegram rad etdi: %s", desc)
 	}
 	return nil
+}
+
+// handleSendCredentials — POST /api/users/{id}/send-credentials (faqat
+// super_admin). Bitta foydalanuvchiga login ma'lumotlarini (ism + username +
+// parol + ilova iOS/Android linklari) Telegram orqali yuboradi. Chat ID
+// bog'langan rezume orqali (users.rezume_id -> rezumeler.tg_user_id) olinadi.
+func handleSendCredentials(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
+		return
+	}
+
+	var fullName, username, password string
+	var tgUserID int64
+	err = db.QueryRow(`
+		SELECT u.full_name, u.username, COALESCE(u.password,''), COALESCE(rz.tg_user_id, 0)
+		FROM users u
+		LEFT JOIN rezumeler rz ON rz.id = u.rezume_id
+		WHERE u.id = ?
+	`, id).Scan(&fullName, &username, &password, &tgUserID)
+	if err != nil {
+		jsonError(w, "Foydalanuvchi topilmadi", http.StatusNotFound)
+		return
+	}
+	if tgUserID == 0 {
+		jsonError(w, "Bu foydalanuvchining Telegram'i bog'lanmagan (rezume yo'q)", http.StatusBadRequest)
+		return
+	}
+
+	// Ilova linklarini olamiz. Xato bo'lsa, linksiz (—) yuboriladi.
+	links, err := fetchVersionLinks()
+	if err != nil {
+		log.Printf("send-credentials: versiya linklari olinmadi: %v", err)
+	}
+
+	msg := buildCredentialsMessage(fullName, username, password, links)
+	if err := sendCredsTgMessage(tgUserID, msg); err != nil {
+		jsonError(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+
+	jsonResponse(w, map[string]interface{}{"message": "Telegram orqali yuborildi"})
 }
 
 // handleSendAllCredentials — POST /api/users/send-all-credentials
