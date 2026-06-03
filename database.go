@@ -213,6 +213,25 @@ func initDB() {
 	// Migration: password ustunini qo'shish (plain text)
 	db.Exec("ALTER TABLE users ADD COLUMN password TEXT NOT NULL DEFAULT ''")
 
+	// user_devices — har bir foydalanuvchi login qilgan qurilmalar tarixi.
+	// Dedup (user_id, device_id) bo'yicha: bir xil fizik qurilmadan qayta login
+	// faqat last_login_at'ni yangilaydi, yangi qator qo'shmaydi. Shu sababli
+	// "nechta qurilma kirgan" = noyob device_id'lar soni; "qachon" = created_at
+	// (birinchi login) va last_login_at (oxirgi login). super_admin login
+	// qilganda yozilmaydi (uning qurilmasi hech kimning ro'yxatiga tushmaydi).
+	db.Exec(`CREATE TABLE IF NOT EXISTS user_devices (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		device_id TEXT NOT NULL,
+		device_name TEXT NOT NULL DEFAULT '',
+		platform TEXT NOT NULL DEFAULT '',
+		last_login_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+		created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+		UNIQUE(user_id, device_id),
+		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+	)`)
+	db.Exec("CREATE INDEX IF NOT EXISTS idx_user_devices_user ON user_devices(user_id)")
+
 	seedDB()
 	log.Println("SQLite baza tayyor")
 }
@@ -495,9 +514,54 @@ func dbGetUsers() ([]UserResponse, error) {
 		cats := getUserCategories(u.ID)
 		ishchiCats := getUserIshchiCategories(u.ID)
 		branch := getBranchPtr(u.BranchID)
-		users = append(users, UserResponse{UserRow: u, Categories: cats, IshchiCategories: ishchiCats, Branch: branch})
+		users = append(users, UserResponse{UserRow: u, Categories: cats, IshchiCategories: ishchiCats, Branch: branch, DeviceCount: dbCountUserDevices(u.ID)})
 	}
 	return users, nil
+}
+
+// dbUpsertUserDevice — login'da qurilmani qayd etadi. Dedup (user_id, device_id):
+// bir xil qurilma allaqachon bo'lsa faqat last_login_at + nom/platforma yangilanadi.
+func dbUpsertUserDevice(userID int64, deviceID, deviceName, platform string) error {
+	_, err := db.Exec(
+		`INSERT INTO user_devices (user_id, device_id, device_name, platform, last_login_at)
+		 VALUES (?, ?, ?, ?, datetime('now','localtime'))
+		 ON CONFLICT(user_id, device_id) DO UPDATE SET
+			device_name   = excluded.device_name,
+			platform      = excluded.platform,
+			last_login_at = datetime('now','localtime')`,
+		userID, deviceID, deviceName, platform,
+	)
+	return err
+}
+
+// dbCountUserDevices — foydalanuvchi login qilgan noyob qurilmalar soni.
+func dbCountUserDevices(userID int64) int {
+	var n int
+	db.QueryRow("SELECT COUNT(*) FROM user_devices WHERE user_id = ?", userID).Scan(&n)
+	return n
+}
+
+// dbGetUserDevices — bitta foydalanuvchining qurilmalari, oxirgi login birinchi.
+func dbGetUserDevices(userID int64) ([]UserDevice, error) {
+	rows, err := db.Query(
+		`SELECT id, device_id, device_name, platform, last_login_at, created_at
+		 FROM user_devices WHERE user_id = ? ORDER BY last_login_at DESC`,
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	devices := []UserDevice{}
+	for rows.Next() {
+		var d UserDevice
+		if err := rows.Scan(&d.ID, &d.DeviceID, &d.DeviceName, &d.Platform, &d.LastLoginAt, &d.CreatedAt); err != nil {
+			continue
+		}
+		devices = append(devices, d)
+	}
+	return devices, nil
 }
 
 func dbGetUserByID(id int64) (*UserResponse, error) {
@@ -514,7 +578,7 @@ func dbGetUserByID(id int64) (*UserResponse, error) {
 	cats := getUserCategories(u.ID)
 	ishchiCats := getUserIshchiCategories(u.ID)
 	branch := getBranchPtr(u.BranchID)
-	return &UserResponse{UserRow: u, Categories: cats, IshchiCategories: ishchiCats, Branch: branch}, nil
+	return &UserResponse{UserRow: u, Categories: cats, IshchiCategories: ishchiCats, Branch: branch, DeviceCount: dbCountUserDevices(u.ID)}, nil
 }
 
 func dbGetUserByPassword(password string) (*UserRow, error) {

@@ -149,6 +149,21 @@ type UserResponse struct {
 	Categories       []Category `json:"categories"`
 	IshchiCategories []Category `json:"ishchi_categories"`
 	Branch           *Branch    `json:"branch"`
+	// DeviceCount — bu foydalanuvchi login qilgan noyob qurilmalar soni
+	// (user_devices jadvalidan). Faqat ko'rinish uchun. super_admin uchun 0
+	// (uning qurilmasi yozilmaydi).
+	DeviceCount int `json:"device_count"`
+}
+
+// UserDevice — foydalanuvchi login qilgan bitta qurilma. Dedup (user_id,
+// device_id) bo'yicha: bir xil fizik qurilma ikki marta sanalmaydi.
+type UserDevice struct {
+	ID          int64  `json:"id"`
+	DeviceID    string `json:"deviceId"`
+	DeviceName  string `json:"deviceName"`
+	Platform    string `json:"platform"`
+	LastLoginAt string `json:"lastLoginAt"`
+	CreatedAt   string `json:"createdAt"`
 }
 
 // --- Ishchi anketa types ---
@@ -374,6 +389,7 @@ func main() {
 	mux.HandleFunc("GET /api/users/{id}", superAdminRequired(handleGetUserAPI))
 	mux.HandleFunc("PATCH /api/users/{id}", superAdminRequired(handleUpdateUser))
 	mux.HandleFunc("POST /api/users/{id}/link-rezume", superAdminRequired(handleLinkUserRezume))
+	mux.HandleFunc("GET /api/users/{id}/devices", superAdminRequired(handleGetUserDevices))
 	mux.HandleFunc("DELETE /api/users/{id}", superAdminRequired(handleDeleteUser))
 	// super_admin'dan boshqa barcha foydalanuvchilarga login ma'lumotlarini
 	// bittada Telegram orqali yuborish — faqat super_admin.

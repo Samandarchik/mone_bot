@@ -5,7 +5,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -61,6 +63,13 @@ func superAdminRequired(next http.HandlerFunc) http.HandlerFunc {
 func handleLogin(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Password string `json:"password"`
+		// Qurilma ma'lumotlari — mijoz har login'da yuboradi (ikkilamchi:
+		// bo'sh bo'lsa ham login ishlaydi). DeviceID — fizik qurilmaning
+		// barqaror noyob kaliti (mijozda bir marta yaratilib saqlanadi), shu
+		// sababli bitta qurilma ikki marta sanalmaydi.
+		DeviceID   string `json:"deviceId"`
+		DeviceName string `json:"deviceName"`
+		Platform   string `json:"platform"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
@@ -84,6 +93,18 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	token := generateToken()
 	dbCreateSession(token, user.ID)
 
+	// Qurilmani qayd etish — faqat super_admin BO'LMAGAN akauntlar uchun va
+	// mijoz device_id yuborgan bo'lsa. Dedup (user_id, device_id): bir xil
+	// qurilmadan qayta login faqat last_login_at'ni yangilaydi. super_admin
+	// login qilganda yozilmaydi — uning qurilmasi hech kimning ro'yxatiga
+	// tushmaydi. Device yozuvi xatosi login'ni buzmasin.
+	deviceID := strings.TrimSpace(body.DeviceID)
+	if user.Role != "super_admin" && deviceID != "" {
+		if derr := dbUpsertUserDevice(user.ID, deviceID, strings.TrimSpace(body.DeviceName), strings.TrimSpace(body.Platform)); derr != nil {
+			log.Printf("user_device yozishda xato (user %d): %v", user.ID, derr)
+		}
+	}
+
 	cats := getUserCategories(user.ID)
 	ishchiCats := getUserIshchiCategories(user.ID)
 	branch := getBranchPtr(user.BranchID)
@@ -94,8 +115,25 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 			Categories:       cats,
 			IshchiCategories: ishchiCats,
 			Branch:           branch,
+			DeviceCount:      dbCountUserDevices(user.ID),
 		},
 	})
+}
+
+// GET /api/users/{id}/devices — bitta foydalanuvchi login qilgan qurilmalar
+// ro'yxati (super_admin). Eng oxirgi login birinchi keladi.
+func handleGetUserDevices(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
+		return
+	}
+	devices, err := dbGetUserDevices(id)
+	if err != nil {
+		jsonError(w, "DB xato: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(w, map[string]interface{}{"devices": devices})
 }
 
 // POST /api/auth/logout
