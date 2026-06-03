@@ -133,6 +133,19 @@ func initDB() {
 	db.Exec("ALTER TABLE users ADD COLUMN telefon TEXT NOT NULL DEFAULT ''")
 	db.Exec("ALTER TABLE users ADD COLUMN rezume_id INTEGER NOT NULL DEFAULT 0")
 
+	// Migration: users jadvaliga sort_order qo'shish — qo'lda surib (drag)
+	// o'rnatilgan ro'yxat tartibini saqlash uchun. Mavjud yozuvlarni dastlab
+	// rol guruhi + id bo'yicha tartiblab qo'yamiz, shunda eski ko'rinish saqlanadi.
+	db.Exec("ALTER TABLE users ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
+	db.Exec(`UPDATE users SET sort_order =
+		(CASE role
+			WHEN 'super_admin' THEN 0
+			WHEN 'admin' THEN 1
+			WHEN 'ishchi_admin' THEN 2
+			ELSE 3
+		END) * 100000 + id
+		WHERE sort_order = 0`)
+
 	// Migration: branches jadvaliga latitude/longitude qo'shish
 	db.Exec("ALTER TABLE branches ADD COLUMN latitude REAL NOT NULL DEFAULT 0")
 	db.Exec("ALTER TABLE branches ADD COLUMN longitude REAL NOT NULL DEFAULT 0")
@@ -476,14 +489,33 @@ func dbCreateUser(username, password, fullName, role string, canInterview bool, 
 	if canInterview {
 		ci = 1
 	}
+	// Yangi user ro'yxat oxiriga qo'shiladi: mavjud eng katta sort_order + 1.
+	var nextOrder int64
+	db.QueryRow("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM users").Scan(&nextOrder)
 	result, err := db.Exec(
-		"INSERT INTO users (username, password, password_hash, full_name, role, can_interview, branch_id, rasm_url, telefon, rezume_id) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?)",
-		username, password, fullName, role, ci, branchID, rasmUrl, telefon, rezumeID,
+		"INSERT INTO users (username, password, password_hash, full_name, role, can_interview, branch_id, rasm_url, telefon, rezume_id, sort_order) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?)",
+		username, password, fullName, role, ci, branchID, rasmUrl, telefon, rezumeID, nextOrder,
 	)
 	if err != nil {
 		return 0, err
 	}
 	return result.LastInsertId()
+}
+
+// dbReorderUsers — berilgan id'lar ketma-ketligi bo'yicha sort_order'ni
+// qayta o'rnatadi. Ro'yxatdagi tartib (0,1,2,...) saqlanadi.
+func dbReorderUsers(orderedIDs []int64) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	for i, id := range orderedIDs {
+		if _, err := tx.Exec("UPDATE users SET sort_order = ? WHERE id = ?", i, id); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func dbSetUserCategories(userID int64, categoryIDs []int64) error {
@@ -495,21 +527,13 @@ func dbSetUserCategories(userID int64, categoryIDs []int64) error {
 }
 
 func dbGetUsers() ([]UserResponse, error) {
-	// Barqaror (deterministik) tartib: avval rol bo'yicha guruhlaymiz
-	// (super_admin → admin → ishchi_admin → boshqalar), keyin id bo'yicha.
-	// Shu bilan har bir user ro'yxatda doim bir xil joyda turadi —
-	// qayta yuklanganda aralashib ketmaydi.
+	// Tartib: qo'lda surib (drag) o'rnatilgan sort_order bo'yicha, keyin id.
+	// Shu bilan har bir user ro'yxatda super admin belgilagan joyda turadi
+	// va qayta yuklanganda aralashib ketmaydi.
 	rows, err := db.Query(
 		`SELECT id, username, COALESCE(password,''), full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at
 		 FROM users
-		 ORDER BY
-		   CASE role
-		     WHEN 'super_admin' THEN 0
-		     WHEN 'admin' THEN 1
-		     WHEN 'ishchi_admin' THEN 2
-		     ELSE 3
-		   END,
-		   id`)
+		 ORDER BY sort_order, id`)
 	if err != nil {
 		return nil, err
 	}

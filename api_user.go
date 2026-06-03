@@ -69,6 +69,27 @@ func handleGetUsers(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, users)
 }
 
+// PATCH /api/users/reorder — ro'yxatdagi userlarni qo'lda surib (drag)
+// o'rnatilgan tartibni saqlash (super_admin). Body: {"ids": [3, 1, 5, ...]}
+func handleReorderUsers(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		IDs []int64 `json:"ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		jsonError(w, "Noto'g'ri so'rov", http.StatusBadRequest)
+		return
+	}
+	if len(body.IDs) == 0 {
+		jsonError(w, "ids bo'sh", http.StatusBadRequest)
+		return
+	}
+	if err := dbReorderUsers(body.IDs); err != nil {
+		jsonError(w, "DB xato: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(w, map[string]bool{"ok": true})
+}
+
 // GET /api/users/{id} — bitta foydalanuvchi (super_admin)
 func handleGetUserAPI(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
