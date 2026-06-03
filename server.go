@@ -13,6 +13,11 @@ const botToken = "8550220546:AAFEII8AzNdMapEqT_VFtqiqv6h0obbLgzQ"
 const baseURL = "https://hr.monebakeryuz.uz"
 const adminTgID int64 = 1066137436
 
+// versionCheckURL — ilova (iOS/Android) yuklab olish linklarini beradigan
+// tashqi endpoint. Login ma'lumotlari yuborilganda shu yerdan App Store /
+// Play Store havolalari olinadi. appName'ni HR ilovasiga moslang.
+const versionCheckURL = "https://version.uzaidev.uz/health?appName=hr_mobile_app"
+
 // --- Telegram types ---
 
 type TgUpdate struct {
@@ -370,6 +375,9 @@ func main() {
 	mux.HandleFunc("PATCH /api/users/{id}", superAdminRequired(handleUpdateUser))
 	mux.HandleFunc("POST /api/users/{id}/link-rezume", superAdminRequired(handleLinkUserRezume))
 	mux.HandleFunc("DELETE /api/users/{id}", superAdminRequired(handleDeleteUser))
+	// super_admin'dan boshqa barcha foydalanuvchilarga login ma'lumotlarini
+	// bittada Telegram orqali yuborish — faqat super_admin.
+	mux.HandleFunc("POST /api/users/send-all-credentials", superAdminRequired(handleSendAllCredentials))
 
 	// Branch API
 	mux.HandleFunc("POST /api/branches", superAdminRequired(handleCreateBranch))
