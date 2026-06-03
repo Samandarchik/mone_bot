@@ -495,8 +495,21 @@ func dbSetUserCategories(userID int64, categoryIDs []int64) error {
 }
 
 func dbGetUsers() ([]UserResponse, error) {
+	// Barqaror (deterministik) tartib: avval rol bo'yicha guruhlaymiz
+	// (super_admin → admin → ishchi_admin → boshqalar), keyin id bo'yicha.
+	// Shu bilan har bir user ro'yxatda doim bir xil joyda turadi —
+	// qayta yuklanganda aralashib ketmaydi.
 	rows, err := db.Query(
-		"SELECT id, username, COALESCE(password,''), full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users ORDER BY id")
+		`SELECT id, username, COALESCE(password,''), full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at
+		 FROM users
+		 ORDER BY
+		   CASE role
+		     WHEN 'super_admin' THEN 0
+		     WHEN 'admin' THEN 1
+		     WHEN 'ishchi_admin' THEN 2
+		     ELSE 3
+		   END,
+		   id`)
 	if err != nil {
 		return nil, err
 	}
