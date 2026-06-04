@@ -194,23 +194,14 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		dbUpdateUserPassword(id, *body.Password)
 	}
 
-	hasAdmin := contains(rolesList, "admin")
-	hasIshchi := contains(rolesList, "ishchi_admin")
-
-	// Rollar yangilanganda, endi tegishli bo'lmagan rol kategoriyalarini tozalaymiz.
-	if rolesProvided {
-		if !hasAdmin {
-			dbSetUserCategories(id, []int64{})
-		}
-		if !hasIshchi {
-			dbSetUserIshchiCategories(id, []int64{})
-		}
-	}
-
-	if body.CategoryIDs != nil && hasAdmin {
+	// MUHIM: rol o'chirilganda kategoriyalarni TOZALAMAYMIZ. Kategoriyalar DB'da
+	// saqlanib qoladi; dostup faqat hozirgi rol(lar) bo'yicha gate qilinadi
+	// (hasRole). Shu sababli rolni o'chirib qayta yoqqanda eski kategoriyalar
+	// joyida turadi. Faqat aniq yuborilgan kategoriya to'plamlarini yangilaymiz.
+	if body.CategoryIDs != nil {
 		dbSetUserCategories(id, body.CategoryIDs)
 	}
-	if body.IshchiCategoryIDs != nil && hasIshchi {
+	if body.IshchiCategoryIDs != nil {
 		dbSetUserIshchiCategories(id, body.IshchiCategoryIDs)
 	}
 
