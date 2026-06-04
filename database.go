@@ -133,6 +133,10 @@ func initDB() {
 	db.Exec("ALTER TABLE users ADD COLUMN telefon TEXT NOT NULL DEFAULT ''")
 	db.Exec("ALTER TABLE users ADD COLUMN rezume_id INTEGER NOT NULL DEFAULT 0")
 
+	// Migration: users jadvaliga roles (ko'p rol) ustunini qo'shish. Vergul bilan
+	// ajratilgan (masalan "admin,ishchi_admin"). Bo'sh bo'lsa eski `role` ishlatiladi.
+	db.Exec("ALTER TABLE users ADD COLUMN roles TEXT NOT NULL DEFAULT ''")
+
 	// Migration: users jadvaliga sort_order qo'shish — qo'lda surib (drag)
 	// o'rnatilgan ro'yxat tartibini saqlash uchun. Mavjud yozuvlarni dastlab
 	// rol guruhi + id bo'yicha tartiblab qo'yamiz, shunda eski ko'rinish saqlanadi.
@@ -484,7 +488,7 @@ func deleteRezume(id int64) error {
 
 // ===================== USER CRUD =====================
 
-func dbCreateUser(username, password, fullName, role string, canInterview bool, branchID int64, rasmUrl, telefon string, rezumeID int64) (int64, error) {
+func dbCreateUser(username, password, fullName, role, roles string, canInterview bool, branchID int64, rasmUrl, telefon string, rezumeID int64) (int64, error) {
 	ci := 0
 	if canInterview {
 		ci = 1
@@ -493,8 +497,8 @@ func dbCreateUser(username, password, fullName, role string, canInterview bool, 
 	var nextOrder int64
 	db.QueryRow("SELECT COALESCE(MAX(sort_order), 0) + 1 FROM users").Scan(&nextOrder)
 	result, err := db.Exec(
-		"INSERT INTO users (username, password, password_hash, full_name, role, can_interview, branch_id, rasm_url, telefon, rezume_id, sort_order) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?)",
-		username, password, fullName, role, ci, branchID, rasmUrl, telefon, rezumeID, nextOrder,
+		"INSERT INTO users (username, password, password_hash, full_name, role, roles, can_interview, branch_id, rasm_url, telefon, rezume_id, sort_order) VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		username, password, fullName, role, roles, ci, branchID, rasmUrl, telefon, rezumeID, nextOrder,
 	)
 	if err != nil {
 		return 0, err
@@ -531,7 +535,7 @@ func dbGetUsers() ([]UserResponse, error) {
 	// Shu bilan har bir user ro'yxatda super admin belgilagan joyda turadi
 	// va qayta yuklanganda aralashib ketmaydi.
 	rows, err := db.Query(
-		`SELECT id, username, COALESCE(password,''), full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at
+		`SELECT id, username, COALESCE(password,''), full_name, role, COALESCE(roles,''), can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at
 		 FROM users
 		 ORDER BY sort_order, id`)
 	if err != nil {
@@ -543,11 +547,13 @@ func dbGetUsers() ([]UserResponse, error) {
 	for rows.Next() {
 		var u UserRow
 		var ci, ia int
-		if err := rows.Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt); err != nil {
+		var rolesCSV string
+		if err := rows.Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &rolesCSV, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt); err != nil {
 			return nil, err
 		}
 		u.CanInterview = ci == 1
 		u.IsActive = ia == 1
+		fillRoles(&u, rolesCSV)
 		cats := getUserCategories(u.ID)
 		ishchiCats := getUserIshchiCategories(u.ID)
 		branch := getBranchPtr(u.BranchID)
@@ -604,14 +610,16 @@ func dbGetUserDevices(userID int64) ([]UserDevice, error) {
 func dbGetUserByID(id int64) (*UserResponse, error) {
 	var u UserRow
 	var ci, ia int
+	var rolesCSV string
 	err := db.QueryRow(
-		"SELECT id, username, COALESCE(password,''), full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE id = ?", id).
-		Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
+		"SELECT id, username, COALESCE(password,''), full_name, role, COALESCE(roles,''), can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE id = ?", id).
+		Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &rolesCSV, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
 	u.CanInterview = ci == 1
 	u.IsActive = ia == 1
+	fillRoles(&u, rolesCSV)
 	cats := getUserCategories(u.ID)
 	ishchiCats := getUserIshchiCategories(u.ID)
 	branch := getBranchPtr(u.BranchID)
@@ -621,18 +629,20 @@ func dbGetUserByID(id int64) (*UserResponse, error) {
 func dbGetUserByPassword(password string) (*UserRow, error) {
 	var u UserRow
 	var ci, ia int
+	var rolesCSV string
 	err := db.QueryRow(
-		"SELECT id, username, COALESCE(password,''), full_name, role, can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE password = ? LIMIT 1",
-		password).Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
+		"SELECT id, username, COALESCE(password,''), full_name, role, COALESCE(roles,''), can_interview, is_active, branch_id, COALESCE(rasm_url,''), COALESCE(telefon,''), COALESCE(rezume_id,0), created_at FROM users WHERE password = ? LIMIT 1",
+		password).Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &rolesCSV, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
 	u.CanInterview = ci == 1
 	u.IsActive = ia == 1
+	fillRoles(&u, rolesCSV)
 	return &u, nil
 }
 
-func dbUpdateUser(id int64, fullName, role string, canInterview, isActive bool, branchID int64) error {
+func dbUpdateUser(id int64, fullName, role, roles string, canInterview, isActive bool, branchID int64) error {
 	ci, ia := 0, 0
 	if canInterview {
 		ci = 1
@@ -641,8 +651,8 @@ func dbUpdateUser(id int64, fullName, role string, canInterview, isActive bool, 
 		ia = 1
 	}
 	_, err := db.Exec(
-		"UPDATE users SET full_name=?, role=?, can_interview=?, is_active=?, branch_id=? WHERE id=?",
-		fullName, role, ci, ia, branchID, id)
+		"UPDATE users SET full_name=?, role=?, roles=?, can_interview=?, is_active=?, branch_id=? WHERE id=?",
+		fullName, role, roles, ci, ia, branchID, id)
 	return err
 }
 
@@ -798,15 +808,17 @@ func dbCreateSession(token string, userID int64) error {
 func dbGetUserByToken(token string) (*UserRow, error) {
 	var u UserRow
 	var ci, ia int
+	var rolesCSV string
 	err := db.QueryRow(
-		`SELECT u.id, u.username, COALESCE(u.password,''), u.full_name, u.role, u.can_interview, u.is_active, u.branch_id, COALESCE(u.rasm_url,''), COALESCE(u.telefon,''), COALESCE(u.rezume_id,0), u.created_at
+		`SELECT u.id, u.username, COALESCE(u.password,''), u.full_name, u.role, COALESCE(u.roles,''), u.can_interview, u.is_active, u.branch_id, COALESCE(u.rasm_url,''), COALESCE(u.telefon,''), COALESCE(u.rezume_id,0), u.created_at
 		 FROM users u JOIN sessions s ON u.id = s.user_id WHERE s.token = ?`, token).
-		Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
+		Scan(&u.ID, &u.Username, &u.Password, &u.FullName, &u.Role, &rolesCSV, &ci, &ia, &u.BranchID, &u.RasmUrl, &u.Telefon, &u.RezumeID, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
 	u.CanInterview = ci == 1
 	u.IsActive = ia == 1
+	fillRoles(&u, rolesCSV)
 	return &u, nil
 }
 

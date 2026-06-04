@@ -105,12 +105,12 @@ func handleGetIshchiAnketalar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Super admin hamma narsani ko'radi, ishchi_admin faqat o'z kategoriyalarini.
-	// admin role esa ishchi tomoniga kirishi kerak emas.
+	// Faqat admin bo'lgan (ishchi_admin roli yo'q) foydalanuvchi kira olmaydi.
 	var allowedCategories []string
-	switch user.Role {
-	case "super_admin":
+	switch {
+	case user.hasRole("super_admin"):
 		// hammasi
-	case "ishchi_admin":
+	case user.hasRole("ishchi_admin"):
 		allowedCategories = getUserIshchiCategoryNames(user.ID)
 		if len(allowedCategories) == 0 {
 			jsonResponse(w, map[string]interface{}{

@@ -135,7 +135,10 @@ type UserRow struct {
 	Password     string `json:"password"`
 	FullName     string `json:"full_name"`
 	Role         string `json:"role"`
-	CanInterview bool   `json:"can_interview"`
+	// Roles — foydalanuvchining barcha rollari (masalan ["admin","ishchi_admin"]).
+	// Eski `role` ustuni backward-compat uchun saqlanadi; bu ro'yxat asosiy.
+	Roles        []string `json:"roles"`
+	CanInterview bool     `json:"can_interview"`
 	IsActive     bool   `json:"is_active"`
 	BranchID     int64  `json:"branch_id"`
 	RasmUrl      string `json:"rasm_url"`

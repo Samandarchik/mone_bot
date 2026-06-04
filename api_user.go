@@ -4,22 +4,24 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // POST /api/users — yangi foydalanuvchi yaratish (super_admin)
 func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Username          string  `json:"username"`
-		Password          string  `json:"password"`
-		FullName          string  `json:"full_name"`
-		Role              string  `json:"role"`
-		CanInterview      bool    `json:"can_interview"`
-		CategoryIDs       []int64 `json:"category_ids"`
-		IshchiCategoryIDs []int64 `json:"ishchi_category_ids"`
-		BranchID          int64   `json:"branch_id"`
-		RasmUrl           string  `json:"rasm_url"`
-		Telefon           string  `json:"telefon"`
-		RezumeID          int64   `json:"rezume_id"`
+		Username          string   `json:"username"`
+		Password          string   `json:"password"`
+		FullName          string   `json:"full_name"`
+		Role              string   `json:"role"`
+		Roles             []string `json:"roles"`
+		CanInterview      bool     `json:"can_interview"`
+		CategoryIDs       []int64  `json:"category_ids"`
+		IshchiCategoryIDs []int64  `json:"ishchi_category_ids"`
+		BranchID          int64    `json:"branch_id"`
+		RasmUrl           string   `json:"rasm_url"`
+		Telefon           string   `json:"telefon"`
+		RezumeID          int64    `json:"rezume_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
@@ -30,28 +32,35 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "Username va password kerak", http.StatusBadRequest)
 		return
 	}
-	if body.Role == "" {
-		body.Role = "admin"
-	}
-	validRoles := map[string]bool{"admin": true, "super_admin": true, "ishchi_admin": true}
-	if !validRoles[body.Role] {
-		jsonError(w, "Noto'g'ri role. Mumkin: admin, super_admin, ishchi_admin", http.StatusBadRequest)
-		return
-	}
 
-	id, err := dbCreateUser(body.Username, body.Password, body.FullName, body.Role, body.CanInterview, body.BranchID, body.RasmUrl, body.Telefon, body.RezumeID)
+	// Rollar: yangi `roles` ro'yxati afzal; bo'lmasa eski bitta `role`.
+	// Bitta user bir vaqtda ham admin, ham ishchi_admin bo'lishi mumkin.
+	incoming := body.Roles
+	if len(incoming) == 0 && body.Role != "" {
+		incoming = []string{body.Role}
+	}
+	for _, rr := range incoming {
+		if rr != "" && !validRole(rr) {
+			jsonError(w, "Noto'g'ri role. Mumkin: admin, ishchi_admin, super_admin", http.StatusBadRequest)
+			return
+		}
+	}
+	rolesList := normalizeRoles(incoming, "admin")
+	role := primaryRole(rolesList)
+	rolesCSV := strings.Join(rolesList, ",")
+
+	id, err := dbCreateUser(body.Username, body.Password, body.FullName, role, rolesCSV, body.CanInterview, body.BranchID, body.RasmUrl, body.Telefon, body.RezumeID)
 	if err != nil {
 		jsonError(w, "Foydalanuvchi yaratishda xato: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Role-ga qarab kategoriya saqlash:
-	// admin → user_categories (rezume kategoriyalari)
-	// ishchi_admin → user_ishchi_categories (ishchi kategoriyalari)
-	if body.Role == "admin" && len(body.CategoryIDs) > 0 {
+	// Rollarga qarab kategoriya saqlash. Bitta userda ikkala rol bo'lsa
+	// ikkala kategoriya to'plami ham saqlanadi.
+	if contains(rolesList, "admin") && len(body.CategoryIDs) > 0 {
 		dbSetUserCategories(id, body.CategoryIDs)
 	}
-	if body.Role == "ishchi_admin" && len(body.IshchiCategoryIDs) > 0 {
+	if contains(rolesList, "ishchi_admin") && len(body.IshchiCategoryIDs) > 0 {
 		dbSetUserIshchiCategories(id, body.IshchiCategoryIDs)
 	}
 
@@ -122,14 +131,15 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		FullName          *string `json:"full_name"`
-		Role              *string `json:"role"`
-		CanInterview      *bool   `json:"can_interview"`
-		IsActive          *bool   `json:"is_active"`
-		Password          *string `json:"password"`
-		CategoryIDs       []int64 `json:"category_ids"`
-		IshchiCategoryIDs []int64 `json:"ishchi_category_ids"`
-		BranchID          *int64  `json:"branch_id"`
+		FullName          *string  `json:"full_name"`
+		Role              *string  `json:"role"`
+		Roles             []string `json:"roles"`
+		CanInterview      *bool    `json:"can_interview"`
+		IsActive          *bool    `json:"is_active"`
+		Password          *string  `json:"password"`
+		CategoryIDs       []int64  `json:"category_ids"`
+		IshchiCategoryIDs []int64  `json:"ishchi_category_ids"`
+		BranchID          *int64   `json:"branch_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
@@ -137,7 +147,6 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fullName := existing.FullName
-	role := existing.Role
 	canInterview := existing.CanInterview
 	isActive := existing.IsActive
 	branchID := existing.BranchID
@@ -145,14 +154,27 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	if body.FullName != nil {
 		fullName = *body.FullName
 	}
-	if body.Role != nil {
-		validRoles := map[string]bool{"admin": true, "super_admin": true, "ishchi_admin": true}
-		if !validRoles[*body.Role] {
-			jsonError(w, "Noto'g'ri role", http.StatusBadRequest)
-			return
+
+	// Rollar: `roles` ro'yxati yoki eski `role` berilgan bo'lsa yangilaymiz,
+	// aks holda mavjud rollar saqlanadi (backward compatible).
+	rolesProvided := body.Roles != nil || body.Role != nil
+	rolesList := existing.effectiveRoles()
+	if rolesProvided {
+		incoming := body.Roles
+		if len(incoming) == 0 && body.Role != nil {
+			incoming = []string{*body.Role}
 		}
-		role = *body.Role
+		for _, rr := range incoming {
+			if rr != "" && !validRole(rr) {
+				jsonError(w, "Noto'g'ri role", http.StatusBadRequest)
+				return
+			}
+		}
+		rolesList = normalizeRoles(incoming, "admin")
 	}
+	role := primaryRole(rolesList)
+	rolesCSV := strings.Join(rolesList, ",")
+
 	if body.CanInterview != nil {
 		canInterview = *body.CanInterview
 	}
@@ -163,7 +185,7 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		branchID = *body.BranchID
 	}
 
-	if err := dbUpdateUser(id, fullName, role, canInterview, isActive, branchID); err != nil {
+	if err := dbUpdateUser(id, fullName, role, rolesCSV, canInterview, isActive, branchID); err != nil {
 		jsonError(w, "Yangilashda xato", http.StatusInternalServerError)
 		return
 	}
@@ -172,20 +194,23 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		dbUpdateUserPassword(id, *body.Password)
 	}
 
-	// Role o'zgartirilganda, eski rol kategoriyalarini tozalaymiz
-	if body.Role != nil {
-		if role != "admin" {
+	hasAdmin := contains(rolesList, "admin")
+	hasIshchi := contains(rolesList, "ishchi_admin")
+
+	// Rollar yangilanganda, endi tegishli bo'lmagan rol kategoriyalarini tozalaymiz.
+	if rolesProvided {
+		if !hasAdmin {
 			dbSetUserCategories(id, []int64{})
 		}
-		if role != "ishchi_admin" {
+		if !hasIshchi {
 			dbSetUserIshchiCategories(id, []int64{})
 		}
 	}
 
-	if body.CategoryIDs != nil && role == "admin" {
+	if body.CategoryIDs != nil && hasAdmin {
 		dbSetUserCategories(id, body.CategoryIDs)
 	}
-	if body.IshchiCategoryIDs != nil && role == "ishchi_admin" {
+	if body.IshchiCategoryIDs != nil && hasIshchi {
 		dbSetUserIshchiCategories(id, body.IshchiCategoryIDs)
 	}
 

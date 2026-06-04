@@ -198,7 +198,9 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 // GET /api/rezumeler — foydalanuvchi kategoriyalari bo'yicha filtrlangan
 func handleGetRezumeler(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromCtx(r)
-	if user.Role == "ishchi_admin" {
+	// Rezume tomoni: super_admin yoki admin rolga ega bo'lganlar ko'radi.
+	// Faqat ishchi_admin bo'lgan (admin roli yo'q) foydalanuvchi kira olmaydi.
+	if !user.hasRole("super_admin") && !user.hasRole("admin") {
 		jsonError(w, "Ruxsat yo'q", http.StatusForbidden)
 		return
 	}

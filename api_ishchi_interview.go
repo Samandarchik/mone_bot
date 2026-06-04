@@ -44,7 +44,7 @@ func computeNextIshchiInterviewSlot(invitedByID int64, date string) (string, err
 // POST /api/ishchi-interviews — ishchi anketani intervyuga chaqirish
 func handleCreateIshchiInterview(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromCtx(r)
-	if user.Role != "ishchi_admin" && user.Role != "super_admin" {
+	if !user.hasRole("ishchi_admin") && !user.hasRole("super_admin") {
 		jsonError(w, "Ruxsat yo'q", http.StatusForbidden)
 		return
 	}
@@ -133,14 +133,14 @@ func handleCreateIshchiInterview(w http.ResponseWriter, r *http.Request) {
 // GET /api/ishchi-interviews
 func handleGetIshchiInterviews(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromCtx(r)
-	if user.Role == "admin" {
+	if !user.hasRole("ishchi_admin") && !user.hasRole("super_admin") {
 		jsonError(w, "Ruxsat yo'q", http.StatusForbidden)
 		return
 	}
 
 	ishchiID, _ := strconv.ParseInt(r.URL.Query().Get("ishchi_id"), 10, 64)
 	invitedByID, _ := strconv.ParseInt(r.URL.Query().Get("invited_by_id"), 10, 64)
-	if user.Role != "super_admin" {
+	if !user.hasRole("super_admin") {
 		invitedByID = user.ID
 	}
 	date := r.URL.Query().Get("date")
@@ -181,13 +181,13 @@ func handleGetIshchiInterviews(w http.ResponseWriter, r *http.Request) {
 // GET /api/ishchi-interviews/overdue
 func handleGetIshchiOverdueInterviews(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromCtx(r)
-	if user.Role == "admin" {
+	if !user.hasRole("ishchi_admin") && !user.hasRole("super_admin") {
 		jsonError(w, "Ruxsat yo'q", http.StatusForbidden)
 		return
 	}
 
 	invitedByID := int64(0)
-	if user.Role != "super_admin" {
+	if !user.hasRole("super_admin") {
 		invitedByID = user.ID
 	}
 
@@ -236,11 +236,11 @@ func handleGetIshchiInterview(w http.ResponseWriter, r *http.Request) {
 // PATCH /api/ishchi-interviews/{id}
 func handleUpdateIshchiInterview(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromCtx(r)
-	if user.Role == "super_admin" {
+	if user.hasRole("super_admin") {
 		jsonError(w, "Super admin statusni o'zgartira olmaydi", http.StatusForbidden)
 		return
 	}
-	if user.Role != "ishchi_admin" {
+	if !user.hasRole("ishchi_admin") {
 		jsonError(w, "Ruxsat yo'q", http.StatusForbidden)
 		return
 	}
