@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -90,15 +92,17 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Sessiyani qurilmaga bog'laymiz (device_id), shunda super_admin o'sha
+	// qurilmani o'chirganda faqat shu qurilmaning tokeni yaroqsiz bo'ladi.
+	deviceID := strings.TrimSpace(body.DeviceID)
 	token := generateToken()
-	dbCreateSession(token, user.ID)
+	dbCreateSession(token, user.ID, deviceID)
 
 	// Qurilmani qayd etish — faqat super_admin BO'LMAGAN akauntlar uchun va
 	// mijoz device_id yuborgan bo'lsa. Dedup (user_id, device_id): bir xil
 	// qurilmadan qayta login faqat last_login_at'ni yangilaydi. super_admin
 	// login qilganda yozilmaydi — uning qurilmasi hech kimning ro'yxatiga
 	// tushmaydi. Device yozuvi xatosi login'ni buzmasin.
-	deviceID := strings.TrimSpace(body.DeviceID)
 	if user.Role != "super_admin" && deviceID != "" {
 		if derr := dbUpsertUserDevice(user.ID, deviceID, strings.TrimSpace(body.DeviceName), strings.TrimSpace(body.Platform)); derr != nil {
 			log.Printf("user_device yozishda xato (user %d): %v", user.ID, derr)
@@ -134,6 +138,32 @@ func handleGetUserDevices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonResponse(w, map[string]interface{}{"devices": devices})
+}
+
+// DELETE /api/users/{id}/devices/{deviceId} — super_admin foydalanuvchining
+// bitta qurilmasini ro'yxatdan o'chiradi va o'sha qurilmadagi tokenni yaroqsiz
+// qiladi (qurilma qaytadan login qilishi shart bo'ladi). {deviceId} —
+// user_devices.id (qurilma yozuvining ID'si).
+func handleDeleteUserDevice(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
+		return
+	}
+	deviceRowID, err := strconv.ParseInt(r.PathValue("deviceId"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri qurilma ID", http.StatusBadRequest)
+		return
+	}
+	if err := dbDeleteUserDevice(id, deviceRowID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			jsonError(w, "Qurilma topilmadi", http.StatusNotFound)
+			return
+		}
+		jsonError(w, "DB xato: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(w, map[string]string{"status": "ok"})
 }
 
 // POST /api/auth/logout

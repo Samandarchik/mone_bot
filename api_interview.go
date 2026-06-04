@@ -158,7 +158,7 @@ func handleCreateInterview(w http.ResponseWriter, r *http.Request) {
 	if interview != nil {
 		broadcastInterviewCreated(interview)
 		// rezume statusi ham "interviewing" ga o'tkazildi — ro'yxatdagi kartochka ham yangilansin
-		broadcastRezumeStatusUpdate(body.RezumeID, "interviewing", user.FullName)
+		broadcastRezumeStatusUpdate(body.RezumeID, "interviewing", user.FullName, "")
 	}
 }
 
@@ -333,7 +333,7 @@ func handleUpdateInterview(w http.ResponseWriter, r *http.Request) {
 				adminName = user.Username
 			}
 			updateRezumeStatusWithAdmin(interview.RezumeID, newStatus, user.ID, adminName)
-			broadcastRezumeStatusUpdate(interview.RezumeID, newStatus, adminName)
+			broadcastRezumeStatusUpdate(interview.RezumeID, newStatus, adminName, "")
 		}
 	}
 }
@@ -409,7 +409,7 @@ func handleDeleteInterview(w http.ResponseWriter, r *http.Request) {
 	remaining := countRemainingActiveInterviews(existing.RezumeID)
 	if remaining == 0 {
 		updateRezumeStatus(existing.RezumeID, "pending")
-		broadcastRezumeStatusUpdate(existing.RezumeID, "pending", "")
+		broadcastRezumeStatusUpdate(existing.RezumeID, "pending", "", "")
 	}
 
 	jsonResponse(w, map[string]string{"status": "deleted"})

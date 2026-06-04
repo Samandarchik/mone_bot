@@ -382,7 +382,7 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, map[string]string{"status": "updated"})
-	broadcastRezumeStatusUpdate(id, body.Status, adminName)
+	broadcastRezumeStatusUpdate(id, body.Status, adminName, voiceUrl)
 }
 
 // --- Yordamchi funksiyalar ---

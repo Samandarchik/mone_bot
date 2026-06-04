@@ -247,9 +247,9 @@ func broadcastNewRezume(rezume *RezumeRow) {
 	})
 }
 
-func broadcastRezumeStatusUpdate(id int64, status, statusByName string) {
+func broadcastRezumeStatusUpdate(id int64, status, statusByName, statusVoiceUrl string) {
 	sendToClients(WSEvent{Type: "status_update", Data: map[string]interface{}{
-		"id": id, "status": status, "status_by_name": statusByName,
+		"id": id, "status": status, "status_by_name": statusByName, "status_voice_url": statusVoiceUrl,
 	}}, func(c *wsClient) bool { return c.canRezume })
 }
 

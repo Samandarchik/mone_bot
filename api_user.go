@@ -192,6 +192,10 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	if body.Password != nil && *body.Password != "" {
 		dbUpdateUserPassword(id, *body.Password)
+		// Parol almashtirilganda barcha sessiyalarni bekor qilamiz — har bir
+		// qurilmada token yaroqsiz bo'lib, eski parol bilan kirgan hamma qurilma
+		// qaytadan login qilishi shart bo'ladi.
+		dbDeleteUserSessions(id)
 	}
 
 	// MUHIM: rol o'chirilganda kategoriyalarni TOZALAMAYMIZ. Kategoriyalar DB'da

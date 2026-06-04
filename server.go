@@ -394,6 +394,7 @@ func main() {
 	mux.HandleFunc("PATCH /api/users/{id}", superAdminRequired(handleUpdateUser))
 	mux.HandleFunc("POST /api/users/{id}/link-rezume", superAdminRequired(handleLinkUserRezume))
 	mux.HandleFunc("GET /api/users/{id}/devices", superAdminRequired(handleGetUserDevices))
+	mux.HandleFunc("DELETE /api/users/{id}/devices/{deviceId}", superAdminRequired(handleDeleteUserDevice))
 	mux.HandleFunc("DELETE /api/users/{id}", superAdminRequired(handleDeleteUser))
 	// super_admin'dan boshqa barcha foydalanuvchilarga login ma'lumotlarini
 	// bittada Telegram orqali yuborish — faqat super_admin.

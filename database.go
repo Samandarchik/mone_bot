@@ -249,31 +249,19 @@ func initDB() {
 	)`)
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_user_devices_user ON user_devices(user_id)")
 
+	// Migration: sessions jadvaliga device_id qo'shish. Login'da qaysi qurilmadan
+	// kelganini sessiyaga bog'laymiz, shunda super_admin bitta qurilmani
+	// o'chirganda faqat o'sha qurilmaning tokeni yaroqsiz bo'ladi. Eski (migratsiyadan
+	// oldingi) sessiyalarda device_id bo'sh bo'ladi — ular qurilmaga bog'lanmagan.
+	db.Exec("ALTER TABLE sessions ADD COLUMN device_id TEXT NOT NULL DEFAULT ''")
+
 	seedDB()
 	log.Println("SQLite baza tayyor")
 }
 
 func seedDB() {
-	// Default super admin yaratish
-	var count int
-	db.QueryRow("SELECT COUNT(*) FROM users WHERE role = 'super_admin'").Scan(&count)
-	if count == 0 {
-		db.Exec(
-			"INSERT INTO users (username, password, password_hash, full_name, role, can_interview) VALUES (?, ?, '', ?, ?, ?)",
-			"admin", "admin123", "Super Admin", "super_admin", 1,
-		)
-		log.Println("Default super admin yaratildi: parol admin123")
-	}
-
-	var count0055 int
-	db.QueryRow("SELECT COUNT(*) FROM users WHERE password = '0055'").Scan(&count0055)
-	if count0055 == 0 {
-		db.Exec(
-			"INSERT INTO users (username, password, password_hash, full_name, role, can_interview) VALUES (?, ?, '', ?, ?, ?)",
-			"admin0055", "0055", "Super Admin 0055", "super_admin", 1,
-		)
-		log.Println("0055 super admin yaratildi")
-	}
+	// Demo/default super adminlar (admin/admin123 va admin0055/0055) o'chirildi.
+	// Endi seed orqali hech qanday super admin avtomatik yaratilmaydi.
 }
 
 // ===================== REZUME CRUD =====================
@@ -800,8 +788,35 @@ func getCategoryByName(name string) (*Category, error) {
 
 // ===================== SESSION CRUD =====================
 
-func dbCreateSession(token string, userID int64) error {
-	_, err := db.Exec("INSERT INTO sessions (token, user_id) VALUES (?, ?)", token, userID)
+func dbCreateSession(token string, userID int64, deviceID string) error {
+	_, err := db.Exec("INSERT INTO sessions (token, user_id, device_id) VALUES (?, ?, ?)", token, userID, deviceID)
+	return err
+}
+
+// dbDeleteUserSessions — foydalanuvchining BARCHA sessiyalarini o'chiradi. Paroli
+// almashtirilganda chaqiriladi: har bir qurilmada token yaroqsiz bo'lib, qaytadan
+// login talab qilinadi.
+func dbDeleteUserSessions(userID int64) error {
+	_, err := db.Exec("DELETE FROM sessions WHERE user_id = ?", userID)
+	return err
+}
+
+// dbDeleteUserDevice — bitta qurilmani (user_devices.id bo'yicha) ro'yxatdan
+// o'chiradi va o'sha qurilmaga bog'langan sessiyalarni ham o'chiradi (device_id
+// orqali), shunda o'sha qurilmadagi token darhol yaroqsiz bo'ladi. user_id bilan
+// cheklangan. Qurilma topilmasa sql.ErrNoRows qaytaradi.
+func dbDeleteUserDevice(userID, deviceRowID int64) error {
+	var deviceID string
+	if err := db.QueryRow(
+		"SELECT device_id FROM user_devices WHERE id = ? AND user_id = ?",
+		deviceRowID, userID,
+	).Scan(&deviceID); err != nil {
+		return err
+	}
+	if deviceID != "" {
+		db.Exec("DELETE FROM sessions WHERE user_id = ? AND device_id = ?", userID, deviceID)
+	}
+	_, err := db.Exec("DELETE FROM user_devices WHERE id = ? AND user_id = ?", deviceRowID, userID)
 	return err
 }
 
