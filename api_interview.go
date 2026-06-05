@@ -140,16 +140,29 @@ func handleCreateInterview(w http.ResponseWriter, r *http.Request) {
 			msg += fmt.Sprintf("Filial: %s\n", branchName)
 		}
 		msg += fmt.Sprintf(
-			"\nIltimos, o'z vaqtida keling.\n"+
-				"Chaqirgan: %s",
+			"\nIltimos, o'z vaqtida keling.\n\n"+
+				"👤 Sizni chaqirgan admin:\n"+
+				"Ism: %s",
 			user.FullName,
 		)
+		if user.Telefon != "" {
+			msg += fmt.Sprintf("\nTelefon: %s", user.Telefon)
+		}
 		log.Printf("Intervyu xabari yuborilyapti: rezume_id=%d, tg_user_id=%d", body.RezumeID, rezume.TgUserID)
 		sendTgMessage(rezume.TgUserID, msg)
 
 		// Lokatsiyani yuborish
 		if branchLat != 0 && branchLng != 0 {
 			sendTgLocation(rezume.TgUserID, branchLat, branchLng)
+		}
+
+		// Chaqirgan adminning rasmini yuborish (bo'lsa)
+		if user.RasmUrl != "" {
+			caption := fmt.Sprintf("👤 Sizni chaqirgan admin: %s", user.FullName)
+			if user.Telefon != "" {
+				caption += fmt.Sprintf("\n📞 %s", user.Telefon)
+			}
+			sendTgPhotoByURL(rezume.TgUserID, user.RasmUrl, caption)
 		}
 	} else {
 		log.Printf("Intervyu xabari YUBORILMADI: rezume_id=%d da tg_user_id=0 (foydalanuvchining Telegram ID si yo'q)", body.RezumeID)

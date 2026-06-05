@@ -368,6 +368,42 @@ func sendTgLocation(chatID int64, latitude, longitude float64) {
 	resp.Body.Close()
 }
 
+// sendTgPhotoByURL — Telegramga URL orqali rasm yuboradi (sendPhoto `photo`
+// maydoni ommaviy URL ni qabul qiladi). photoURL "/uploads/.." bo'lsa baseURL
+// old qo'shiladi. Rasm yuborilmasa — caption ni oddiy matn sifatida yuboradi.
+func sendTgPhotoByURL(chatID int64, photoURL, caption string) {
+	if photoURL == "" {
+		if caption != "" {
+			sendTgMessage(chatID, caption)
+		}
+		return
+	}
+	if strings.HasPrefix(photoURL, "/") {
+		photoURL = baseURL + photoURL
+	}
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendPhoto", botToken)
+	payload := map[string]interface{}{
+		"chat_id": chatID,
+		"photo":   photoURL,
+		"caption": caption,
+	}
+	jsonData, _ := json.Marshal(payload)
+	resp, err := http.Post(url, "application/json", bytes.NewReader(jsonData))
+	if err != nil {
+		log.Printf("sendTgPhotoByURL xato: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Printf("sendTgPhotoByURL Telegram javobi xato (chat_id=%d, status=%d): %s", chatID, resp.StatusCode, string(respBody))
+		// Rasm yuborilmasa, hech bo'lmasa matnli ma'lumot borsin
+		if caption != "" {
+			sendTgMessage(chatID, caption)
+		}
+	}
+}
+
 func answerCallback(callbackID string, text string) {
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/answerCallbackQuery", botToken)
 	payload := map[string]interface{}{

@@ -26,6 +26,8 @@ type WSEvent struct {
 type wsClient struct {
 	conn                    *websocket.Conn
 	send                    chan []byte
+	userID                  int64    // ulangan foydalanuvchi ID'si
+	deviceID                string   // shu ulanishning qurilma kaliti (sessiyadan)
 	allowedCategories       []string // rezume kategoriyalari (admin uchun)
 	allowedIshchiCategories []string // ishchi kategoriyalari (ishchi_admin uchun)
 	role                    string
@@ -124,6 +126,10 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Shu ulanishning qurilma kaliti — super_admin qurilmani o'chirganda aynan
+	// shu ulanishga "force_logout" yuborish uchun ishlatiladi.
+	deviceID, _ := dbGetSessionDeviceID(token)
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("WS upgrade xato: %v", err)
@@ -133,6 +139,8 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	client := &wsClient{
 		conn:                    conn,
 		send:                    make(chan []byte, 256),
+		userID:                  user.ID,
+		deviceID:                deviceID,
 		allowedCategories:       allowedCategories,
 		allowedIshchiCategories: allowedIshchiCategories,
 		role:                    user.Role,
@@ -227,6 +235,17 @@ func sendToClients(event WSEvent, shouldSend func(c *wsClient) bool) {
 			go hub.unregister(c)
 		}
 	}
+}
+
+// broadcastForceLogout — super_admin bir qurilmani o'chirganda, aynan o'sha
+// foydalanuvchining o'sha qurilmasidagi ochiq WS ulanish(lar)iga "force_logout"
+// yuboradi. Mijoz buni olib darhol login ekraniga qaytadi (HTTP 401 ni kutmasdan).
+func broadcastForceLogout(userID int64, deviceID string) {
+	if deviceID == "" {
+		return
+	}
+	sendToClients(WSEvent{Type: "force_logout", Data: map[string]interface{}{"device_id": deviceID}},
+		func(c *wsClient) bool { return c.userID == userID && c.deviceID == deviceID })
 }
 
 // Rezume broadcastlar — ishchi_admin ga yuborilmaydi

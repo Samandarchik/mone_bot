@@ -155,7 +155,8 @@ func handleDeleteUserDevice(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "Noto'g'ri qurilma ID", http.StatusBadRequest)
 		return
 	}
-	if err := dbDeleteUserDevice(id, deviceRowID); err != nil {
+	deviceID, err := dbDeleteUserDevice(id, deviceRowID)
+	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			jsonError(w, "Qurilma topilmadi", http.StatusNotFound)
 			return
@@ -163,6 +164,9 @@ func handleDeleteUserDevice(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "DB xato: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Real-time: o'sha qurilmaning ochiq WS ulanishiga darhol "force_logout"
+	// yuboramiz — mijoz 401 ni kutmasdan login ekraniga qaytadi.
+	broadcastForceLogout(id, deviceID)
 	jsonResponse(w, map[string]string{"status": "ok"})
 }
 

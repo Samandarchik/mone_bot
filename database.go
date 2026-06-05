@@ -824,19 +824,28 @@ func dbDeleteUserSessions(userID int64) error {
 // o'chiradi va o'sha qurilmaga bog'langan sessiyalarni ham o'chiradi (device_id
 // orqali), shunda o'sha qurilmadagi token darhol yaroqsiz bo'ladi. user_id bilan
 // cheklangan. Qurilma topilmasa sql.ErrNoRows qaytaradi.
-func dbDeleteUserDevice(userID, deviceRowID int64) error {
+// O'chirilgan qurilmaning device_id'sini ham qaytaradi — chaqiruvchi shu orqali
+// o'sha qurilmaning ochiq WS ulanishiga "force_logout" yuboradi.
+func dbDeleteUserDevice(userID, deviceRowID int64) (string, error) {
 	var deviceID string
 	if err := db.QueryRow(
 		"SELECT device_id FROM user_devices WHERE id = ? AND user_id = ?",
 		deviceRowID, userID,
 	).Scan(&deviceID); err != nil {
-		return err
+		return "", err
 	}
 	if deviceID != "" {
 		db.Exec("DELETE FROM sessions WHERE user_id = ? AND device_id = ?", userID, deviceID)
 	}
 	_, err := db.Exec("DELETE FROM user_devices WHERE id = ? AND user_id = ?", deviceRowID, userID)
-	return err
+	return deviceID, err
+}
+
+// dbGetSessionDeviceID — token bo'yicha sessiyaning device_id'sini qaytaradi.
+func dbGetSessionDeviceID(token string) (string, error) {
+	var deviceID string
+	err := db.QueryRow("SELECT COALESCE(device_id,'') FROM sessions WHERE token = ?", token).Scan(&deviceID)
+	return deviceID, err
 }
 
 func dbGetUserByToken(token string) (*UserRow, error) {
