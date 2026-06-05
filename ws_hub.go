@@ -248,6 +248,15 @@ func broadcastForceLogout(userID int64, deviceID string) {
 		func(c *wsClient) bool { return c.userID == userID && c.deviceID == deviceID })
 }
 
+// broadcastUsersReorder — super_admin foydalanuvchilar ro'yxatini surib (drag)
+// qayta tartiblaganda, yangi tartibni (id ketma-ketligi) boshqa ulangan
+// super_admin qurilmalariga real-time yuboradi. Faqat super_admin bu ro'yxatni
+// ko'radi, shuning uchun faqat ularga jo'natamiz.
+func broadcastUsersReorder(ids []int64) {
+	sendToClients(WSEvent{Type: "users_reorder", Data: map[string]interface{}{"ids": ids}},
+		func(c *wsClient) bool { return c.isSuperAdmin })
+}
+
 // Rezume broadcastlar — ishchi_admin ga yuborilmaydi
 func broadcastNewRezume(rezume *RezumeRow) {
 	sendToClients(WSEvent{Type: "new_rezume", Data: rezume}, func(c *wsClient) bool {

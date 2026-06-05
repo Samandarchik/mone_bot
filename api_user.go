@@ -96,6 +96,8 @@ func handleReorderUsers(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "DB xato: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Yangi tartibni boshqa ulangan super_admin qurilmalariga real-time yuboramiz.
+	broadcastUsersReorder(body.IDs)
 	jsonResponse(w, map[string]bool{"ok": true})
 }
 
