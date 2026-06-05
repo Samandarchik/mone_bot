@@ -267,6 +267,61 @@ func handleLinkUserRezume(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, resp)
 }
 
+// POST /api/users/{id}/replace-rezume — foydalanuvchiga bog'langan rezumeni
+// BOSHQA telefon raqami bo'yicha topilgan rezume bilan almashtiradi (super_admin).
+// Body: {"phone": "+998..."}. link-rezume'dan farqi: rasm_url va telefon
+// MAJBURAN qayta yoziladi va full_name rezumedagi F.I.Sh bilan yangilanadi.
+// Login (username) va parol tegilmaydi.
+func handleReplaceUserRezume(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
+		return
+	}
+
+	if _, err := dbGetUserByID(id); err != nil {
+		jsonError(w, "Foydalanuvchi topilmadi", http.StatusNotFound)
+		return
+	}
+
+	var body struct {
+		Phone string `json:"phone"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		jsonError(w, "JSON xato", http.StatusBadRequest)
+		return
+	}
+
+	phone := normalizePhone(body.Phone)
+	if phone == "" {
+		jsonError(w, "Telefon raqami kerak", http.StatusBadRequest)
+		return
+	}
+
+	rezume, err := getRezumeByPhone(phone)
+	if err != nil || rezume == nil {
+		jsonError(w, "Bu telefon bo'yicha rezume topilmadi", http.StatusNotFound)
+		return
+	}
+
+	// Rezumedagi F.I.Sh'ni bo'sh bo'lmagan qismlardan yig'amiz.
+	var parts []string
+	for _, s := range []string{rezume.Familiya, rezume.Ism, rezume.Sharif} {
+		if strings.TrimSpace(s) != "" {
+			parts = append(parts, strings.TrimSpace(s))
+		}
+	}
+	fio := strings.Join(parts, " ")
+
+	if err := dbReplaceUserRezume(id, rezume.ID, rezume.RasmUrl, rezume.Telefon, fio); err != nil {
+		jsonError(w, "Almashtirishda xato: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp, _ := dbGetUserByID(id)
+	jsonResponse(w, resp)
+}
+
 // DELETE /api/users/{id} — foydalanuvchini o'chirish (super_admin)
 func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

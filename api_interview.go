@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"strconv"
@@ -143,12 +144,15 @@ func handleCreateInterview(w http.ResponseWriter, r *http.Request) {
 				"Chaqirgan: %s",
 			user.FullName,
 		)
+		log.Printf("Intervyu xabari yuborilyapti: rezume_id=%d, tg_user_id=%d", body.RezumeID, rezume.TgUserID)
 		sendTgMessage(rezume.TgUserID, msg)
 
 		// Lokatsiyani yuborish
 		if branchLat != 0 && branchLng != 0 {
 			sendTgLocation(rezume.TgUserID, branchLat, branchLng)
 		}
+	} else {
+		log.Printf("Intervyu xabari YUBORILMADI: rezume_id=%d da tg_user_id=0 (foydalanuvchining Telegram ID si yo'q)", body.RezumeID)
 	}
 
 	interview, _ := dbGetInterviewByID(id)

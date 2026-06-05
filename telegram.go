@@ -313,7 +313,11 @@ func sendTgMessage(chatID int64, text string) {
 		log.Printf("sendTgMessage xato: %v", err)
 		return
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("sendTgMessage Telegram javobi xato (chat_id=%d, status=%d): %s", chatID, resp.StatusCode, string(body))
+	}
 }
 
 func editMessageText(chatID int64, messageID int64, text string) {

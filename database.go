@@ -658,6 +658,25 @@ func dbLinkUserToRezume(userID, rezumeID int64, rasmUrl, telefon string) error {
 	return err
 }
 
+// dbReplaceUserRezume — foydalanuvchiga bog'langan rezumeni boshqa rezume bilan
+// ALMASHTIRADI. dbLinkUserToRezume'dan farqi: rasm_url va telefon faqat bo'sh
+// bo'lganda emas, MAJBURAN qayta yoziladi (super_admin "Rezumeni almashtirish"
+// tugmasi bilan boshqa telefon raqamidagi rezumeni bog'laganda). full_name ham
+// rezumedagi F.I.Sh bilan yangilanadi (bo'sh bo'lsa tegilmaydi). Login
+// (username) va parol o'zgarmaydi — user eski hisobi bilan kirishda davom etadi.
+func dbReplaceUserRezume(userID, rezumeID int64, rasmUrl, telefon, fullName string) error {
+	if fullName != "" {
+		_, err := db.Exec(
+			"UPDATE users SET rezume_id = ?, rasm_url = ?, telefon = ?, full_name = ? WHERE id = ?",
+			rezumeID, rasmUrl, telefon, fullName, userID)
+		return err
+	}
+	_, err := db.Exec(
+		"UPDATE users SET rezume_id = ?, rasm_url = ?, telefon = ? WHERE id = ?",
+		rezumeID, rasmUrl, telefon, userID)
+	return err
+}
+
 func dbUpdateUserPassword(id int64, password string) error {
 	_, err := db.Exec("UPDATE users SET password = ? WHERE id = ?", password, id)
 	return err

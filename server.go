@@ -393,6 +393,7 @@ func main() {
 	mux.HandleFunc("GET /api/users/{id}", superAdminRequired(handleGetUserAPI))
 	mux.HandleFunc("PATCH /api/users/{id}", superAdminRequired(handleUpdateUser))
 	mux.HandleFunc("POST /api/users/{id}/link-rezume", superAdminRequired(handleLinkUserRezume))
+	mux.HandleFunc("POST /api/users/{id}/replace-rezume", superAdminRequired(handleReplaceUserRezume))
 	mux.HandleFunc("GET /api/users/{id}/devices", superAdminRequired(handleGetUserDevices))
 	mux.HandleFunc("DELETE /api/users/{id}/devices/{deviceId}", superAdminRequired(handleDeleteUserDevice))
 	mux.HandleFunc("DELETE /api/users/{id}", superAdminRequired(handleDeleteUser))
