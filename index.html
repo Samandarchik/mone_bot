@@ -688,7 +688,7 @@ function addExtraLang(){
   tag.className='lang-tag';
   tag.id='etag-'+idx;
   tag.innerHTML='<span>'+name+'</span>'
-    +'<select onchange="extraLangs['+idx+'].daraja=this.value"><option value="">Daraja</option><option>Bilmayman</option><option>Bilaman</option><option>Zo\'r bilaman</option></select>'
+    +'<select onchange="extraLangs['+idx+'].daraja=this.value"><option value="">Daraja</option><option value="bilmayman">Bilmayman</option><option value="bilaman">Bilaman</option><option value="zor bilaman">Zo\'r bilaman</option></select>'
     +'<button onclick="removeExtraLang('+idx+')" title="O\'chirish">&#x2715;</button>';
   container.appendChild(tag);
   inp.value='';
@@ -706,7 +706,7 @@ function rebuildExtra(){
     const tag=document.createElement('div');
     tag.className='lang-tag';
     tag.innerHTML='<span>'+l.til+'</span>'
-      +'<select onchange="extraLangs['+i+'].daraja=this.value"><option value="">Daraja</option><option>Bilmayman</option><option>Bilaman</option><option>Zo\'r bilaman</option></select>'
+      +'<select onchange="extraLangs['+i+'].daraja=this.value"><option value="">Daraja</option><option value="bilmayman">Bilmayman</option><option value="bilaman">Bilaman</option><option value="zor bilaman">Zo\'r bilaman</option></select>'
       +'<button onclick="removeExtraLang('+i+')" title="O\'chirish">&#x2715;</button>';
     c.appendChild(tag);
   });

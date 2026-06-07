@@ -255,6 +255,22 @@ func initDB() {
 	// oldingi) sessiyalarda device_id bo'sh bo'ladi — ular qurilmaga bog'lanmagan.
 	db.Exec("ALTER TABLE sessions ADD COLUMN device_id TEXT NOT NULL DEFAULT ''")
 
+	// Migration: bir nomzodga bittadan ortiq bahosiz (rating=0) intervyu bo'lmasligi
+	// kerak. Chaqirish logikasi yangi chaqiriqdan oldin eski bahosizlarni o'chiradi,
+	// shuning uchun bu invariant. Lekin eski/buzilgan ma'lumotda (yoki dublikat rezume
+	// yozuvlarida) bir odamga ikkita bahosiz intervyu qolib ketgan bo'lishi mumkin —
+	// kalendar har slotga faqat bittasini ko'rsatgani uchun ikkinchisi yashirin turadi
+	// va vaqtni o'zgartirilganda "ikkita bo'lib" oshkor bo'ladi. Bu yerda har bir
+	// nomzod (telefon, bo'lmasa rezume_id) bo'yicha eng oxirgi (MAX(id)) bahosizni
+	// qoldirib, qolganlarini o'chiramiz. Idempotent — har startupda xavfsiz ishlaydi.
+	db.Exec(`DELETE FROM interviews
+		WHERE rating = 0 AND id NOT IN (
+			SELECT MAX(i.id) FROM interviews i
+			LEFT JOIN rezumeler r ON r.id = i.rezume_id
+			WHERE i.rating = 0
+			GROUP BY CASE WHEN COALESCE(r.telefon,'') != '' THEN 'p:' || r.telefon ELSE 'r:' || i.rezume_id END
+		)`)
+
 	seedDB()
 	log.Println("SQLite baza tayyor")
 }

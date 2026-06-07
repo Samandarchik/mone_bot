@@ -88,8 +88,17 @@ func handleCreateInterview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Avvalgi bahosiz (rating=0) chaqiriq bo'lsa — o'chiramiz (ertaga qayta chaqirish uchun)
-	db.Exec("DELETE FROM interviews WHERE rezume_id = ? AND rating = 0", body.RezumeID)
+	// Avvalgi bahosiz (rating=0) chaqiriq bo'lsa — o'chiramiz (ertaga qayta chaqirish uchun).
+	// Faqat shu rezume_id emas, balki shu nomzodning dublikat rezumelari (bir xil telefon)
+	// bo'yicha ham tozalaymiz — aks holda bir odamga ikkita parallel bahosiz intervyu
+	// qolib ketadi va kalendarda dublikat bo'lib ko'rinadi.
+	if rezume.Telefon != "" {
+		db.Exec(`DELETE FROM interviews WHERE rating = 0 AND rezume_id IN (
+			SELECT id FROM rezumeler WHERE id = ? OR telefon = ?
+		)`, body.RezumeID, rezume.Telefon)
+	} else {
+		db.Exec("DELETE FROM interviews WHERE rezume_id = ? AND rating = 0", body.RezumeID)
+	}
 
 	// Rezume uchun maks 4 marta chaqirish qoidasi
 	var rezumeInterviewCount int
