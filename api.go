@@ -292,13 +292,12 @@ func handleDeleteRezume(w http.ResponseWriter, r *http.Request) {
 }
 
 // PATCH /api/rezumeler/{id}/status — qabul/rad qilish
-// Super admin o'zgartira olmaydi — faqat ko'radi.
+// Super admin odatda statusni o'zgartira olmaydi — faqat ko'radi.
+// Istisno: super admin rad etilgan (rejected) rezume otkazini bekor qila oladi
+// (rejected -> pending), boshqa o'zgarishlarga ruxsat yo'q.
 func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromCtx(r)
-	if user.Role == "super_admin" {
-		jsonError(w, "Super admin statusni o'zgartira olmaydi", http.StatusForbidden)
-		return
-	}
+	isSuperAdmin := user.Role == "super_admin"
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -314,6 +313,19 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
 		return
+	}
+
+	// Super admin uchun yagona ruxsat: rad etishni bekor qilish (rejected -> pending)
+	if isSuperAdmin {
+		cur, err := getRezumeByID(id)
+		if err != nil {
+			jsonError(w, "Rezume topilmadi", http.StatusNotFound)
+			return
+		}
+		if !(cur.Status == "rejected" && body.Status == "pending") {
+			jsonError(w, "Super admin faqat rad etishni bekor qila oladi", http.StatusForbidden)
+			return
+		}
 	}
 
 	validStatuses := map[string]bool{
