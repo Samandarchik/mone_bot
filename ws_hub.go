@@ -72,6 +72,24 @@ func (h *wsHub) unregister(c *wsClient) {
 	log.Printf("WS client uzildi. Jami: %d", len(h.clients))
 }
 
+// trySend — bitta clientga xavfsiz yuborish. RLock ostida clientning hali
+// ro'yxatda ekanini tekshiradi: close(c.send) faqat unregister ichida to'liq
+// Lock ostida bajariladi, shuning uchun RLock ushlab turilganda va client
+// xaritada bo'lsa, kanal yopilmaydi — "send on closed channel" panic bo'lmaydi.
+func (h *wsHub) trySend(c *wsClient, data []byte) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	if !h.clients[c] {
+		// Client uzildi/o'chirildi — kanal yopilgan bo'lishi mumkin, yubormaymiz.
+		return
+	}
+	select {
+	case c.send <- data:
+	default:
+		go h.unregister(c)
+	}
+}
+
 // Barcha clientlarga event yuborish
 func (h *wsHub) broadcast(event WSEvent) {
 	data, err := json.Marshal(event)
@@ -157,7 +175,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			rezumeler, _, err := getRezumeler("", "", "", "", allowedCategories, 1, 100)
 			if err == nil {
 				data, _ := json.Marshal(WSEvent{Type: "init", Data: rezumeler})
-				client.send <- data
+				hub.trySend(client, data)
 			}
 		}
 		// Ishchi init: super_admin yoki ishchi_admin roli bo'lsa
@@ -166,7 +184,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			if err == nil {
 				attachIshchiInterviews(ishchilar)
 				data, _ := json.Marshal(WSEvent{Type: "ishchi_init", Data: ishchilar})
-				client.send <- data
+				hub.trySend(client, data)
 			}
 		}
 	}()
