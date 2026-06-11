@@ -227,6 +227,10 @@ func initDB() {
 	db.Exec("UPDATE rezumeler SET status = 'rejected' WHERE status = 'rad'")
 	db.Exec("UPDATE ishchi_anketalar SET status = 'pending' WHERE status = 'yangi' OR status = ''")
 
+	// Migration: ?start=oldWorker havolasidan kelgan, lekin eski binary 'pending'
+	// qilib saqlab qo'ygan rezumelarni 'old_worker' statusiga o'tkazish.
+	db.Exec("UPDATE rezumeler SET status = 'old_worker' WHERE status = 'pending' AND LOWER(source) = 'oldworker'")
+
 	// Migration: password ustunini qo'shish (plain text)
 	db.Exec("ALTER TABLE users ADD COLUMN password TEXT NOT NULL DEFAULT ''")
 
@@ -284,17 +288,24 @@ func seedDB() {
 
 func saveRezume(a *Anketa, rasmURL string) (int64, error) {
 	tillarJSON, _ := json.Marshal(a.Tillar)
+	source := sanitizeSource(a.Source)
+	// Bot havolasi ?start=oldWorker bilan ochilgan bo'lsa — bu eski ishchi:
+	// rezume "kutilmoqda" emas, darhol "old_worker" statusi bilan tushadi.
+	status := "pending"
+	if strings.EqualFold(source, "oldWorker") {
+		status = "old_worker"
+	}
 	result, err := db.Exec(`INSERT INTO rezumeler
 		(lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi,
 		 malumot, oilaviy_holat, tillar, telefon, qoshimcha, rasm_url,
 		 tg_user_id, tg_username, tg_username2, source, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		a.Lavozim, a.Familiya, a.Ism, a.Sharif, a.TugilganSana,
 		a.BoySm, a.VaznKg, a.YashashManzili, a.Moljal,
 		a.UmumiyTajriba, a.ChetElTajribasi, a.Malumot, a.OilaviyHolat,
 		string(tillarJSON), a.Telefon, a.Qoshimcha, rasmURL,
-		a.TgUserID, a.TgUsername, a.TgUsername2, sanitizeSource(a.Source),
+		a.TgUserID, a.TgUsername, a.TgUsername2, source, status,
 	)
 	if err != nil {
 		return 0, err

@@ -862,14 +862,14 @@ function statusBadge(s) {
     yangi: 'badge-yangi', pending: 'badge-yangi',
     qabul: 'badge-qabul', accepted: 'badge-qabul',
     interviewing: 'badge-yangi', trial: 'badge-yangi',
-    reserve: 'badge-yangi',
+    reserve: 'badge-yangi', old_worker: 'badge-yangi',
     rad: 'badge-rad', rejected: 'badge-rad', noshow: 'badge-rad'
   };
   const labels = {
     yangi: 'Yangi', pending: 'Yangi',
     qabul: 'Qabul', accepted: 'Qabul',
     interviewing: 'Intervyuda', trial: 'Sinovda',
-    reserve: 'Rezervda',
+    reserve: 'Rezervda', old_worker: 'Eski ishchi',
     rad: 'Rad', rejected: 'Rad', noshow: 'Kelmadi'
   };
   return `<span class="badge ${map[s] || ''}">${labels[s] || s}</span>`;

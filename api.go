@@ -331,10 +331,10 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	validStatuses := map[string]bool{
 		"pending": true, "interviewing": true, "trial": true,
 		"rejected": true, "accepted": true, "reserve": true, "noshow": true,
-		"fired": true,
+		"fired": true, "old_worker": true,
 	}
 	if !validStatuses[body.Status] {
-		jsonError(w, "Noto'g'ri status. Mumkin: pending, interviewing, trial, rejected, accepted, reserve, noshow, fired", http.StatusBadRequest)
+		jsonError(w, "Noto'g'ri status. Mumkin: pending, interviewing, trial, rejected, accepted, reserve, noshow, fired, old_worker", http.StatusBadRequest)
 		return
 	}
 
