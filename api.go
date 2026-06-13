@@ -119,11 +119,23 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Face ID apparati uchun yuz rasmini saqlash (oldWorker anketalarida keladi)
+	faceRasmURL := ""
+	if anketa.FaceRasm != "" && strings.Contains(anketa.FaceRasm, ",") {
+		var err error
+		faceRasmURL, err = saveImageWithPrefix(anketa.FaceRasm, anketa.TgUserID, "face_")
+		if err != nil {
+			log.Printf("Face rasm saqlashda xato: %v", err)
+			fio := strings.TrimSpace(anketa.Familiya + " " + anketa.Ism)
+			notifyAdmin("Face rasm saqlashda xato", err.Error(), fio, anketa.Telefon, anketa.TgUserID, anketa.TgUsername)
+		}
+	}
+
 	// Dublikat tekshiruv: tugilgan_sana + lavozim + telefon bir xil bo'lsa eski rezumeni o'chirish
 	deleteDuplicateRezume(anketa.Lavozim, anketa.TugilganSana, anketa.Telefon)
 
 	// Bazaga saqlash
-	id, err := saveRezume(&anketa, rasmURL)
+	id, err := saveRezume(&anketa, rasmURL, faceRasmURL)
 	if err != nil {
 		log.Printf("DB saqlashda xato: %v", err)
 		fio := strings.TrimSpace(anketa.Familiya + " " + anketa.Ism)
@@ -292,12 +304,9 @@ func handleDeleteRezume(w http.ResponseWriter, r *http.Request) {
 }
 
 // PATCH /api/rezumeler/{id}/status — qabul/rad qilish
-// Super admin odatda statusni o'zgartira olmaydi — faqat ko'radi.
-// Istisno: super admin rad etilgan (rejected) rezume otkazini bekor qila oladi
-// (rejected -> pending), boshqa o'zgarishlarga ruxsat yo'q.
+// Super admin ham xohlagan rezume statusini o'zgartira oladi.
 func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	user := getUserFromCtx(r)
-	isSuperAdmin := user.Role == "super_admin"
 
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -313,19 +322,6 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		jsonError(w, "JSON xato", http.StatusBadRequest)
 		return
-	}
-
-	// Super admin uchun yagona ruxsat: rad etishni bekor qilish (rejected -> pending)
-	if isSuperAdmin {
-		cur, err := getRezumeByID(id)
-		if err != nil {
-			jsonError(w, "Rezume topilmadi", http.StatusNotFound)
-			return
-		}
-		if !(cur.Status == "rejected" && body.Status == "pending") {
-			jsonError(w, "Super admin faqat rad etishni bekor qila oladi", http.StatusForbidden)
-			return
-		}
 	}
 
 	validStatuses := map[string]bool{
@@ -397,9 +393,80 @@ func handleUpdateStatus(w http.ResponseWriter, r *http.Request) {
 	broadcastRezumeStatusUpdate(id, body.Status, adminName, voiceUrl)
 }
 
+// PUT /api/rezumeler/{id} — rezume ma'lumotlarini to'liq tahrirlash.
+// Maydonlar bilan birga yangi rasm (base64) va status ham bir so'rovda yangilanadi.
+// Status to'g'ridan-to'g'ri (ovozsiz) o'rnatiladi — admin tahrir oynasidan o'zgartiradi.
+func handleUpdateRezume(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromCtx(r)
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		jsonError(w, "Noto'g'ri ID", http.StatusBadRequest)
+		return
+	}
+	current, err := getRezumeByID(id)
+	if err != nil {
+		jsonError(w, "Rezume topilmadi", http.StatusNotFound)
+		return
+	}
+
+	// Anketa maydonlari + ixtiyoriy status bitta payloadda keladi
+	var payload struct {
+		Anketa
+		Status string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		jsonError(w, "JSON xato: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := updateRezume(id, &payload.Anketa); err != nil {
+		jsonError(w, "Yangilashda xato: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Yangi rasm yuborilgan bo'lsa — faylga saqlab, rasm_url ni yangilaymiz
+	if payload.Rasm != "" && strings.Contains(payload.Rasm, ",") {
+		if url, err := saveImage(payload.Rasm, current.TgUserID); err == nil {
+			db.Exec("UPDATE rezumeler SET rasm_url=? WHERE id=?", url, id)
+		} else {
+			log.Printf("Rezume rasmini yangilashda xato: %v", err)
+		}
+	}
+
+	// Status berilgan va o'zgargan bo'lsa — to'g'ridan-to'g'ri (ovozsiz) almashtiramiz
+	validStatuses := map[string]bool{
+		"pending": true, "interviewing": true, "trial": true,
+		"rejected": true, "accepted": true, "reserve": true, "noshow": true,
+		"fired": true, "old_worker": true,
+	}
+	if payload.Status != "" && validStatuses[payload.Status] && payload.Status != current.Status {
+		adminName := user.FullName
+		if adminName == "" {
+			adminName = user.Username
+		}
+		if err := updateRezumeStatusWithAdmin(id, payload.Status, user.ID, adminName); err != nil {
+			log.Printf("Rezume statusini yangilashda xato: %v", err)
+		}
+	}
+
+	row, err := getRezumeByID(id)
+	if err != nil {
+		jsonError(w, "Yangilangan rezumeni o'qishda xato", http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(w, row)
+	broadcastRezumeUpdate(row)
+}
+
 // --- Yordamchi funksiyalar ---
 
 func saveImage(base64Data string, tgUserID int64) (string, error) {
+	return saveImageWithPrefix(base64Data, tgUserID, "")
+}
+
+// saveImageWithPrefix — fayl nomiga prefiks qo'shib saqlaydi (masalan "face_"),
+// shunda bitta anketadagi ikkita rasm bir millisekundda kelsa ham to'qnashmaydi.
+func saveImageWithPrefix(base64Data string, tgUserID int64, prefix string) (string, error) {
 	parts := strings.SplitN(base64Data, ",", 2)
 	if len(parts) != 2 {
 		return "", fmt.Errorf("noto'g'ri base64 format")
@@ -408,7 +475,7 @@ func saveImage(base64Data string, tgUserID int64) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	filename := fmt.Sprintf("%d_%d.jpg", time.Now().UnixMilli(), tgUserID)
+	filename := fmt.Sprintf("%s%d_%d.jpg", prefix, time.Now().UnixMilli(), tgUserID)
 	path := filepath.Join("uploads", filename)
 	if err := os.WriteFile(path, imgBytes, 0644); err != nil {
 		return "", err

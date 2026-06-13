@@ -182,6 +182,10 @@ func initDB() {
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN source TEXT NOT NULL DEFAULT ''")
 	db.Exec("ALTER TABLE ishchi_anketalar ADD COLUMN source TEXT NOT NULL DEFAULT ''")
 
+	// Migration: face_rasm_url — Face ID apparati uchun yaqindan olingan yuz rasmi.
+	// Faqat ?start=oldWorker (eski ishchi) anketalarida to'ldiriladi.
+	db.Exec("ALTER TABLE rezumeler ADD COLUMN face_rasm_url TEXT NOT NULL DEFAULT ''")
+
 	// ishchi_categories jadvalini yaratish
 	db.Exec(`CREATE TABLE IF NOT EXISTS ishchi_categories (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -286,7 +290,7 @@ func seedDB() {
 
 // ===================== REZUME CRUD =====================
 
-func saveRezume(a *Anketa, rasmURL string) (int64, error) {
+func saveRezume(a *Anketa, rasmURL, faceRasmURL string) (int64, error) {
 	tillarJSON, _ := json.Marshal(a.Tillar)
 	source := sanitizeSource(a.Source)
 	// Bot havolasi ?start=oldWorker bilan ochilgan bo'lsa — bu eski ishchi:
@@ -298,19 +302,38 @@ func saveRezume(a *Anketa, rasmURL string) (int64, error) {
 	result, err := db.Exec(`INSERT INTO rezumeler
 		(lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi,
-		 malumot, oilaviy_holat, tillar, telefon, qoshimcha, rasm_url,
+		 malumot, oilaviy_holat, tillar, telefon, qoshimcha, rasm_url, face_rasm_url,
 		 tg_user_id, tg_username, tg_username2, source, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		a.Lavozim, a.Familiya, a.Ism, a.Sharif, a.TugilganSana,
 		a.BoySm, a.VaznKg, a.YashashManzili, a.Moljal,
 		a.UmumiyTajriba, a.ChetElTajribasi, a.Malumot, a.OilaviyHolat,
-		string(tillarJSON), a.Telefon, a.Qoshimcha, rasmURL,
+		string(tillarJSON), a.Telefon, a.Qoshimcha, rasmURL, faceRasmURL,
 		a.TgUserID, a.TgUsername, a.TgUsername2, source, status,
 	)
 	if err != nil {
 		return 0, err
 	}
 	return result.LastInsertId()
+}
+
+// updateRezume — rezume ma'lumotlarini (statusdan tashqari) tahrirlaydi.
+// Status, source, tg_user_id, rasm o'zgartirilmaydi — ular alohida boshqariladi.
+func updateRezume(id int64, a *Anketa) error {
+	tillarJSON, _ := json.Marshal(a.Tillar)
+	_, err := db.Exec(`UPDATE rezumeler SET
+		lavozim=?, familiya=?, ism=?, sharif=?, tugilgan_sana=?, boy_sm=?, vazn_kg=?,
+		yashash_manzili=?, moljal=?, umumiy_tajriba=?, chet_el_tajribasi=?,
+		malumot=?, oilaviy_holat=?, tillar=?, telefon=?, qoshimcha=?,
+		tg_username=?, tg_username2=?
+		WHERE id=?`,
+		a.Lavozim, a.Familiya, a.Ism, a.Sharif, a.TugilganSana, a.BoySm, a.VaznKg,
+		a.YashashManzili, a.Moljal, a.UmumiyTajriba, a.ChetElTajribasi,
+		a.Malumot, a.OilaviyHolat, string(tillarJSON), a.Telefon, a.Qoshimcha,
+		a.TgUsername, a.TgUsername2,
+		id,
+	)
+	return err
 }
 
 func getRezumeler(lavozim, status, search, source string, allowedCategories []string, page, limit int) ([]RezumeRow, int, error) {
@@ -361,7 +384,7 @@ func getRezumeler(lavozim, status, search, source string, allowedCategories []st
 	query := fmt.Sprintf(
 		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
-		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
+		 tillar, telefon, qoshimcha, rasm_url, COALESCE(face_rasm_url,''), tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM rezumeler WHERE %s ORDER BY id DESC LIMIT ? OFFSET ?`, where)
 	args = append(args, limit, offset)
 
@@ -379,7 +402,7 @@ func getRezumeler(lavozim, status, search, source string, allowedCategories []st
 			&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 			&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 			&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
-			&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
+			&r.Qoshimcha, &r.RasmUrl, &r.FaceRasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -399,12 +422,12 @@ func getRezumeByID(id int64) (*RezumeRow, error) {
 	err := db.QueryRow(
 		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
-		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
+		 tillar, telefon, qoshimcha, rasm_url, COALESCE(face_rasm_url,''), tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM rezumeler WHERE id = ?`, id).Scan(
 		&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 		&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 		&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
-		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
+		&r.Qoshimcha, &r.RasmUrl, &r.FaceRasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -430,7 +453,7 @@ func getRezumeByPhone(phone string) (*RezumeRow, error) {
 	err := db.QueryRow(
 		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
-		 tillar, telefon, qoshimcha, rasm_url, tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
+		 tillar, telefon, qoshimcha, rasm_url, COALESCE(face_rasm_url,''), tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM rezumeler
 		 WHERE replace(replace(replace(replace(replace(telefon,' ',''),'+',''),'-',''),'(',''),')','') = ?
 		    OR replace(replace(replace(replace(replace(telefon,' ',''),'+',''),'-',''),'(',''),')','') LIKE ?
@@ -439,7 +462,7 @@ func getRezumeByPhone(phone string) (*RezumeRow, error) {
 		&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 		&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 		&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
-		&r.Qoshimcha, &r.RasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
+		&r.Qoshimcha, &r.RasmUrl, &r.FaceRasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
 	)
 	if err != nil {
 		return nil, err

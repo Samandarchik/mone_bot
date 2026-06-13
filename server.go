@@ -75,6 +75,9 @@ type Anketa struct {
 	Telefon         string     `json:"telefon"`
 	Qoshimcha       string     `json:"qoshimcha"`
 	Rasm            string     `json:"rasm"`
+	// FaceRasm — Face ID apparati uchun yaqindan olingan yuz rasmi (base64).
+	// Faqat ?start=oldWorker havolasidan kelgan anketalarda yuboriladi.
+	FaceRasm        string     `json:"face_rasm"`
 	TgUserID        int64      `json:"tg_user_id"`
 	TgUsername      string     `json:"tg_username"`
 	TgUsername2     string     `json:"tg_username2"`
@@ -100,6 +103,7 @@ type RezumeRow struct {
 	Telefon         string     `json:"telefon"`
 	Qoshimcha       string     `json:"qoshimcha"`
 	RasmUrl         string     `json:"rasm_url"`
+	FaceRasmUrl     string     `json:"face_rasm_url"`
 	TgUserID        int64      `json:"tg_user_id"`
 	TgUsername      string     `json:"tg_username"`
 	TgUsername2     string     `json:"tg_username2"`
@@ -352,6 +356,7 @@ func main() {
 	// Rezume API (auth kerak)
 	mux.HandleFunc("GET /api/rezumeler", authRequired(handleGetRezumeler))
 	mux.HandleFunc("GET /api/rezumeler/{id}", authRequired(handleGetRezume))
+	mux.HandleFunc("PUT /api/rezumeler/{id}", authRequired(handleUpdateRezume))
 	mux.HandleFunc("DELETE /api/rezumeler/{id}", authRequired(handleDeleteRezume))
 	mux.HandleFunc("PATCH /api/rezumeler/{id}/status", authRequired(handleUpdateStatus))
 

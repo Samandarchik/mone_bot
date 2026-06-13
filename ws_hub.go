@@ -299,6 +299,24 @@ func broadcastRezumeStatusUpdate(id int64, status, statusByName, statusVoiceUrl 
 	}}, func(c *wsClient) bool { return c.canRezume })
 }
 
+// broadcastRezumeUpdate — rezume to'liq tahrirlanganda yangilangan rowni yuboradi.
+func broadcastRezumeUpdate(rezume *RezumeRow) {
+	sendToClients(WSEvent{Type: "rezume_update", Data: rezume}, func(c *wsClient) bool {
+		if !c.canRezume {
+			return false
+		}
+		if c.isSuperAdmin {
+			return true
+		}
+		for _, cat := range c.allowedCategories {
+			if cat == rezume.Lavozim {
+				return true
+			}
+		}
+		return false
+	})
+}
+
 func broadcastRezumeDelete(id int64) {
 	sendToClients(WSEvent{Type: "delete", Data: map[string]interface{}{"id": id}},
 		func(c *wsClient) bool { return c.canRezume })
