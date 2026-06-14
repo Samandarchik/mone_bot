@@ -131,8 +131,8 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Dublikat tekshiruv: tugilgan_sana + lavozim + telefon bir xil bo'lsa eski rezumeni o'chirish
-	deleteDuplicateRezume(anketa.Lavozim, anketa.TugilganSana, anketa.Telefon)
+	// Dublikat tekshiruv: tug'ilgan sana + lavozim + ism + telefon bir xil bo'lsa eski rezumeni o'chirish (katta-kichik harf farqsiz)
+	deleteDuplicateRezume(anketa.Lavozim, anketa.TugilganSana, anketa.Ism, anketa.Telefon)
 
 	// Bazaga saqlash
 	id, err := saveRezume(&anketa, rasmURL, faceRasmURL)
@@ -263,6 +263,40 @@ func handleGetRezumeler(w http.ResponseWriter, r *http.Request) {
 		"limit": limit,
 		"pages": pages,
 	})
+}
+
+// GET /api/rezumeler/counts?status= — joriy status uchun har bir lavozim bo'yicha rezume soni.
+// Kategoriya tablari ostida real-time son ko'rsatish uchun ishlatiladi.
+func handleGetRezumeCounts(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromCtx(r)
+	if !user.hasRole("super_admin") && !user.hasRole("admin") {
+		jsonError(w, "Ruxsat yo'q", http.StatusForbidden)
+		return
+	}
+
+	status := r.URL.Query().Get("status")
+
+	var allowedCategories []string
+	if user.Role != "super_admin" {
+		allowedCategories = getUserCategoryNames(user.ID)
+		if len(allowedCategories) == 0 {
+			jsonResponse(w, map[string]interface{}{"counts": map[string]int{}, "total": 0})
+			return
+		}
+	}
+
+	counts, err := getRezumeCounts(status, allowedCategories)
+	if err != nil {
+		jsonError(w, "DB xato: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	total := 0
+	for _, n := range counts {
+		total += n
+	}
+
+	jsonResponse(w, map[string]interface{}{"counts": counts, "total": total})
 }
 
 // GET /api/rezumeler/{id}

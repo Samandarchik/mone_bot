@@ -355,6 +355,7 @@ func main() {
 
 	// Rezume API (auth kerak)
 	mux.HandleFunc("GET /api/rezumeler", authRequired(handleGetRezumeler))
+	mux.HandleFunc("GET /api/rezumeler/counts", authRequired(handleGetRezumeCounts))
 	mux.HandleFunc("GET /api/rezumeler/{id}", authRequired(handleGetRezume))
 	mux.HandleFunc("PUT /api/rezumeler/{id}", authRequired(handleUpdateRezume))
 	mux.HandleFunc("DELETE /api/rezumeler/{id}", authRequired(handleDeleteRezume))

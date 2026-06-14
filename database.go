@@ -416,6 +416,51 @@ func getRezumeler(lavozim, status, search, source string, allowedCategories []st
 	return results, total, nil
 }
 
+// getRezumeCounts — joriy status uchun har bir lavozim (kategoriya) bo'yicha rezume sonini qaytaradi.
+// where-mantig'i getRezumeler bilan bir xil: status bo'sh bo'lsa default filtr (rejected'lar va 4+ intervyu
+// chaqirilganlar chiqarib tashlanadi), allowedCategories berilsa faqat shu kategoriyalar.
+// Natija: lavozim -> son map'i (jami "Barchasi" uchun qiymatlar yig'indisidan hisoblanadi).
+func getRezumeCounts(status string, allowedCategories []string) (map[string]int, error) {
+	where := "1=1"
+	args := []interface{}{}
+
+	if status != "" {
+		where += " AND status = ?"
+		args = append(args, status)
+	} else {
+		where += " AND status != 'rejected'"
+		where += " AND id NOT IN (SELECT rezume_id FROM interviews GROUP BY rezume_id HAVING COUNT(*) >= 4)"
+	}
+	if len(allowedCategories) > 0 {
+		ph := ""
+		for i, cat := range allowedCategories {
+			if i > 0 {
+				ph += ","
+			}
+			ph += "?"
+			args = append(args, cat)
+		}
+		where += " AND lavozim IN (" + ph + ")"
+	}
+
+	rows, err := db.Query("SELECT lavozim, COUNT(*) FROM rezumeler WHERE "+where+" GROUP BY lavozim", args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	counts := map[string]int{}
+	for rows.Next() {
+		var lavozim string
+		var n int
+		if err := rows.Scan(&lavozim, &n); err != nil {
+			return nil, err
+		}
+		counts[lavozim] = n
+	}
+	return counts, nil
+}
+
 func getRezumeByID(id int64) (*RezumeRow, error) {
 	var r RezumeRow
 	var tillarStr string
@@ -958,13 +1003,19 @@ func ratingToStatus(rating int) string {
 	}
 }
 
-// Rezume dublikatini tekshirish va eski dublikatni o'chirish
-func deleteDuplicateRezume(lavozim, tugilganSana, telefon string) {
-	if lavozim == "" || tugilganSana == "" || telefon == "" {
+// Rezume dublikatini tekshirish va eski dublikatni o'chirish.
+// Dublikat kaliti: tug'ilgan sana (yili) + lavozim (kategoriya) + ism + telefon.
+// Taqqoslash katta-kichik harflarga (va atrofdagi bo'sh joylarga) bog'liq emas.
+func deleteDuplicateRezume(lavozim, tugilganSana, ism, telefon string) {
+	if lavozim == "" || tugilganSana == "" || ism == "" || telefon == "" {
 		return
 	}
-	db.Exec("DELETE FROM rezumeler WHERE lavozim = ? AND tugilgan_sana = ? AND telefon = ?",
-		lavozim, tugilganSana, telefon)
+	db.Exec(`DELETE FROM rezumeler WHERE
+		LOWER(TRIM(lavozim)) = LOWER(TRIM(?)) AND
+		TRIM(tugilgan_sana) = TRIM(?) AND
+		LOWER(TRIM(ism)) = LOWER(TRIM(?)) AND
+		TRIM(telefon) = TRIM(?)`,
+		lavozim, tugilganSana, ism, telefon)
 }
 
 // Rezume uchun rejected interviewlar sonini tekshirish
