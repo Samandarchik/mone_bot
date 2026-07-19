@@ -333,7 +333,7 @@ func main() {
 	os.MkdirAll("uploads", 0755)
 	initDB()
 
-	go startBotPolling()
+	// go startBotPolling() // OCHIRILDI 2026-07-19: rezume faqat WEB orqali; token endi isup-gateway davomat botiniki
 	go startIshchiBotPolling()
 
 	mux := http.NewServeMux()
