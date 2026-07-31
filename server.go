@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-const botToken = "8550220546:AAFEII8AzNdMapEqT_VFtqiqv6h0obbLgzQ"
+const botToken = "8550220546:AAEVwWyWXhhUgJlMQaV8klu66qbzjzEFWNo"
 const baseURL = "https://hr.monebakeryuz.uz"
 const adminTgID int64 = 1066137436
 
@@ -27,10 +27,19 @@ type TgUpdate struct {
 }
 
 type TgMessage struct {
-	MessageID int64   `json:"message_id"`
-	Chat      TgChat  `json:"chat"`
-	From      *TgUser `json:"from"`
-	Text      string  `json:"text"`
+	MessageID int64      `json:"message_id"`
+	Chat      TgChat     `json:"chat"`
+	From      *TgUser    `json:"from"`
+	Text      string     `json:"text"`
+	Contact   *TgContact `json:"contact"`
+}
+
+// TgContact — "Telefonni ulashish" tugmasi orqali kelgan kontakt. Matn o'rniga
+// shu keladi, shuning uchun alohida qayta ishlanadi (aks holda bot raqamni
+// tushunmay qayta-qayta so'rayveradi).
+type TgContact struct {
+	PhoneNumber string `json:"phone_number"`
+	UserID      int64  `json:"user_id"`
 }
 
 type TgCallback struct {
@@ -333,7 +342,7 @@ func main() {
 	os.MkdirAll("uploads", 0755)
 	initDB()
 
-	// go startBotPolling() // OCHIRILDI 2026-07-19: rezume faqat WEB orqali; token endi isup-gateway davomat botiniki
+	go startBotPolling()
 	go startIshchiBotPolling()
 
 	mux := http.NewServeMux()

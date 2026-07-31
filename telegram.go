@@ -77,7 +77,31 @@ func handleBotMessage(msg *TgMessage) {
 		}
 		stateMu.Unlock()
 
-		sendTgMessage(chatID, "Assalomu alaykum!\n\nIltimos, telefon raqamingizni yuboring.\nMisol: 998901234567")
+		// remove_keyboard — chatda boshqa botdan qolib ketgan "Telefonni ulashish"
+		// tugmasini tozalaydi (odam uni bosса kontakt kelib, oqim buzilardi).
+		if err := sendMessageToTelegramWithKeyboard(chatID,
+			"Assalomu alaykum!\n\nIltimos, telefon raqamingizni yuboring.\nMisol: 998901234567",
+			map[string]interface{}{"remove_keyboard": true}); err != nil {
+			log.Printf("start xabarini yuborishda xato: %v", err)
+			sendTgMessage(chatID, "Assalomu alaykum!\n\nIltimos, telefon raqamingizni yuboring.\nMisol: 998901234567")
+		}
+		return
+	}
+
+	// Kontakt ulashildi — raqam matn emas, contact obyektida keladi. Faqat
+	// O'Z kontaktini qabul qilamiz. Holatdan qat'i nazar javob beramiz: odam
+	// raqamini bergan bo'lsa, unga havola kerak.
+	if msg.Contact != nil {
+		if msg.From != nil && msg.Contact.UserID != 0 && msg.Contact.UserID != msg.From.ID {
+			sendTgMessage(chatID, "Iltimos, o'zingizning telefon raqamingizni yuboring.")
+			return
+		}
+		phone := normalizePhone(msg.Contact.PhoneNumber)
+		if !isValidUzPhone(phone) {
+			sendTgMessage(chatID, "Telefon raqam noto'g'ri formatda.\nIltimos, to'g'ri raqam yuboring.\nMisol: 998901234567")
+			return
+		}
+		sendApplyLink(chatID, phone, msg.From)
 		return
 	}
 
@@ -86,48 +110,52 @@ func handleBotMessage(msg *TgMessage) {
 	stateMu.RUnlock()
 
 	if state == "waiting_phone" {
-		phone := strings.ReplaceAll(text, " ", "")
-		phone = strings.ReplaceAll(phone, "-", "")
-		phone = strings.ReplaceAll(phone, "(", "")
-		phone = strings.ReplaceAll(phone, ")", "")
-		if strings.HasPrefix(phone, "+") {
-			phone = phone[1:]
-		}
-		if !strings.HasPrefix(phone, "998") || len(phone) != 12 {
+		phone := normalizePhone(text)
+		if !isValidUzPhone(phone) {
 			sendTgMessage(chatID, "Telefon raqam noto'g'ri formatda.\nIltimos, to'g'ri raqam yuboring.\nMisol: 998901234567")
 			return
 		}
-
-		username := ""
-		if msg.From != nil {
-			username = msg.From.Username
-		}
-
-		stateMu.RLock()
-		source := userSources[chatID]
-		stateMu.RUnlock()
-
-		link := fmt.Sprintf("%s/+%s/%d/%s", baseURL, phone, chatID, username)
-		if source != "" {
-			link += "?src=" + source
-		}
-
-		text := "Rahmat!\n\nAnketa to'ldirish uchun quyidagi tugmani bosing:"
-		keyboard := map[string]interface{}{
-			"inline_keyboard": [][]map[string]string{
-				{{"text": "Ariza berish", "url": link}},
-			},
-		}
-		if err := sendMessageToTelegramWithKeyboard(chatID, text, keyboard); err != nil {
-			log.Printf("inline tugma yuborishda xato: %v", err)
-			sendTgMessage(chatID, text+"\n\n"+link)
-		}
-
-		stateMu.Lock()
-		delete(userStates, chatID)
-		delete(userSources, chatID)
-		stateMu.Unlock()
+		sendApplyLink(chatID, phone, msg.From)
 	}
+}
+
+// isValidUzPhone — 998 bilan boshlanuvchi 12 xonali raqam.
+func isValidUzPhone(phone string) bool {
+	return strings.HasPrefix(phone, "998") && len(phone) == 12
+}
+
+// sendApplyLink — anketa havolasini "Ariza berish" inline tugmasi bilan yuboradi
+// va foydalanuvchi holatini tozalaydi.
+func sendApplyLink(chatID int64, phone string, from *TgUser) {
+	username := ""
+	if from != nil {
+		username = from.Username
+	}
+
+	stateMu.RLock()
+	source := userSources[chatID]
+	stateMu.RUnlock()
+
+	link := fmt.Sprintf("%s/+%s/%d/%s", baseURL, phone, chatID, username)
+	if source != "" {
+		link += "?src=" + source
+	}
+
+	text := "Rahmat!\n\nAnketa to'ldirish uchun quyidagi tugmani bosing:"
+	keyboard := map[string]interface{}{
+		"inline_keyboard": [][]map[string]string{
+			{{"text": "Ariza berish", "url": link}},
+		},
+	}
+	if err := sendMessageToTelegramWithKeyboard(chatID, text, keyboard); err != nil {
+		log.Printf("inline tugma yuborishda xato: %v", err)
+		sendTgMessage(chatID, text+"\n\n"+link)
+	}
+
+	stateMu.Lock()
+	delete(userStates, chatID)
+	delete(userSources, chatID)
+	stateMu.Unlock()
 }
 
 // ===================== CALLBACK QUERY HANDLER =====================
