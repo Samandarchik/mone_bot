@@ -12,12 +12,9 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -27,8 +24,8 @@ const worklyGatewayURL = "http://127.0.0.1:8092"
 var worklyHTTP = &http.Client{Timeout: 10 * time.Second}
 
 // handleWorklyConfirm — [Ha]/[Yo'q] bosilganda gateway'ga uzatadi.
-// Xodim fikrini o'zgartirsa ikkinchi tugmani bosaveradi — tugmalar qoladi,
-// xabar oxiridagi javob qatori yangilanadi.
+// Javobdan keyin tugmalar OLIB TASHLANADI (bitta javob) — fikr o'zgarsa
+// xodim menejerga aytadi, menejer grafikni tahrirlaydi.
 func handleWorklyConfirm(cb *TgCallback, token, answer string) {
 	ans, txt := "no", "❌ Javobingiz qayd etildi: KELMAYMAN"
 	if answer == "y" {
@@ -46,39 +43,9 @@ func handleWorklyConfirm(cb *TgCallback, token, answer string) {
 		return
 	}
 	answerCallback(cb.ID, txt)
+	// editMessageText reply_markup yubormaydi — tugmalar o'zi yo'qoladi.
 	if cb.Message != nil {
-		// Eski javob qatorini olib tashlab, yangisini yozamiz.
-		base := cb.Message.Text
-		for _, sep := range []string{"\n\n✅ Javobingiz", "\n\n❌ Javobingiz"} {
-			if i := strings.Index(base, sep); i >= 0 {
-				base = base[:i]
-			}
-		}
-		worklyEditWithButtons(cb.Message.Chat.ID, cb.Message.MessageID,
-			base+"\n\n"+txt, token)
+		editMessageText(cb.Message.Chat.ID, cb.Message.MessageID,
+			cb.Message.Text+"\n\n"+txt)
 	}
-}
-
-// worklyEditWithButtons — xabar matnini yangilab, [Ha]/[Yo'q] tugmalarini
-// QOLDIRADI (mavjud editMessageText tugmalarni olib tashlab qo'yardi).
-func worklyEditWithButtons(chatID, messageID int64, text, token string) {
-	payload := map[string]interface{}{
-		"chat_id":    chatID,
-		"message_id": messageID,
-		"text":       text,
-		"reply_markup": map[string]interface{}{
-			"inline_keyboard": [][]map[string]string{{
-				{"text": "✅ Ha, kelaman", "callback_data": "wkc:" + token + ":y"},
-				{"text": "❌ Yo'q, kelmayman", "callback_data": "wkc:" + token + ":n"},
-			}},
-		},
-	}
-	jsonData, _ := json.Marshal(payload)
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/editMessageText", botToken)
-	resp, err := http.Post(url, "application/json", bytes.NewReader(jsonData))
-	if err != nil {
-		log.Printf("workly edit xato: %v", err)
-		return
-	}
-	resp.Body.Close()
 }
