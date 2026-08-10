@@ -178,6 +178,14 @@ func handleCallbackQuery(cb *TgCallback) {
 		dayCode := parts[1]
 		tgUserID := cb.From.ID
 		assignSlot(tgUserID, dayCode, cb)
+	case "wkc":
+		// Workly grafik tasdiqlash ([Ha]/[Yo'q]) — isup-gateway yuborgan
+		// tugma; javob gateway'ga uzatiladi (workly_confirm.go).
+		if len(parts) < 3 {
+			answerCallback(cb.ID, "Xato")
+			return
+		}
+		handleWorklyConfirm(cb, parts[1], parts[2])
 	default:
 		answerCallback(cb.ID, "Bu tugma endi ishlamaydi. Iltimos, dastur orqali qabul/rad qiling.")
 	}
