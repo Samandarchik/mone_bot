@@ -67,7 +67,11 @@ type LangInfo struct {
 }
 
 type Anketa struct {
-	Lavozim         string     `json:"lavozim"`
+	Lavozim string `json:"lavozim"`
+	// Lavozimlar — anketada tanlangan barcha vakansiyalar. Bitta nomzod bir
+	// nechta lavozimga ariza bera oladi; `Lavozim` esa birinchi tanlangani
+	// (eski kod/mijozlar bilan moslik uchun) bo'lib qoladi.
+	Lavozimlar      []string   `json:"lavozimlar"`
 	Familiya        string     `json:"familiya"`
 	Ism             string     `json:"ism"`
 	Sharif          string     `json:"sharif"`
@@ -94,8 +98,11 @@ type Anketa struct {
 }
 
 type RezumeRow struct {
-	ID              int64      `json:"id"`
-	Lavozim         string     `json:"lavozim"`
+	ID      int64  `json:"id"`
+	Lavozim string `json:"lavozim"`
+	// Lavozimlar — rezumeda tanlangan barcha vakansiyalar (kamida bittasi —
+	// `Lavozim`). Kategoriya bo'yicha filtr/hisob shu ro'yxat asosida ishlaydi.
+	Lavozimlar      []string   `json:"lavozimlar"`
 	Familiya        string     `json:"familiya"`
 	Ism             string     `json:"ism"`
 	Sharif          string     `json:"sharif"`

@@ -129,7 +129,7 @@
         "tags": ["Rezume"],
         "security": [{"BearerAuth": []}],
         "parameters": [
-          {"name": "lavozim", "in": "query", "schema": {"type": "string"}, "description": "Lavozim bo'yicha filter"},
+          {"name": "lavozim", "in": "query", "schema": {"type": "string"}, "description": "Lavozim bo'yicha filter (rezumening tanlangan lavozimlaridan biri mos kelsa chiqadi)"},
           {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["yangi", "qabul", "rad"]}, "description": "Status bo'yicha filter"},
           {"name": "search", "in": "query", "schema": {"type": "string"}, "description": "Familiya, ism, telefon bo'yicha qidirish"},
           {"name": "page", "in": "query", "schema": {"type": "integer", "default": 1}},
@@ -527,7 +527,8 @@
         "type": "object",
         "required": ["lavozim", "familiya", "ism", "telefon"],
         "properties": {
-          "lavozim": {"type": "string"},
+          "lavozim": {"type": "string", "description": "Birinchi tanlangan lavozim (lavozimlar bo'sh bo'lsa ishlatiladi)"},
+          "lavozimlar": {"type": "array", "items": {"type": "string"}, "description": "Anketada tanlangan barcha vakansiyalar", "example": ["\u041f\u043e\u0432\u0430\u0440 / Oshpaz", "\u041e\u0444\u0438\u0446\u0438\u0430\u043d\u0442 / Ofitsiant"]},
           "familiya": {"type": "string"},
           "ism": {"type": "string"},
           "sharif": {"type": "string"},
@@ -552,7 +553,8 @@
         "type": "object",
         "properties": {
           "id": {"type": "integer"},
-          "lavozim": {"type": "string"},
+          "lavozim": {"type": "string", "description": "Birinchi tanlangan lavozim"},
+          "lavozimlar": {"type": "array", "items": {"type": "string"}, "description": "Rezumeda tanlangan barcha vakansiyalar"},
           "familiya": {"type": "string"},
           "ism": {"type": "string"},
           "sharif": {"type": "string"},

@@ -131,8 +131,9 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Dublikat tekshiruv: tug'ilgan sana + lavozim + ism + telefon bir xil bo'lsa eski rezumeni o'chirish (katta-kichik harf farqsiz)
-	deleteDuplicateRezume(anketa.Lavozim, anketa.TugilganSana, anketa.Ism, anketa.Telefon)
+	// Dublikat tekshiruv: tug'ilgan sana + lavozim(lar) + ism + telefon bir xil bo'lsa eski rezumeni o'chirish (katta-kichik harf farqsiz)
+	lavozimlar := anketaLavozimlar(&anketa)
+	deleteDuplicateRezume(lavozimlar, anketa.TugilganSana, anketa.Ism, anketa.Telefon)
 
 	// Bazaga saqlash
 	id, err := saveRezume(&anketa, rasmURL, faceRasmURL)
@@ -181,7 +182,7 @@ func handleRezume(w http.ResponseWriter, r *http.Request) {
 				"━━━━━━━━━━━━━━━━━━━━\n\n"+
 				"Rahmat!",
 			fio,
-			anketa.Lavozim, fio, anketa.TugilganSana,
+			strings.Join(lavozimlar, ", "), fio, anketa.TugilganSana,
 			anketa.BoySm, anketa.VaznKg,
 			anketa.YashashManzili, anketa.Moljal,
 			anketa.UmumiyTajriba, anketa.ChetElTajribasi,
@@ -285,15 +286,10 @@ func handleGetRezumeCounts(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	counts, err := getRezumeCounts(status, allowedCategories)
+	counts, total, err := getRezumeCounts(status, allowedCategories)
 	if err != nil {
 		jsonError(w, "DB xato: "+err.Error(), http.StatusInternalServerError)
 		return
-	}
-
-	total := 0
-	for _, n := range counts {
-		total += n
 	}
 
 	jsonResponse(w, map[string]interface{}{"counts": counts, "total": total})

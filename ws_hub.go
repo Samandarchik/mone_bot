@@ -285,8 +285,10 @@ func broadcastNewRezume(rezume *RezumeRow) {
 			return true
 		}
 		for _, cat := range c.allowedCategories {
-			if cat == rezume.Lavozim {
-				return true
+			for _, l := range rezume.Lavozimlar {
+				if cat == l {
+					return true
+				}
 			}
 		}
 		return false
@@ -309,8 +311,10 @@ func broadcastRezumeUpdate(rezume *RezumeRow) {
 			return true
 		}
 		for _, cat := range c.allowedCategories {
-			if cat == rezume.Lavozim {
-				return true
+			for _, l := range rezume.Lavozimlar {
+				if cat == l {
+					return true
+				}
 			}
 		}
 		return false

@@ -201,7 +201,7 @@ textarea{resize:vertical}
 <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
 
 <div class="card" style="animation-delay:.05s">
-  <span class="lbl"><span class="step-num">1</span><span data-uz="Lavozim tanlang" data-ru="Выберите должность">Lavozim tanlang</span></span>
+  <span class="lbl"><span class="step-num">1</span><span data-uz="Lavozim tanlang (bir nechtasini tanlash mumkin)" data-ru="Выберите должность (можно выбрать несколько)">Lavozim tanlang (bir nechtasini tanlash mumkin)</span></span>
   <div class="bg" id="g-lavozim">
     <span style="color:#94a3b8;font-size:13px">Yuklanmoqda...</span>
   </div>
@@ -498,8 +498,8 @@ function renderLavozimButtons(){
     btn.setAttribute('data-uz',uzName);
     btn.setAttribute('data-ru',ruName);
     btn.textContent=curLang==='ru'?ruName:uzName;
-    btn.onclick=function(){sel(this,'lavozim')};
-    if(state.lavozim===cat.name) btn.classList.add('on');
+    btn.onclick=function(){toggleLavozim(this)};
+    if(state.lavozimlar.indexOf(cat.name)>=0) btn.classList.add('on');
     container.appendChild(btn);
   });
 }
@@ -593,7 +593,9 @@ function showImg(src){
   document.getElementById('img-overlay').classList.add('show');
 }
 
-const state={lavozim:'',chet:'',malumot:'',oila:'',viloyat:'',tuman:''};
+// lavozimlar — tanlangan barcha vakansiyalar (bir nechtasi bo'lishi mumkin),
+// lavozim — birinchi tanlangani (eski API bilan moslik uchun).
+const state={lavozim:'',lavozimlar:[],chet:'',malumot:'',oila:'',viloyat:'',tuman:''};
 const langs={en:'',ru:'',tr:'',uz:''};
 
 const UZ_REGIONS=[
@@ -739,7 +741,7 @@ function faceFromFile(input){
 
 function updateProgress(){
   let filled=0;const total=isOldWorker?18:17;
-  if(state.lavozim)filled++;
+  if(state.lavozimlar.length)filled++;
   if(document.getElementById('familiya').value)filled++;
   if(document.getElementById('ism').value)filled++;
   if(document.getElementById('tugilgan').value)filled++;
@@ -765,17 +767,31 @@ function sel(btn,group){
   document.getElementById('g-'+group).querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   state[group]=btn.getAttribute('data-value')||btn.textContent.trim();
-  if(group==='lavozim')updateLavozimHint();
   updateProgress();
+}
+
+// Lavozim tugmasi — bosilganda tanlanadi, qayta bosilganda tanlov bekor qilinadi.
+// Bir nechta lavozim tanlash mumkin.
+function toggleLavozim(btn){
+  const val=btn.getAttribute('data-value')||btn.textContent.trim();
+  const i=state.lavozimlar.indexOf(val);
+  if(i>=0){state.lavozimlar.splice(i,1);btn.classList.remove('on');}
+  else{state.lavozimlar.push(val);btn.classList.add('on');}
+  state.lavozim=state.lavozimlar[0]||'';
+  updateLavozimHint();
+  updateProgress();
+}
+
+function lavozimName(full){
+  const parts=full.split(' / ');
+  return curLang==='ru'?(parts[0]||full):(parts[1]||full);
 }
 
 function updateLavozimHint(){
   const el=document.getElementById('lavozim-hint');
   if(!el)return;
-  if(!state.lavozim){el.textContent='';return;}
-  const parts=state.lavozim.split(' / ');
-  const name=curLang==='ru'?(parts[0]||state.lavozim):(parts[1]||state.lavozim);
-  el.textContent=' — '+name;
+  if(!state.lavozimlar.length){el.textContent='';return;}
+  el.textContent=' — '+state.lavozimlar.map(lavozimName).join(', ');
 }
 
 function setLang(btn,lang,val){
@@ -913,6 +929,7 @@ async function submitForm(){
 
   const payload={
     lavozim:state.lavozim,
+    lavozimlar:state.lavozimlar,
     familiya:document.getElementById('familiya').value,
     ism:document.getElementById('ism').value,
     sharif:document.getElementById('sharif').value,
@@ -955,7 +972,7 @@ async function submitForm(){
     document.getElementById('msg-err').style.display='block';
     btn.disabled=false;
     btn.textContent=curLang==='uz'?'Saqlash va yuborish':'Сохранить и отправить';
-    try{fetch('/api/report-error',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({error:e.message,tg_user_id:urlTgUserID,tg_username:urlTgUsername,fio:(document.getElementById('familiya').value+' '+document.getElementById('ism').value).trim(),telefon:document.getElementById('telefon').value,lavozim:state.lavozim||''})});}catch(_){}
+    try{fetch('/api/report-error',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({error:e.message,tg_user_id:urlTgUserID,tg_username:urlTgUsername,fio:(document.getElementById('familiya').value+' '+document.getElementById('ism').value).trim(),telefon:document.getElementById('telefon').value,lavozim:state.lavozimlar.join(', ')||''})});}catch(_){}
   }
 }
 </script>

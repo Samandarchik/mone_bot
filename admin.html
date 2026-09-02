@@ -857,6 +857,12 @@ function toast(msg, ok = true) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// lavozimText — rezume bir nechta vakansiyaga yuborilgan bo'lishi mumkin,
+// hammasini vergul bilan ko'rsatamiz (eski yozuvlarda faqat `lavozim` bo'ladi).
+function lavozimText(r) {
+  return (r.lavozimlar && r.lavozimlar.length) ? r.lavozimlar.join(', ') : (r.lavozim || '');
+}
+
 function statusBadge(s) {
   const map = {
     yangi: 'badge-yangi', pending: 'badge-yangi',
@@ -1155,7 +1161,7 @@ async function loadDashboard() {
         <tr style="cursor:pointer" onclick="showRezumeDetail(${r.id})">
           <td>${r.id}</td>
           <td>${r.familiya} ${r.ism}</td>
-          <td>${r.lavozim}</td>
+          <td>${lavozimText(r)}</td>
           <td>${r.telefon}</td>
           <td>${statusBadge(r.status)}</td>
           <td>${formatDate(r.created_at)}</td>
@@ -1190,7 +1196,7 @@ async function loadRezumeler(page) {
           <td>${r.id}</td>
           <td>${r.rasm_url ? `<img src="${r.rasm_url}" style="width:36px;height:36px;object-fit:cover;border-radius:8px">` : '<div style="width:36px;height:36px;background:var(--bg);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text2)">N/A</div>'}</td>
           <td><strong>${r.familiya} ${r.ism}</strong></td>
-          <td style="font-size:12px">${r.lavozim}</td>
+          <td style="font-size:12px">${lavozimText(r)}</td>
           <td>${r.telefon}</td>
           <td style="font-size:12px">${r.source ? `<span class="badge badge-admin">${r.source}</span>` : '<span style="color:var(--text2)">—</span>'}</td>
           <td>${statusBadge(r.status)}</td>
@@ -1282,7 +1288,7 @@ async function showRezumeDetail(id) {
           ${r.rasm_url ? `<img src="${r.rasm_url}" style="width:200px;height:260px;object-fit:cover;border-radius:14px;border:2px solid var(--border);flex-shrink:0" alt="Rasm">` : ''}
           <div style="flex:1;min-width:280px">
             <h2 style="margin-bottom:8px">${r.familiya} ${r.ism} ${r.sharif}</h2>
-            <p style="color:var(--text2);margin-bottom:8px">${r.lavozim}</p>
+            <p style="color:var(--text2);margin-bottom:8px">${lavozimText(r)}</p>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
               ${statusBadge(r.status)}
               ${r.status_by_name ? `<span style="font-size:12px;color:var(--text2);background:#f3f4f6;padding:2px 8px;border-radius:10px">${r.status === 'qabul' ? '✅' : r.status === 'rad' ? '❌' : ''} ${r.status_by_name}</span>` : ''}
@@ -1682,7 +1688,7 @@ async function searchUserByPhone() {
       photoEl.style.display = 'none';
     }
     document.getElementById('userRezumeName').textContent = fio || '—';
-    document.getElementById('userRezumeLavozim').textContent = r.lavozim || '';
+    document.getElementById('userRezumeLavozim').textContent = lavozimText(r);
     document.getElementById('userRezumePhone').textContent = r.telefon || raw;
     document.getElementById('userRezumePreview').style.display = '';
 

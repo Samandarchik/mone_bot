@@ -186,6 +186,13 @@ func initDB() {
 	// Faqat ?start=oldWorker (eski ishchi) anketalarida to'ldiriladi.
 	db.Exec("ALTER TABLE rezumeler ADD COLUMN face_rasm_url TEXT NOT NULL DEFAULT ''")
 
+	// Migration: lavozimlar — anketada tanlangan bir nechta vakansiya.
+	// "|" bilan ajratilgan ro'yxat sifatida saqlanadi (kategoriya nomlarida "|" uchramaydi).
+	// `lavozim` ustuni birinchi tanlangan lavozimni saqlab qoladi — eski
+	// so'rovlar va intervyu joinlari shu ustunga tayanadi.
+	db.Exec("ALTER TABLE rezumeler ADD COLUMN lavozimlar TEXT NOT NULL DEFAULT ''")
+	db.Exec("UPDATE rezumeler SET lavozimlar = lavozim WHERE TRIM(COALESCE(lavozimlar,'')) = '' AND TRIM(lavozim) != ''")
+
 	// ishchi_categories jadvalini yaratish
 	db.Exec(`CREATE TABLE IF NOT EXISTS ishchi_categories (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -290,6 +297,82 @@ func seedDB() {
 
 // ===================== REZUME CRUD =====================
 
+// lavozimSep — `lavozimlar` ustunidagi ro'yxat ajratuvchisi. Kategoriya nomlari
+// "Повар / Oshpaz" ko'rinishida bo'lgani uchun "|" xavfsiz ajratuvchi.
+const lavozimSep = "|"
+
+// lavozimlarCol — eski yozuvlar uchun fallback: `lavozimlar` bo'sh bo'lsa,
+// bitta elementli ro'yxat sifatida `lavozim` ishlatiladi.
+const lavozimlarCol = "COALESCE(NULLIF(TRIM(lavozimlar),''), lavozim)"
+
+// joinLavozimlar — tanlangan lavozimlar ro'yxatini ustun qiymatiga aylantiradi.
+// Bo'shlar va takrorlar tashlab yuboriladi; ro'yxat bo'sh bo'lsa `fallback`
+// (bitta `lavozim` maydoni) ishlatiladi.
+func joinLavozimlar(list []string, fallback string) string {
+	seen := map[string]bool{}
+	out := []string{}
+	for _, v := range list {
+		v = strings.TrimSpace(v)
+		if v == "" || seen[v] {
+			continue
+		}
+		seen[v] = true
+		out = append(out, strings.ReplaceAll(v, lavozimSep, "/"))
+	}
+	if len(out) == 0 {
+		fallback = strings.TrimSpace(fallback)
+		if fallback == "" {
+			return ""
+		}
+		return strings.ReplaceAll(fallback, lavozimSep, "/")
+	}
+	return strings.Join(out, lavozimSep)
+}
+
+// splitLavozimlar — ustun qiymatini ro'yxatga ajratadi.
+func splitLavozimlar(s, fallback string) []string {
+	out := []string{}
+	for _, v := range strings.Split(s, lavozimSep) {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
+	}
+	if len(out) == 0 {
+		if fallback = strings.TrimSpace(fallback); fallback != "" {
+			out = append(out, fallback)
+		}
+	}
+	return out
+}
+
+// anketaLavozimlar — anketada tanlangan lavozimlarni normallashtirilgan
+// (bo'shsiz, takrorsiz) ro'yxat qilib qaytaradi.
+func anketaLavozimlar(a *Anketa) []string {
+	return splitLavozimlar(joinLavozimlar(a.Lavozimlar, a.Lavozim), a.Lavozim)
+}
+
+// firstLavozim — ro'yxatdagi birinchi lavozim (`lavozim` ustuni uchun).
+func firstLavozim(list []string, fallback string) string {
+	for _, v := range list {
+		if v = strings.TrimSpace(v); v != "" {
+			return v
+		}
+	}
+	return strings.TrimSpace(fallback)
+}
+
+// lavozimMatchSQL — rezume tanlangan lavozimlaridan biri `cats` ichida bormi?
+// Har bir kategoriya uchun instr('|'||lavozimlar||'|', '|'||cat||'|') tekshiriladi.
+func lavozimMatchSQL(cats []string) (string, []interface{}) {
+	parts := []string{}
+	args := []interface{}{}
+	for _, c := range cats {
+		parts = append(parts, "instr(LOWER('|'||"+lavozimlarCol+"||'|'), LOWER('|'||?||'|')) > 0")
+		args = append(args, c)
+	}
+	return "(" + strings.Join(parts, " OR ") + ")", args
+}
+
 func saveRezume(a *Anketa, rasmURL, faceRasmURL string) (int64, error) {
 	tillarJSON, _ := json.Marshal(a.Tillar)
 	source := sanitizeSource(a.Source)
@@ -299,13 +382,17 @@ func saveRezume(a *Anketa, rasmURL, faceRasmURL string) (int64, error) {
 	if strings.EqualFold(source, "oldWorker") {
 		status = "old_worker"
 	}
+	// Bir nechta lavozim tanlangan bo'lsa — hammasi `lavozimlar` ustuniga,
+	// birinchisi esa eski `lavozim` ustuniga yoziladi.
+	lavozimlar := joinLavozimlar(a.Lavozimlar, a.Lavozim)
+	lavozim := firstLavozim(a.Lavozimlar, a.Lavozim)
 	result, err := db.Exec(`INSERT INTO rezumeler
-		(lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
+		(lavozim, lavozimlar, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi,
 		 malumot, oilaviy_holat, tillar, telefon, qoshimcha, rasm_url, face_rasm_url,
 		 tg_user_id, tg_username, tg_username2, source, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		a.Lavozim, a.Familiya, a.Ism, a.Sharif, a.TugilganSana,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		lavozim, lavozimlar, a.Familiya, a.Ism, a.Sharif, a.TugilganSana,
 		a.BoySm, a.VaznKg, a.YashashManzili, a.Moljal,
 		a.UmumiyTajriba, a.ChetElTajribasi, a.Malumot, a.OilaviyHolat,
 		string(tillarJSON), a.Telefon, a.Qoshimcha, rasmURL, faceRasmURL,
@@ -321,13 +408,15 @@ func saveRezume(a *Anketa, rasmURL, faceRasmURL string) (int64, error) {
 // Status, source, tg_user_id, rasm o'zgartirilmaydi — ular alohida boshqariladi.
 func updateRezume(id int64, a *Anketa) error {
 	tillarJSON, _ := json.Marshal(a.Tillar)
+	lavozimlar := joinLavozimlar(a.Lavozimlar, a.Lavozim)
+	lavozim := firstLavozim(a.Lavozimlar, a.Lavozim)
 	_, err := db.Exec(`UPDATE rezumeler SET
-		lavozim=?, familiya=?, ism=?, sharif=?, tugilgan_sana=?, boy_sm=?, vazn_kg=?,
+		lavozim=?, lavozimlar=?, familiya=?, ism=?, sharif=?, tugilgan_sana=?, boy_sm=?, vazn_kg=?,
 		yashash_manzili=?, moljal=?, umumiy_tajriba=?, chet_el_tajribasi=?,
 		malumot=?, oilaviy_holat=?, tillar=?, telefon=?, qoshimcha=?,
 		tg_username=?, tg_username2=?
 		WHERE id=?`,
-		a.Lavozim, a.Familiya, a.Ism, a.Sharif, a.TugilganSana, a.BoySm, a.VaznKg,
+		lavozim, lavozimlar, a.Familiya, a.Ism, a.Sharif, a.TugilganSana, a.BoySm, a.VaznKg,
 		a.YashashManzili, a.Moljal, a.UmumiyTajriba, a.ChetElTajribasi,
 		a.Malumot, a.OilaviyHolat, string(tillarJSON), a.Telefon, a.Qoshimcha,
 		a.TgUsername, a.TgUsername2,
@@ -341,8 +430,11 @@ func getRezumeler(lavozim, status, search, source string, allowedCategories []st
 	args := []interface{}{}
 
 	if lavozim != "" {
-		where += " AND lavozim = ?"
-		args = append(args, lavozim)
+		// Rezume bir nechta lavozimga yuborilgan bo'lishi mumkin — tanlangan
+		// kategoriya shu ro'yxat ichida bo'lsa ham ko'rinadi.
+		cond, cargs := lavozimMatchSQL([]string{lavozim})
+		where += " AND " + cond
+		args = append(args, cargs...)
 	}
 	if source != "" {
 		where += " AND source = ?"
@@ -363,15 +455,9 @@ func getRezumeler(lavozim, status, search, source string, allowedCategories []st
 		args = append(args, s, s, s)
 	}
 	if len(allowedCategories) > 0 {
-		ph := ""
-		for i, cat := range allowedCategories {
-			if i > 0 {
-				ph += ","
-			}
-			ph += "?"
-			args = append(args, cat)
-		}
-		where += " AND lavozim IN (" + ph + ")"
+		cond, cargs := lavozimMatchSQL(allowedCategories)
+		where += " AND " + cond
+		args = append(args, cargs...)
 	}
 
 	var total int
@@ -382,7 +468,7 @@ func getRezumeler(lavozim, status, search, source string, allowedCategories []st
 
 	offset := (page - 1) * limit
 	query := fmt.Sprintf(
-		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
+		`SELECT id, lavozim, COALESCE(NULLIF(TRIM(lavozimlar),''), lavozim), familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
 		 tillar, telefon, qoshimcha, rasm_url, COALESCE(face_rasm_url,''), tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM rezumeler WHERE %s ORDER BY id DESC LIMIT ? OFFSET ?`, where)
@@ -397,9 +483,9 @@ func getRezumeler(lavozim, status, search, source string, allowedCategories []st
 	results := []RezumeRow{}
 	for rows.Next() {
 		var r RezumeRow
-		var tillarStr string
+		var tillarStr, lavozimlarStr string
 		err := rows.Scan(
-			&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
+			&r.ID, &r.Lavozim, &lavozimlarStr, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 			&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 			&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
 			&r.Qoshimcha, &r.RasmUrl, &r.FaceRasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
@@ -407,6 +493,7 @@ func getRezumeler(lavozim, status, search, source string, allowedCategories []st
 		if err != nil {
 			return nil, 0, err
 		}
+		r.Lavozimlar = splitLavozimlar(lavozimlarStr, r.Lavozim)
 		json.Unmarshal([]byte(tillarStr), &r.Tillar)
 		if r.Tillar == nil {
 			r.Tillar = []LangInfo{}
@@ -419,8 +506,10 @@ func getRezumeler(lavozim, status, search, source string, allowedCategories []st
 // getRezumeCounts — joriy status uchun har bir lavozim (kategoriya) bo'yicha rezume sonini qaytaradi.
 // where-mantig'i getRezumeler bilan bir xil: status bo'sh bo'lsa default filtr (rejected'lar va 4+ intervyu
 // chaqirilganlar chiqarib tashlanadi), allowedCategories berilsa faqat shu kategoriyalar.
-// Natija: lavozim -> son map'i (jami "Barchasi" uchun qiymatlar yig'indisidan hisoblanadi).
-func getRezumeCounts(status string, allowedCategories []string) (map[string]int, error) {
+// Natija: lavozim -> son map'i va jami rezume soni. Bitta rezume bir nechta
+// lavozimga yozilgan bo'lishi mumkin, shuning uchun jami — qiymatlar yig'indisi
+// emas, alohida rezumelar soni.
+func getRezumeCounts(status string, allowedCategories []string) (map[string]int, int, error) {
 	where := "1=1"
 	args := []interface{}{}
 
@@ -431,45 +520,51 @@ func getRezumeCounts(status string, allowedCategories []string) (map[string]int,
 		where += " AND status != 'rejected'"
 		where += " AND id NOT IN (SELECT rezume_id FROM interviews GROUP BY rezume_id HAVING COUNT(*) >= 4)"
 	}
+	allowed := map[string]bool{}
 	if len(allowedCategories) > 0 {
-		ph := ""
-		for i, cat := range allowedCategories {
-			if i > 0 {
-				ph += ","
-			}
-			ph += "?"
-			args = append(args, cat)
+		cond, cargs := lavozimMatchSQL(allowedCategories)
+		where += " AND " + cond
+		args = append(args, cargs...)
+		for _, c := range allowedCategories {
+			allowed[c] = true
 		}
-		where += " AND lavozim IN (" + ph + ")"
 	}
 
-	rows, err := db.Query("SELECT lavozim, COUNT(*) FROM rezumeler WHERE "+where+" GROUP BY lavozim", args...)
+	// Har bir rezumening lavozimlar ro'yxati o'qiladi va Go tomonida sanaladi —
+	// bitta rezume o'zi tanlagan har bir kategoriya tagida ko'rinadi.
+	rows, err := db.Query("SELECT "+lavozimlarCol+" FROM rezumeler WHERE "+where, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	counts := map[string]int{}
+	total := 0
 	for rows.Next() {
-		var lavozim string
-		var n int
-		if err := rows.Scan(&lavozim, &n); err != nil {
-			return nil, err
+		var lavozimlar string
+		if err := rows.Scan(&lavozimlar); err != nil {
+			return nil, 0, err
 		}
-		counts[lavozim] = n
+		total++
+		for _, l := range splitLavozimlar(lavozimlar, "") {
+			if len(allowed) > 0 && !allowed[l] {
+				continue
+			}
+			counts[l]++
+		}
 	}
-	return counts, nil
+	return counts, total, rows.Err()
 }
 
 func getRezumeByID(id int64) (*RezumeRow, error) {
 	var r RezumeRow
-	var tillarStr string
+	var tillarStr, lavozimlarStr string
 	err := db.QueryRow(
-		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
+		`SELECT id, lavozim, COALESCE(NULLIF(TRIM(lavozimlar),''), lavozim), familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
 		 tillar, telefon, qoshimcha, rasm_url, COALESCE(face_rasm_url,''), tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM rezumeler WHERE id = ?`, id).Scan(
-		&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
+		&r.ID, &r.Lavozim, &lavozimlarStr, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 		&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 		&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
 		&r.Qoshimcha, &r.RasmUrl, &r.FaceRasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
@@ -477,6 +572,7 @@ func getRezumeByID(id int64) (*RezumeRow, error) {
 	if err != nil {
 		return nil, err
 	}
+	r.Lavozimlar = splitLavozimlar(lavozimlarStr, r.Lavozim)
 	json.Unmarshal([]byte(tillarStr), &r.Tillar)
 	if r.Tillar == nil {
 		r.Tillar = []LangInfo{}
@@ -494,9 +590,9 @@ func getRezumeByPhone(phone string) (*RezumeRow, error) {
 	}
 
 	var r RezumeRow
-	var tillarStr string
+	var tillarStr, lavozimlarStr string
 	err := db.QueryRow(
-		`SELECT id, lavozim, familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
+		`SELECT id, lavozim, COALESCE(NULLIF(TRIM(lavozimlar),''), lavozim), familiya, ism, sharif, tugilgan_sana, boy_sm, vazn_kg,
 		 yashash_manzili, moljal, umumiy_tajriba, chet_el_tajribasi, malumot, oilaviy_holat,
 		 tillar, telefon, qoshimcha, rasm_url, COALESCE(face_rasm_url,''), tg_user_id, tg_username, COALESCE(tg_username2,''), status, status_by, status_by_name, COALESCE(status_voice_url,''), COALESCE(source,''), created_at
 		 FROM rezumeler
@@ -504,7 +600,7 @@ func getRezumeByPhone(phone string) (*RezumeRow, error) {
 		    OR replace(replace(replace(replace(replace(telefon,' ',''),'+',''),'-',''),'(',''),')','') LIKE ?
 		 ORDER BY id DESC LIMIT 1`,
 		normalized, "%"+suffix).Scan(
-		&r.ID, &r.Lavozim, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
+		&r.ID, &r.Lavozim, &lavozimlarStr, &r.Familiya, &r.Ism, &r.Sharif, &r.TugilganSana,
 		&r.BoySm, &r.VaznKg, &r.YashashManzili, &r.Moljal, &r.UmumiyTajriba,
 		&r.ChetElTajribasi, &r.Malumot, &r.OilaviyHolat, &tillarStr, &r.Telefon,
 		&r.Qoshimcha, &r.RasmUrl, &r.FaceRasmUrl, &r.TgUserID, &r.TgUsername, &r.TgUsername2, &r.Status, &r.StatusBy, &r.StatusByName, &r.StatusVoiceUrl, &r.Source, &r.CreatedAt,
@@ -512,6 +608,7 @@ func getRezumeByPhone(phone string) (*RezumeRow, error) {
 	if err != nil {
 		return nil, err
 	}
+	r.Lavozimlar = splitLavozimlar(lavozimlarStr, r.Lavozim)
 	json.Unmarshal([]byte(tillarStr), &r.Tillar)
 	if r.Tillar == nil {
 		r.Tillar = []LangInfo{}
@@ -878,6 +975,13 @@ func dbUpdateCategory(id int64, name string, isActive bool) error {
 		if _, err := tx.Exec("UPDATE rezumeler SET lavozim = ? WHERE lavozim = ?", name, oldName); err != nil {
 			return err
 		}
+		// Ko'p lavozimli rezumelarda ham eski nomni yangisiga almashtiramiz.
+		if _, err := tx.Exec(
+			"UPDATE rezumeler SET lavozimlar = TRIM(replace('|'||"+lavozimlarCol+"||'|', '|'||?||'|', '|'||?||'|'), '|') "+
+				"WHERE instr('|'||"+lavozimlarCol+"||'|', '|'||?||'|') > 0",
+			oldName, name, oldName); err != nil {
+			return err
+		}
 	}
 
 	return tx.Commit()
@@ -1005,17 +1109,19 @@ func ratingToStatus(rating int) string {
 
 // Rezume dublikatini tekshirish va eski dublikatni o'chirish.
 // Dublikat kaliti: tug'ilgan sana (yili) + lavozim (kategoriya) + ism + telefon.
+// Anketada bir nechta lavozim tanlanishi mumkin — eski rezumening lavozimlaridan
+// birortasi yangisi bilan kesishsa, u dublikat hisoblanadi.
 // Taqqoslash katta-kichik harflarga (va atrofdagi bo'sh joylarga) bog'liq emas.
-func deleteDuplicateRezume(lavozim, tugilganSana, ism, telefon string) {
-	if lavozim == "" || tugilganSana == "" || ism == "" || telefon == "" {
+func deleteDuplicateRezume(lavozimlar []string, tugilganSana, ism, telefon string) {
+	if len(lavozimlar) == 0 || tugilganSana == "" || ism == "" || telefon == "" {
 		return
 	}
-	db.Exec(`DELETE FROM rezumeler WHERE
-		LOWER(TRIM(lavozim)) = LOWER(TRIM(?)) AND
+	cond, args := lavozimMatchSQL(lavozimlar)
+	args = append(args, tugilganSana, ism, telefon)
+	db.Exec(`DELETE FROM rezumeler WHERE `+cond+` AND
 		TRIM(tugilgan_sana) = TRIM(?) AND
 		LOWER(TRIM(ism)) = LOWER(TRIM(?)) AND
-		TRIM(telefon) = TRIM(?)`,
-		lavozim, tugilganSana, ism, telefon)
+		TRIM(telefon) = TRIM(?)`, args...)
 }
 
 // Rezume uchun rejected interviewlar sonini tekshirish
