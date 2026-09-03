@@ -1182,7 +1182,7 @@ func dbGetInterviews(rezumeID int64, rating int, invitedByID int64, date string,
 		 i.interview_date, i.interview_time, i.branch_id,
 		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
 		 i.rating, i.comment, COALESCE(i.voice_url, ''), i.created_at,
-		 COALESCE(r.familiya || ' ' || r.ism, ''), COALESCE(r.lavozim, ''), COALESCE(r.telefon, ''),
+		 COALESCE(r.familiya || ' ' || r.ism, ''), replace(COALESCE(NULLIF(TRIM(r.lavozimlar),''), r.lavozim, ''), '|', ', '), COALESCE(r.telefon, ''),
 		 COALESCE(r.rasm_url, ''), COALESCE(r.tg_username, ''), COALESCE(r.tg_user_id, 0)
 		 FROM interviews i
 		 LEFT JOIN users u ON u.id = i.invited_by_id
@@ -1224,7 +1224,7 @@ func dbGetInterviewByID(id int64) (*InterviewRow, error) {
 		 i.interview_date, i.interview_time, i.branch_id,
 		 COALESCE(b.name, ''), COALESCE(b.latitude, 0), COALESCE(b.longitude, 0),
 		 i.rating, i.comment, COALESCE(i.voice_url, ''), i.created_at,
-		 COALESCE(r.familiya || ' ' || r.ism, ''), COALESCE(r.lavozim, ''), COALESCE(r.telefon, ''),
+		 COALESCE(r.familiya || ' ' || r.ism, ''), replace(COALESCE(NULLIF(TRIM(r.lavozimlar),''), r.lavozim, ''), '|', ', '), COALESCE(r.telefon, ''),
 		 COALESCE(r.rasm_url, ''), COALESCE(r.tg_username, ''), COALESCE(r.tg_user_id, 0)
 		 FROM interviews i
 		 LEFT JOIN users u ON u.id = i.invited_by_id
